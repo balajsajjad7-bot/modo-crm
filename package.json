@@ -1,0 +1,37 @@
+{
+  "name": "crm-modo",
+  "version": "2.7.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "db:push": "prisma db push",
+    "seed": "node scripts/seed.js",
+    "postinstall": "prisma generate",
+    "migrate": "node scripts/migrate.js",
+    "vercel-build": "node scripts/migrate.js && prisma generate && next build"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "0.9.5",
+    "@prisma/adapter-neon": "5.20.0",
+    "@prisma/client": "5.20.0",
+    "bcryptjs": "2.4.3",
+    "framer-motion": "11.11.17",
+    "jose": "5.9.3",
+    "lucide-react": "0.460.0",
+    "next": "^14.2.25",
+    "nodemailer": "6.9.16",
+    "ogl": "1.0.11",
+    "qrcode": "1.5.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "ws": "8.18.0"
+  },
+  "devDependencies": {
+    "prisma": "5.20.0"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  }
+}

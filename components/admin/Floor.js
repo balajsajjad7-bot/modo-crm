@@ -1,0 +1,144 @@
+"use client";
+// Admin overview: live floor at a glance, live calls with subtitles + AI, dialer, recent calls, leaderboard.
+import { useState } from "react";
+import Link from "next/link";
+import { usePoll, api } from "./api";
+import { dur } from "@/lib/fmt";
+import { Sparkles, PhoneCall, Radio, Coffee, Moon, Trophy, History, RefreshCw, HelpCircle, PhoneOff, Headphones } from "lucide-react";
+import ListenPanel from "./ListenPanel";
+import ShiftEndRequests from "./ShiftEndRequests";
+
+const lines = (t) => (t || "").split("\n").filter(Boolean).map((l) => (l.startsWith("C: ") ? { who: "C", text: l.slice(3) } : { who: "A", text: l.startsWith("A: ") ? l.slice(3) : l }));
+const mins = (a, b) => Math.max(0, Math.round(((b ? new Date(b) : Date.now()) - new Date(a)) / 1000));
+const WHO = { agent: "Agent confused", customer: "Customer confused", both: "Both confused" };
+const ENDED = { customer: "Customer hung up", agent: "Agent ended", unknown: "Unknown" };
+
+export default function Floor() {
+  const [sess] = usePoll("/api/sessions", 3000);
+  const [pres] = usePoll("/api/presence", 15000);
+  const [vici, reloadVici] = usePoll("/api/vicidial", 10000);
+  const [board] = usePoll("/api/leaderboard", 20000);
+  const [brief, setBrief] = useState(null); const [briefing, setBriefing] = useState(false);
+  const [listening, setListening] = useState([]); const [mutedIds, setMutedIds] = useState({});
+  const [phoneMsg, setPhoneMsg] = useState(null);
+  const viciListen = async (body) => { setPhoneMsg({ busy: true, text: "Asking VICIdial to ring your phone…" }); const r = await api("/api/vicidial/monitor", "POST", body); setPhoneMsg(r.ok ? { text: r.data.message } : { err: r.data.error }); };
+  const listen = (id) => { setListening((l) => (l.includes(id) ? l : [...l, id])); setMutedIds((m) => Object.fromEntries([...Object.keys(m).map((k) => [k, true]), [id, false]])); }; // newest one is heard, others muted
+  const all = sess.data || []; const live = all.filter((s) => !s.endedAt); const done = all.filter((s) => s.endedAt);
+  const p = pres.data || []; const count = (st) => p.filter((x) => st.includes(x.status)).length;
+  async function getBrief() { setBriefing(true); const r = await api("/api/floor-ai", "POST"); setBriefing(false); setBrief(r.ok ? r.data.text : r.data.error || "AI couldn't summarise right now."); }
+
+  return (
+    <div className="floor">
+      <ShiftEndRequests compact />
+      <div className="floor-kpis">
+        <div><PhoneCall size={16} /><b>{live.length}</b><span>on calls now</span></div>
+        <div><Radio size={16} /><b>{count(["working", "remote"])}</b><span>working</span></div>
+        <div><Coffee size={16} /><b>{count(["on break"])}</b><span>on break</span></div>
+        <div><Moon size={16} /><b>{count(["idle", "away", "busy"])}</b><span>idle / away</span></div>
+        <div><PhoneOff size={16} /><b>{done.filter((s) => s.endedBy === "customer").length}</b><span>customer hang-ups (12h)</span></div>
+      </div>
+
+      <section className="panel stack floor-ai">
+        <div className="row" style={{ justifyContent: "space-between" }}>
+          <h2><Sparkles size={17} /> Floor summary</h2>
+          <button className="ghost sm" onClick={getBrief} disabled={briefing}><Sparkles size={13} /> {briefing ? "Thinking…" : brief ? "Refresh" : "Summarise the floor"}</button>
+        </div>
+        {brief ? <div className="brief">{brief.split("\n").filter(Boolean).map((l, i) => <p key={i}>{l.replace(/^[-*•]\s*/, "")}</p>)}</div>
+          : <p className="muted small" style={{ margin: 0 }}>Modo AI reads the dialer, every live call and the last few hours of calls, and tells you who needs help.</p>}
+      </section>
+
+      {listening.length > 0 && (
+        <section className="stack">
+          <h2 className="sec-h"><Headphones size={17} /> Listening <span className="muted small">audio goes straight from the agent's browser to yours and is not recorded</span></h2>
+          <div className="listen-grid">
+            {listening.map((id) => { const c = all.find((x) => x.id === id); if (!c) return null; return (
+              <ListenPanel key={id} call={c} muted={!!mutedIds[id]} setMuted={(v) => setMutedIds((m) => ({ ...m, [id]: v }))} onClose={() => setListening((l) => l.filter((x) => x !== id))} />
+            ); })}
+          </div>
+        </section>
+      )}
+
+      <section className="stack">
+        <div className="row" style={{ justifyContent: "space-between" }}>
+          <h2 className="sec-h"><PhoneCall size={17} /> Live calls <span className="muted small">{live.length ? "subtitles update every few seconds" : ""}</span></h2>
+          {live.length > 0 && <div className="row">
+            <button className="sm" onClick={() => { setListening(live.map((c) => c.id)); setMutedIds(Object.fromEntries(live.map((c, i) => [c.id, i > 0]))); }}><Headphones size={13} /> Listen to all ({live.length})</button>
+            {listening.length > 0 && <button className="ghost sm" onClick={() => setListening([])}>Stop all</button>}
+          </div>}
+        </div>
+        {!live.length ? <div className="panel muted">No one is on a call with live assist right now.</div> : (
+          <div className="live-grid">
+            {live.map((s) => {
+              const L = lines(s.transcript).slice(-4);
+              return (
+                <article key={s.id} className="panel live-card">
+                  <header className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
+                    <div className="row" style={{ gap: 8, minWidth: 0 }}><span className="live-dot" /><b className="ellipsis">{s.user.name}</b><span className="muted small num">{dur(mins(s.startedAt))}</span></div>
+                    <div className="row" style={{ gap: 4 }}>
+                      {s.confused && s.confused !== "none" && <span className="chip late" title={s.confusedNote || ""}><HelpCircle size={11} /> {WHO[s.confused]}</span>}
+                      {s.mood && s.mood !== "unknown" && <span className={"chip " + (s.mood === "interested" ? "ok" : s.mood === "annoyed" ? "red" : "")}>{s.mood}</span>}
+                      <button className={listening.includes(s.id) ? "sm" : "ghost sm"} onClick={() => listen(s.id)} title="Listen live"><Headphones size={13} /> {listening.includes(s.id) ? "Listening" : "Listen"}</button>
+                    </div>
+                  </header>
+                  <div className="subs">{L.length ? L.map((l, i) => <p key={i} className={l.who === "C" ? "c" : "a"} style={{ opacity: 0.45 + (i + 1) / L.length * 0.55 }}><b>{l.who === "C" ? "Customer" : s.user.name.split(" ")[0]}</b>{l.text}</p>) : <p className="muted">Waiting for speech…</p>}</div>
+                  {s.summary && <p className="live-sum"><Sparkles size={12} /> {s.summary}</p>}
+                  {(s.agentNerv != null || s.custNerv != null) && (
+                    <div className="mini-nerv">
+                      <span>Agent <i><em style={{ width: (s.agentNerv || 0) + "%", background: s.agentNerv >= 60 ? "#ff4d5a" : s.agentNerv >= 35 ? "#ffb070" : "#7fd6a0" }} /></i> {s.agentState || ""}</span>
+                      <span>Customer <i><em style={{ width: (s.custNerv || 0) + "%", background: s.custNerv >= 60 ? "#ff4d5a" : s.custNerv >= 35 ? "#ffb070" : "#7fd6a0" }} /></i> {s.customerState || ""}</span>
+                    </div>
+                  )}
+                  {s.confusedNote && s.confused !== "none" && <p className="small" style={{ margin: 0, color: "#ffc79b" }}>{s.confusedNote}</p>}
+                  <footer className="small muted">{s.customerSide ? "Both sides captioned" : "Agent's side only"}{s.lastTip ? ` · AI suggested: "${s.lastTip}"` : ""}</footer>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <div className="two-col">
+        <section className="panel stack">
+          <div className="row" style={{ justifyContent: "space-between" }}><h2><Radio size={17} /> Dialer</h2><button className="ghost sm icon-btn" aria-label="Refresh" onClick={reloadVici}><RefreshCw size={13} /></button></div>
+          {phoneMsg && <div className={phoneMsg.err ? "err small" : "receipt"}>{phoneMsg.err || phoneMsg.text}</div>}
+          {vici.error ? <p className="muted small" style={{ margin: 0 }}>{vici.error} <Link href="/admin/connectors">Connect VICIdial</Link></p> : !vici.data ? <p className="muted">Checking…</p> : !vici.data.agents.length ? <p className="muted">No one is logged into the dialer.</p> : (
+            <div className="dialer-list">{vici.data.agents.map((a, i) => (
+              <div key={i}><span className={"dot " + String(a.status || "").toLowerCase()} /><b>{a.full_name || a.user || a.f0}</b><span className="chip">{a.status}</span><span className="muted small">{a.campaign_id || a.campaign || ""}</span><span className="muted small" style={{ marginLeft: "auto" }}>{a.calls_today ? a.calls_today + " calls" : ""}</span>
+                {/INCALL|QUEUE|DIAL/i.test(a.status || "") && <span className="row" style={{ gap: 4 }}>
+                  <button className="ghost sm" title="VICIdial rings your phone and you hear both sides" onClick={() => viciListen({ vicidialUser: a.user || a.f0, stage: "MONITOR" })}><Headphones size={12} /> Listen</button>
+                  <button className="ghost sm" title="Talk to the agent only; the customer can't hear you" onClick={() => viciListen({ vicidialUser: a.user || a.f0, stage: "WHISPER" })}>Whisper</button>
+                  <button className="ghost sm" title="Join the call: both can hear you" onClick={() => viciListen({ vicidialUser: a.user || a.f0, stage: "BARGE" })}>Barge</button></span>}</div>
+            ))}</div>
+          )}
+        </section>
+        <section className="panel stack">
+          <h2><Trophy size={17} /> Today's leaderboard</h2>
+          {!board.data?.rows.length ? <p className="muted">No active agents yet.</p> : (
+            <div className="dialer-list">{board.data.rows.slice(0, 8).map((r, i) => (
+              <div key={r.agentId}><b className="num" style={{ width: 22 }}>{i + 1}</b><b>{r.name}</b><span className={"chip " + (r.verified >= board.data.target ? "ok" : "")}>{r.verified}/{board.data.target}</span><span className="muted small" style={{ marginLeft: "auto" }}>{r.submitted} sent · idle {dur(r.idleSeconds || 0)}</span></div>
+            ))}</div>
+          )}
+        </section>
+      </div>
+
+      <section className="panel stack">
+        <h2><History size={17} /> Recent calls</h2>
+        {!done.length ? <p className="muted">No finished calls in the last 12 hours.</p> : (
+          <div className="tablewrap"><table>
+            <thead><tr><th>Agent</th><th>When</th><th>Length</th><th>What happened</th><th>Confused</th><th>Ended by</th><th className="r">Score</th></tr></thead>
+            <tbody>{done.slice(0, 30).map((s) => (
+              <tr key={s.id}>
+                <td>{s.user.name}</td><td className="small muted">{new Date(s.startedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</td>
+                <td className="small">{dur(mins(s.startedAt, s.endedAt))}</td>
+                <td className="small" style={{ maxWidth: 420 }}>{s.summary || <span className="muted">—</span>}</td>
+                <td>{s.confused && s.confused !== "none" ? <span className="chip late" title={s.confusedNote || ""}>{WHO[s.confused]}</span> : <span className="muted small">no</span>}</td>
+                <td>{s.endedBy ? <span className={"chip " + (s.endedBy === "customer" ? "red" : "")}>{ENDED[s.endedBy]}</span> : "—"}{s.endedBySource === "ai" && <span className="muted small"> (AI guess)</span>}</td>
+                <td className="r num">{s.score ?? "—"}</td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </section>
+    </div>
+  );
+}

@@ -1,0 +1,17 @@
+import "./globals.css";
+import PlasmaBackground from "@/components/PlasmaBackground";
+import { bootScript } from "@/components/Appearance";
+export const metadata = { title: "CRM Modo", description: "Call-center CRM: attendance, pipeline, sales, chat and AI" };
+export const viewport = { themeColor: "#1a1a1b", width: "device-width", initialScale: 1 };
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" data-theme="dark" data-appearance="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+      </head>
+      <body><PlasmaBackground />{children}</body>
+    </html>
+  );
+}

@@ -1,0 +1,502 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  AGENT
+}
+
+model User {
+  id           String       @id @default(cuid())
+  agentId      String       @unique
+  passwordHash String
+  role         Role         @default(AGENT)
+  name         String
+  email        String?
+  phone        String?
+  cnic         String?
+  vicidialUser String?
+  baseSalary   Float        @default(0)
+  shiftStart   String       @default("19:00") // HH:MM local time
+  shiftHours   Float        @default(9)
+  workDays     String       @default("1,2,3,4,5,6") // 0=Sun..6=Sat
+  graceMinutes Int          @default(0)
+  active       Boolean      @default(true)
+  lastSeenAt   DateTime?
+  status       String       @default("available") // available | away | busy (break comes from BreakLog, idle from activity)
+  statusAt     DateTime?
+  idleSince    DateTime?
+  departmentId String?
+  campaignId   String?
+  totpSecret   String?      // encrypted
+  totpEnabled  Boolean      @default(false)
+  padText      String?      // agent's personal scratchpad
+  createdAt    DateTime     @default(now())
+  attendance   Attendance[]
+  sales        Sale[]
+  sessions     CallSession[]
+  breaks       BreakLog[]
+  activity     Activity[]
+}
+
+model Attendance {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  shiftDate   String    // YYYY-MM-DD of the shift start
+  clockIn     DateTime
+  clockOut    DateTime?
+  lateSeconds Int       @default(0)
+  deduction   Float     @default(0)
+  waived      Boolean   @default(false)
+  note        String?
+  ip          String?
+  source      String    @default("login") // login | auto | qr | kiosk | admin
+  location    String?   // office | remote
+  autoOut     Boolean   @default(false)   // clocked out automatically after going quiet
+
+  @@unique([userId, shiftDate])
+}
+
+model Sale {
+  id        String   @id @default(cuid())
+  receipt   String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  raw       String
+  summary   String?
+  amount    Float?
+  customer  String?
+  product   String?
+  flags     String?
+  ip        String?
+  phone     String?
+  email        String?
+  address      String?
+  zip          String?
+  orderNumber  String?
+  discountPct  Float?
+  billBefore   Float?
+  billAfter    Float?
+  nextBillDate DateTime?
+  lines        Int?
+  overcharged  Float?
+  device       String?
+  deviceColor  String?
+  storage      String?
+  specs        String?
+  gift         String?
+  office       String?   // Islamabad | Karachi | Lahore | other
+  locationCode String?
+  closerId     String?
+  notes        String?
+  saleType     String?
+  campaignId   String?   // new | addon (another device for an existing customer)
+  duplicateOf String?
+  shiftDate String   @default("")
+  status    String   @default("NEW") // NEW | VERIFIED (= Active) | REJECTED (= Not active)
+  createdAt DateTime @default(now())
+}
+
+model CallSession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  transcript String    @default("")
+  lastTip    String?
+  tone       String?
+  summary    String?   // AI: what the call is about, updated live
+  mood       String?   // AI: customer mood
+  confused   String?   // AI: agent | customer | both | none
+  confusedNote String?
+  endedBy    String?   // customer | agent | unknown
+  endedBySource String? // agent (confirmed) | ai (estimated) | dialer
+  customerSide Boolean @default(false) // customer's audio was transcribed too
+  agentState    String?  // AI: calm | nervous | rushed | confused
+  customerState String?  // AI: calm | nervous | annoyed | confused | interested
+  agentNerv     Int?     // AI: 0-100 how nervous the agent sounds
+  custNerv      Int?     // AI: 0-100 how nervous the customer sounds
+  live          String?  // AI live-assist extras (JSON): objection, rebuttal, questions, facts, checklist
+  score      Int?
+  review     String?
+  startedAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  endedAt    DateTime?
+}
+
+model BreakLog {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  shiftDate String
+  start     DateTime  @default(now())
+  end       DateTime?
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  shiftDate String
+  kind      String   // AWAY (left the tab) | IDLE (no mouse/keyboard)
+  start     DateTime
+  end       DateTime
+  seconds   Int
+}
+
+// One row, id "global". Edited from Admin > Settings.
+model Setting {
+  id             String  @id @default("global")
+  ipLock         Boolean @default(false)
+  officeIps      String  @default("")
+  breakAllowance Int     @default(60)   // minutes per shift
+  idleAfter      Int     @default(5)    // minutes without activity
+  dailyTarget    Int     @default(3)    // verified sales per shift
+  bonusPerSale   Float   @default(500)  // Rs per verified sale above target
+  officeLat      Float?
+  officeLng      Float?
+  officeRadius   Int     @default(150)  // metres
+  autoClockOut   Int     @default(30)   // minutes without activity before automatic clock-out
+  autoClockIn    Boolean @default(true) // opening the CRM during shift time clocks you in
+  shiftEndOut    Boolean @default(true) // clock everyone out automatically when their shift ends
+  shiftEndGrace  Int     @default(0)    // minutes after shift end before the automatic clock-out
+  currency       String  @default("$")  // customer-facing currency for the discount calculator
+  lockdown       Boolean @default(false) // emergency stop: only admins can use the CRM
+  lockdownMsg    String?
+  monitorNotice  Boolean @default(false) // tell agents when a supervisor is listening
+  require2fa     String  @default("none") // none | admins | everyone
+  agentPerms     String  @default("{}")
+  dialer         String  @default("{}") // which dialer Modo drives (vicidial | custom | off) + custom URL templates
+  aiKnowledge    String  @default("{}") // "Train Modo AI": company facts, scripts, objection answers, rules // what agents are allowed to do (Team → Agent access)
+  discountRates  String  @default("{\"Internet\":20,\"Electricity\":15,\"Gas\":15}") // max % per service
+}
+
+// Integrations: webhooks (Slack, Discord, Zapier, Make, Google Sheets…), AI key, VICIdial, TURN.
+model Connector {
+  id         String    @id @default(cuid())
+  type       String    // webhook | slack | discord | sheets | ai | vicidial | turn
+  name       String
+  config     String    @default("{}") // JSON
+  events     String    @default("")   // comma list for webhook-style connectors
+  enabled    Boolean   @default(true)
+  lastStatus String?
+  lastAt     DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+// Manual pay changes by admin (+ bonus, - deduction) for a month
+model Adjustment {
+  id          String   @id @default(cuid())
+  userId      String
+  month       String   // YYYY-MM
+  amount      Float
+  reason      String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([userId, month])
+}
+
+model AgentNote {
+  id        String   @id @default(cuid())
+  userId    String
+  text      String
+  byId      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ── Team chat, voice notes, attachments, huddles ─────────────────────
+model Conversation {
+  id            String         @id @default(cuid())
+  name          String?
+  isGroup       Boolean        @default(false)
+  isChannel     Boolean        @default(false) // Slack-style #channel anyone can browse and join
+  isPrivate     Boolean        @default(false)
+  topic         String?
+  createdById   String?
+  createdAt     DateTime       @default(now())
+  lastMessageAt DateTime       @default(now())
+  members       ConvMember[]
+  messages      Message[]
+  huddles       Huddle[]
+}
+
+model ConvMember {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  lastReadAt     DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  kind           String       @default("TEXT") // TEXT | AUDIO | FILE | SYSTEM
+  text           String?
+  fileId         String?
+  fileName       String?
+  fileMime       String?
+  fileSize       Int?
+  parentId       String?      // set on thread replies
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  reactions      Reaction[]
+
+  @@index([conversationId, createdAt])
+  @@index([parentId])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId, emoji])
+}
+
+model FileBlob {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  mime      String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+}
+
+model Huddle {
+  id             String              @id @default(cuid())
+  conversationId String
+  conversation   Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  startedById    String
+  startedAt      DateTime            @default(now())
+  endedAt        DateTime?
+  participants   HuddleParticipant[]
+}
+
+model HuddleParticipant {
+  id       String    @id @default(cuid())
+  huddleId String
+  huddle   Huddle    @relation(fields: [huddleId], references: [id], onDelete: Cascade)
+  userId   String
+  joinedAt DateTime  @default(now())
+  lastSeen DateTime  @default(now())
+  leftAt   DateTime?
+  muted    Boolean   @default(false)
+
+  @@unique([huddleId, userId])
+}
+
+model Signal {
+  id        String   @id @default(cuid())
+  huddleId  String
+  fromId    String
+  toId      String
+  type      String   // offer | answer | ice
+  payload   String
+  createdAt DateTime @default(now())
+
+  @@index([huddleId, toId])
+}
+
+// ── CRM: contacts, pipeline, tasks, activity ─────────────────────────
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  city      String?
+  company   String?
+  tags      String   @default("")
+  source    String?
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model Deal {
+  id            String    @id @default(cuid())
+  title         String
+  contactId     String?
+  ownerId       String
+  stage         String    @default("lead") // lead | contacted | quoted | won | lost
+  value         Float     @default(0)
+  service       String?
+  expectedClose DateTime?
+  lostReason    String?
+  position      Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([ownerId])
+  @@index([stage])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  type        String    @default("callback") // callback | task | email | meeting
+  dueAt       DateTime?
+  contactId   String?
+  dealId      String?
+  assigneeId  String
+  createdById String
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  @@index([assigneeId, done])
+}
+
+model CrmActivity {
+  id        String   @id @default(cuid())
+  contactId String?
+  dealId    String?
+  userId    String
+  kind      String   // note | call | stage | task | created
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([contactId])
+  @@index([dealId])
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  body      String
+  status    String   // sent | failed
+  error     String?
+  contactId String?
+  saleId    String?
+  sentById  String
+  createdAt DateTime @default(now())
+
+  @@index([contactId])
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  color     String   @default("#ff6b4a")
+  createdAt DateTime @default(now())
+}
+
+model Campaign {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#ffb347")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// Supervisor listening live to an agent's call (audio goes browser-to-browser, never stored)
+model ListenRequest {
+  id            String    @id @default(cuid())
+  callSessionId String
+  adminId       String
+  agentId       String
+  createdAt     DateTime  @default(now())
+  lastSeen      DateTime  @default(now())
+  endedAt       DateTime?
+
+  @@index([agentId, endedAt])
+}
+
+// AI quality review of one call (the "QA department")
+model QaReview {
+  id            String   @id @default(cuid())
+  callSessionId String   @unique
+  userId        String
+  overall       Int
+  scores        String   // JSON: greeting, pitch, disclosure, closing, empathy, clarity, grammar, confidence, compliance (0-10 each)
+  grammar       String   // JSON: [{ said, better, why }]
+  nervous       String   // JSON: [{ said, sign }]
+  compliance    String   // JSON: [{ item, passed, note }]
+  highlights    String   // JSON: { strengths: [], improve: [] }
+  fillers       Int      @default(0)
+  agentWords    Int      @default(0)
+  customerWords Int      @default(0)
+  wpm           Int?
+  agentNervous  Int?
+  customerNervous Int?
+  sentiment     String?  // customer: positive | neutral | negative
+  outcome       String?  // sale | callback | not interested | no answer | other
+  summary       String?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// Budget Ease (utility-bill discount) submissions — separate from telecom sales.
+// SSN last 4 and date of birth are stored encrypted (AES-256-GCM) and only admins can reveal them.
+model BeSale {
+  id             String   @id @default(cuid())
+  consumerId     String   @unique
+  userId         String
+  customer       String
+  phone          String
+  email          String?
+  ssn4           String   // encrypted
+  dob            String   // encrypted (YYYY-MM-DD)
+  zip            String
+  serviceAddress String
+  company        String   // utility company
+  service        String   @default("electricity")
+  billAmount     Float
+  payAmount      Float
+  notes          String?
+  status         String   @default("NEW") // NEW | FOLLOWUP | APPROVED | REJECTED
+  flags          String?
+  campaignId     String?
+  audit          String   @default("[]") // who revealed the private fields and when
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([phone])
+}
+
+// Agent asks to end their shift early → admin approves → a one-time code is sent to the agent → agent enters it to clock out
+model ShiftEndRequest {
+  id         String    @id @default(cuid())
+  userId     String
+  shiftDate  String
+  reason     String
+  status     String    @default("pending") // pending | approved | denied | used | expired
+  codeHash   String?
+  expiresAt  DateTime?
+  decidedBy  String?
+  decidedAt  DateTime?
+  adminNote  String?
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
