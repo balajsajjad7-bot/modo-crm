@@ -62,13 +62,14 @@ function Meter({ label, value, state }) {
 
 export default function ListenPanel({ call, onClose, muted, setMuted }) {
   const [streams, setStreams] = useState({}); const [err, setErr] = useState(""); const [vol, setVol] = useState(1); const [side, setSide] = useState({ agent: false, customer: false });
-  const handle = useRef(null);
+  const handle = useRef(null); const [slow, setSlow] = useState(false);
   useEffect(() => {
     let alive = true;
-    startListening(call.id, (who, st) => alive && setStreams((s) => ({ ...s, [who]: st })), () => alive && setErr("The call ended."))
+    const t = setTimeout(() => alive && setSlow(true), 15000); // stop hanging forever with a helpful hint
+    startListening(call.id, (who, st) => { if (alive) { clearTimeout(t); setSlow(false); setStreams((s) => ({ ...s, [who]: st })); } }, () => alive && setErr("The call ended."))
       .then((h) => { if (alive) handle.current = h; else h.close(); })
       .catch((e) => setErr(e.message));
-    return () => { alive = false; handle.current?.close(); };
+    return () => { alive = false; clearTimeout(t); handle.current?.close(); };
   }, [call.id]);
   const L = lines(call.transcript).slice(-6);
   const secs = Math.floor((Date.now() - new Date(call.startedAt)) / 1000);
@@ -83,7 +84,8 @@ export default function ListenPanel({ call, onClose, muted, setMuted }) {
         </div>
       </header>
       {err && <p className="err small" style={{ margin: 0 }}>{err}</p>}
-      {!streams.agent && !err && <p className="muted small" style={{ margin: 0 }}>Connecting to {call.user.name.split(" ")[0]}'s browser… Their Call assist page must be open.</p>}
+      {!streams.agent && !err && !slow && <p className="muted small" style={{ margin: 0 }}>Connecting to {call.user.name.split(" ")[0]}'s browser… Their Call assist page must be open.</p>}
+      {!streams.agent && !err && slow && <p className="err small" style={{ margin: 0 }}>Couldn't connect to {call.user.name.split(" ")[0]}'s browser. This needs: (1) the agent has <b>Call assist</b> open with a live call, and (2) a working voice relay (TURN). For a real customer call, use the <b>Dialer → Listen</b> button instead — it rings your phone through VICIdial and doesn't need any of this.</p>}
       <div className="waves">
         <VoiceWave stream={streams.agent} color="#ff8a4a" label="Agent" muted={muted || side.agent} volume={vol} onToggle={() => setSide({ ...side, agent: !side.agent })} />
         <VoiceWave stream={streams.customer} color="#6cc4ff" label="Customer" muted={muted || side.customer} volume={vol} onToggle={() => setSide({ ...side, customer: !side.customer })} />
