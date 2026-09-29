@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireManager } from "@/lib/auth";
 import { recordingLookup } from "@/lib/vicidial";
 
 // Admin: recordings for a day. No agent = ALL agents (tries date-only, then every linked agent). ?date=&agent=&phone=&lead=
 export async function GET(req) {
-  const { error } = await requireRole("ADMIN");
+  const { error } = await requireManager("recordings");
   if (error) return error;
   const q = new URL(req.url).searchParams;
   const date = q.get("date"); const agent = q.get("agent"); const phone = q.get("phone"); const lead = q.get("lead");

@@ -11,6 +11,7 @@ datasource db {
 enum Role {
   ADMIN
   AGENT
+  SUPERVISOR
 }
 
 model User {
@@ -43,6 +44,8 @@ model User {
   onboardedAt  DateTime?    // when this agent acknowledged the welcome + contract
   geoInside    Boolean?     // currently inside the office geofence (null = unknown)
   geoAt        DateTime?    // when the geo state last changed
+  supAccess    String       @default("[]") // for SUPERVISOR: JSON array of admin section keys they may open
+  supervisorAccess String   @default("[]") // for SUPERVISOR accounts: which admin areas they may open
   padText      String?      // agent's personal scratchpad
   createdAt    DateTime     @default(now())
   attendance   Attendance[]

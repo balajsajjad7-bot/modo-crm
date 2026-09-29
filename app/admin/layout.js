@@ -3,12 +3,14 @@ import Shell from "@/components/Shell";
 import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
+import { sectionForPath } from "@/lib/supaccess";
 
 export default function AdminLayout({ children }) {
   const [{ data: sales }] = usePoll("/api/sales", 30000);
   const fresh = (sales || []).filter((s) => s.status === "NEW").length;
   const [secure, setSecure] = useState(false);
-  useEffect(() => { fetch("/api/me").then((r) => r.json()).then((m) => setSecure(!!m?.ceo || !!m?.secureLine)).catch(() => {}); }, []);
+  const [me, setMe] = useState(null);
+  useEffect(() => { fetch("/api/me").then((r) => r.json()).then((m) => { setMe(m); setSecure(!!m?.ceo || !!m?.secureLine); }).catch(() => {}); }, []);
   const i = (C) => <C size={17} />;
   const nav = [
     { href: "/admin", exact: true, label: "Overview", hint: "Live floor, leaderboard and calls", icon: i(LayoutDashboard) },
@@ -55,6 +57,14 @@ export default function AdminLayout({ children }) {
       { href: "/admin/updates", label: "Updates", hint: "Modo version and what's new", icon: i(Download) },
     ] },
   ];
+  // A supervisor only sees the sections the admin granted (Overview always; items with no section, like
+  // Windows app / Install / Updates, are treated as general and kept).
+  let shownNav = nav;
+  if (me?.role === "SUPERVISOR") {
+    const allowed = Array.isArray(me.supAccess) ? me.supAccess : [];
+    const ok = (href) => { if (!href || href === "/admin") return true; const k = sectionForPath(href); return !k || allowed.includes(k); };
+    shownNav = nav.map((it) => it.children ? (() => { const kids = it.children.filter((c) => ok(c.href)); return kids.length ? { ...it, children: kids } : null; })() : (ok(it.href) ? it : null)).filter(Boolean);
+  }
   const signOut = async (leaveCall) => { await leaveCall(); await fetch("/api/auth/logout", { method: "POST" }); location.href = "/"; };
-  return <Shell nav={nav} home="/admin" onSignOut={signOut}>{children}</Shell>;
+  return <Shell nav={shownNav} home="/admin" onSignOut={signOut}>{children}</Shell>;
 }

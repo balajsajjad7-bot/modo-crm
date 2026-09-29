@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireManager } from "@/lib/auth";
 import { lateness } from "@/lib/payroll";
 
 // Admin: everyone's attendance for one shift date, and manual corrections.
 export async function GET(req) {
-  const { error } = await requireRole("ADMIN");
+  const { error } = await requireManager("attendance");
   if (error) return error;
   const date = new URL(req.url).searchParams.get("date") || new Date().toISOString().slice(0, 10);
   const agents = await db.user.findMany({ where: { role: "AGENT" }, orderBy: { name: "asc" } });

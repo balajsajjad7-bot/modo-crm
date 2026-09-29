@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireAdminOnly } from "@/lib/auth";
 
 // { active?, password?, reset2fa?, name?, email?, departmentId?, campaignId? }
 export async function PATCH(req, { params }) {
-  const { session, error } = await requireRole("ADMIN");
+  const { session, error } = await requireAdminOnly();
   if (error) return error;
   const u = await db.user.findUnique({ where: { id: params.id } });
   if (!u) return NextResponse.json({ error: "User not found." }, { status: 404 });
@@ -19,6 +19,7 @@ export async function PATCH(req, { params }) {
   if (b.reset2fa) { data.totpSecret = null; data.totpEnabled = false; }
   for (const k of ["name", "email", "departmentId", "campaignId"]) if (k in b) data[k] = b[k] || null;
   if ("name" in data && !data.name) delete data.name;
+  if ("supAccess" in b && u.role === "SUPERVISOR") data.supAccess = JSON.stringify((Array.isArray(b.supAccess) ? b.supAccess : []).map(String).slice(0, 60));
   await db.user.update({ where: { id: u.id }, data });
   return NextResponse.json({ ok: true });
 }

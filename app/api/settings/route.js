@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { requireRole, clientIp, currentUser } from "@/lib/auth";
+import { requireRole, requireAdminOnly, clientIp, currentUser } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { clearLockCache } from "@/lib/lock";
 
@@ -17,7 +17,7 @@ export async function GET() {
 
 // Partial update: only the fields sent are changed
 export async function PATCH(req) {
-  const { error, session } = await requireRole("ADMIN");
+  const { error, session } = await requireAdminOnly();
   if (error) return error;
   const b = await req.json();
   const data = {};

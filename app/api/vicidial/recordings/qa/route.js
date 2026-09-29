@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireManager } from "@/lib/auth";
 
 // Save/update a manual QA score on one recording. { recId, agentUser, callDate, phone, url, score, checklist, notes, outcome }
 export async function POST(req) {
-  const { session, error } = await requireRole("ADMIN");
+  const { session, error } = await requireManager("recordings");
   if (error) return error;
   const b = await req.json();
   if (!b.recId) return NextResponse.json({ error: "Missing recording id." }, { status: 400 });

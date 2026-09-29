@@ -14,7 +14,8 @@ export async function GET(req) {
   const q = new URL(req.url).searchParams;
   const to = q.get("to") || day(Date.now()); const from = q.get("from") || day(Date.now() - 13 * 86400000);
   const where = { createdAt: { gte: new Date(new Date(from + "T00:00:00Z").getTime() - OFF()), lt: new Date(new Date(to + "T00:00:00Z").getTime() - OFF() + 86400000) } };
-  if (s.role !== "ADMIN") where.userId = s.uid; else if (q.get("agent")) where.userId = q.get("agent");
+  const mgr = s.role === "ADMIN" || (s.role === "SUPERVISOR" && await supervisorHas(s, "quality"));
+  if (!mgr) where.userId = s.uid; else if (q.get("agent")) where.userId = q.get("agent");
   const reviews = await db.qaReview.findMany({ where, orderBy: { createdAt: "desc" }, take: 2000 });
   const users = await db.user.findMany({ where: { id: { in: [...new Set(reviews.map((r) => r.userId))] } }, select: { id: true, name: true, agentId: true } });
   const rows = reviews.map((r) => {

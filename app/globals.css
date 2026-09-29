@@ -1387,3 +1387,8 @@ a.se-toast{color:inherit;text-decoration:none;cursor:pointer}
 .install-wrap{min-height:100dvh;display:grid;place-items:center;padding:24px 16px}
 .install-card{max-width:440px;width:100%}
 .install-card ol{color:var(--ink)}
+
+/* Supervisor access checkboxes */
+.sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 14px}
+.sup-check{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:500;font-size:14px}
+.sup-check input{width:auto}

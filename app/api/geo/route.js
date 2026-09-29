@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, requireRole } from "@/lib/auth";
+import { currentUser, requireRole, requireManager } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { distanceM } from "@/lib/presence";
 import { sendPush } from "@/lib/push";
@@ -32,7 +32,7 @@ export async function POST(req) {
 
 // Admin: everyone's current in/out state + today's leave/return log.
 export async function GET() {
-  const { error } = await requireRole("ADMIN");
+  const { error } = await requireManager("whereabouts");
   if (error) return error;
   const st = await getSettings();
   const agents = await db.user.findMany({ where: { role: "AGENT", active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, agentId: true, geoInside: true, geoAt: true, lastSeenAt: true } });
