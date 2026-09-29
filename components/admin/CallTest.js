@@ -8,9 +8,16 @@ export default function CallTest() {
   const [s, setS] = useState(null); // {running, host, srflx, relay, relayCount, done, err}
   async function run() {
     setS({ running: true, host: false, srflx: false, relay: false, relayCount: 0 });
+    if (typeof RTCPeerConnection === "undefined") return setS({ err: "This browser doesn't support calls. Use Chrome, Edge or Safari (not an in-app browser)." });
     let ice;
     try { ice = await fetch("/api/huddle/ice").then((r) => r.json()); } catch { return setS({ err: "Couldn't load call settings." }); }
-    let pc; try { pc = new RTCPeerConnection({ iceServers: ice.iceServers || [] }); } catch { return setS({ err: "This browser can't make calls." }); }
+    let pc;
+    try { pc = new RTCPeerConnection({ iceServers: ice.iceServers || [] }); }
+    catch {
+      // The configured TURN/STUN address is invalid — the constructor rejected it. Prove the browser itself is fine.
+      try { const t = new RTCPeerConnection(); t.close(); return setS({ err: "Your call server address is invalid — check Tools → Connectors → TURN. Each URL must start with turn: or turns: (e.g. turn:relay.metered.ca:80)." }); }
+      catch { return setS({ err: "This browser can't make calls (WebRTC blocked). Try Chrome/Edge/Safari, not an in-app browser." }); }
+    }
     const found = { host: false, srflx: false, relay: false, relayCount: 0 };
     let done = false;
     const finish = () => { if (done) return; done = true; try { pc.close(); } catch {} setS({ ...found, done: true, running: false }); };
