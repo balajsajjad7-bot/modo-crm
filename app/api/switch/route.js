@@ -21,6 +21,6 @@ export async function POST(req) {
   if (!admin) return NextResponse.json({ error: "No admin account to switch to." }, { status: 500 });
   const token = await signSession({ uid: admin.id, role: admin.role, name: admin.name, agentId: admin.agentId });
   const res = NextResponse.json({ ok: true, go: "/admin" });
-  res.cookies.set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 14 * 3600 });
+  res.cookies.set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 30 * 24 * 3600 });
   return res;
 }

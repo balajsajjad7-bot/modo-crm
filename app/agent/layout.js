@@ -32,24 +32,25 @@ function Frame({ children }) {
       { href: "/agent/contacts", label: "My customers", hint: "People you're working with", icon: i(Contact) },
       { href: "/agent/tasks", label: "Tasks & callbacks", hint: "Your callbacks and to-dos", icon: i(ListChecks) }] : []),
   ];
+  const progressKids = [
+    { href: "/agent/target", label: "Target & leaderboard", hint: "Today's target and ranking", icon: i(Trophy) },
+    { href: "/agent/quality", label: "My call quality", hint: "AI coaching on every call", icon: i(BadgeCheck) },
+    { href: "/agent/reports", label: "My stats", hint: "Your sales and attendance trends", icon: i(BarChart3) },
+    ...(P.lookups !== false ? [{ href: "/agent/lookups", label: "Lookups", hint: "USA phone, ZIP, address and email checks", icon: i(SearchCheck) }] : []),
+    ...(P.calculator !== false ? [{ href: "/agent/calculator", label: "Calculator", hint: "Quote a customer's discount", icon: i(Calculator) }] : []),
+    { href: "/agent/contract", label: "My contract", hint: "Your welcome and confidential contract", icon: i(FileText) },
+  ];
   const nav = [
     { href: "/agent", exact: true, label: "My shift", hint: "Time, breaks and deductions", icon: i(Timer) },
     ...(dialerOn ? [{ href: "/agent/dialer", label: "Dialer", hint: "Make and manage calls (your dialer runs in the background)", icon: i(PhoneCall) }] : []),
-    { href: "/agent/call", label: "Call assist", hint: "Live suggestions while you talk", icon: i(Mic) },
-    be ? { href: "/agent/budgetease", label: "Budget Ease", hint: "Submit a utility-bill discount signup", icon: i(PiggyBank) }
-       : { href: "/agent/sale", label: "Submit sale", hint: "Goes straight to admin", icon: i(ClipboardPaste) },
+    ...(P.callAssist !== false ? [{ href: "/agent/call", label: "Call assist", hint: "Live suggestions while you talk", icon: i(Mic) }] : []),
+    ...(P.submitSale !== false ? [be ? { href: "/agent/budgetease", label: "Budget Ease", hint: "Submit a utility-bill discount signup", icon: i(PiggyBank) }
+       : { href: "/agent/sale", label: "Submit sale", hint: "Goes straight to admin", icon: i(ClipboardPaste) }] : []),
     ...(crmKids.length ? [{ label: "CRM", icon: i(Briefcase), children: crmKids }] : []),
-    { label: "My progress", icon: i(Trophy), children: [
-      { href: "/agent/target", label: "Target & leaderboard", hint: "Today's target and ranking", icon: i(Trophy) },
-      { href: "/agent/quality", label: "My call quality", hint: "AI coaching on every call", icon: i(BadgeCheck) },
-      { href: "/agent/reports", label: "My stats", hint: "Your sales and attendance trends", icon: i(BarChart3) },
-      { href: "/agent/lookups", label: "Lookups", hint: "USA phone, ZIP, address and email checks", icon: i(SearchCheck) },
-      { href: "/agent/calculator", label: "Calculator", hint: "Quote a customer's discount", icon: i(Calculator) },
-      { href: "/agent/contract", label: "My contract", hint: "Your welcome and confidential contract", icon: i(FileText) },
-    ] },
-    { href: "/agent/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
+    { label: "My progress", icon: i(Trophy), children: progressKids },
+    ...(P.chat !== false ? [{ href: "/agent/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true }] : []),
     ...(secure ? [{ href: "/agent/vault", label: "Secure line", hint: "Encrypted room — invited by the CEO", icon: i(Lock) }] : []),
-    { href: "/agent/ai", label: "Modo AI", hint: "Scripts, objections and quick help", icon: i(Sparkles) },
+    ...(P.modoAI !== false ? [{ href: "/agent/ai", label: "Modo AI", hint: "Scripts, objections and quick help", icon: i(Sparkles) }] : []),
   ];
   return (
     <Shell nav={nav} home="/agent" navAction={<BreakButton onBreak={onBreak} since={me?.breaks?.open?.start} onClick={toggleBreak} />} header={onBreak ? "On break" : ""} status={onBreak ? "warn" : ""} userSub={me ? `${me.agentId} · shift ${me.shiftStart}` : ""}

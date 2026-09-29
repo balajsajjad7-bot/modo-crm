@@ -79,8 +79,11 @@ export async function POST(req, { params }) {
       if (!amount && !b.warning) return NextResponse.json({ error: "Dock some pay, log a warning, or both." }, { status: 400 });
       if (!reason) return NextResponse.json({ error: "Add a reason." }, { status: 400 });
       if (amount) await db.adjustment.create({ data: { userId: u.id, month: b.month || now.toISOString().slice(0, 7), amount: -amount, reason: "Dock: " + reason, createdById: session.uid } });
-      if (b.warning) await db.agentNote.create({ data: { userId: u.id, text: `⚠ Warning: ${reason}${amount ? ` (docked ${amount})` : ""}`, byId: session.uid } });
-      break;
+      if (b.warning) {
+        await db.agentNote.create({ data: { userId: u.id, text: `⚠ Warning by ${session.name}: ${reason}${amount ? ` (pay docked ${amount})` : ""}`, byId: session.uid } });
+        try { const { sendPush } = await import("@/lib/push"); await sendPush(u.id, { title: "⚠ Warning from management", body: reason + (amount ? ` — pay docked ${amount}.` : ""), urgent: true, url: "/agent" }); } catch {}
+      }
+      return NextResponse.json({ ok: true, docked: amount, warned: !!b.warning });
     }
     case "clockOut":
       await db.breakLog.updateMany({ where: { userId: u.id, end: null }, data: { end: now } });

@@ -182,7 +182,10 @@ function DockModal({ agent, onClose, onDone }) {
   async function submit(e) {
     e.preventDefault(); setBusy(true); setErr("");
     const r = await api(`/api/agents/${agent.id}`, "POST", { action: "dock", amount: amount || 0, reason, warning: warn });
-    setBusy(false); if (!r.ok) return setErr(r.data.error || "Couldn't save."); onDone();
+    setBusy(false); if (!r.ok) return setErr(r.data.error || "Couldn't save.");
+    const bits = []; if (r.data.docked) bits.push(`docked Rs ${r.data.docked}`); if (r.data.warned) bits.push("sent a warning to their phone & record");
+    alert(`${agent.name}: ${bits.join(" and ") || "done"}.`);
+    onDone();
   }
   return (
     <div className="ai-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -191,8 +194,8 @@ function DockModal({ agent, onClose, onDone }) {
         <form className="ai-modal-body stack" onSubmit={submit}>
           <label>Amount to dock (Rs)<input type="number" min="0" step="any" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Leave blank for a warning only" /></label>
           <label>Reason<textarea style={{ minHeight: 70 }} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="What happened" required /></label>
-          <label className="row" style={{ color: "var(--ink)" }}><input type="checkbox" style={{ width: "auto" }} checked={warn} onChange={(e) => setWarn(e.target.checked)} /> Also record a formal warning on their record</label>
-          <p className="muted small" style={{ margin: 0 }}>A dock shows as a deduction in this month's payroll; a warning shows in the agent's profile notes.</p>
+          <label className="row" style={{ color: "var(--ink)" }}><input type="checkbox" style={{ width: "auto" }} checked={warn} onChange={(e) => setWarn(e.target.checked)} /> Record a formal warning (also alerts the agent's phone)</label>
+          <p className="muted small" style={{ margin: 0 }}>The dock shows as a deduction in this month's payroll. The warning is saved on the agent's profile (Team → Agents → Open) and pushed to their phone. Tick the box to include a warning; leave the amount blank for a warning only.</p>
           {err && <div className="err">{err}</div>}
         </form>
         <footer className="ai-modal-foot"><button className="ghost sm" type="button" onClick={onClose}>Cancel</button><button className="sm" onClick={submit} disabled={busy}>{busy ? "Applying…" : "Apply"}</button></footer>
