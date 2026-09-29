@@ -4,11 +4,13 @@
 // never need a VPN on their device — this proxy is only for sites that block datacenter servers.
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { Link2, ShieldCheck, Save } from "lucide-react";
+import { Link2, ShieldCheck, Save, Globe } from "lucide-react";
 
 export default function LookupUrls() {
   const [urls, setUrls] = useState(""); const [proxy, setProxy] = useState(""); const [loaded, setLoaded] = useState(false);
   const [msg, setMsg] = useState(""); const [err, setErr] = useState("");
+  const [exit, setExit] = useState(null); const [exitBusy, setExitBusy] = useState(false);
+  async function checkExit() { setExitBusy(true); setExit(null); const r = await api("/api/lookup?type=exitip"); setExitBusy(false); setExit(r.ok ? r.data : { error: r.data.error || "Couldn't check." }); }
   useEffect(() => { api("/api/settings").then((r) => { if (!r.ok) return; let a = []; try { a = JSON.parse(r.data.lookupUrls || "[]"); } catch {} setUrls((Array.isArray(a) ? a : []).join("\n")); setProxy(r.data.lookupProxy || ""); setLoaded(true); }); }, []);
   async function save() {
     setMsg(""); setErr("");
@@ -32,6 +34,16 @@ export default function LookupUrls() {
           <input value={proxy} onChange={(e) => setProxy(e.target.value)} placeholder="http://user:pass@proxy-host:port  (or socks5://…)" />
         </label>
         <p className="muted small" style={{ margin: 0 }}>Modo already does every lookup from its own server, so your agents don't need a VPN. Only fill this in if a site blocks Modo's server — paste a proxy/VPN endpoint (from any proxy provider) and Modo will route your lookups through it.</p>
+      </div>
+      <div className="stack" style={{ gap: 6 }}>
+        <div className="row" style={{ justifyContent: "space-between" }}><b className="row" style={{ gap: 6 }}><Globe size={15} /> Modo's US exit</b>
+          <button className="ghost sm" onClick={checkExit} disabled={exitBusy}>{exitBusy ? "Checking…" : "Check location"}</button></div>
+        {exit && (exit.error ? <div className="err" style={{ margin: 0 }}>{exit.error}</div> :
+          <div className={exit.us ? "receipt" : "err"} style={{ margin: 0 }}>
+            {exit.us ? "✓ " : "⚠ "}Your lookups run from <b>{[exit.city, exit.region, exit.country].filter(Boolean).join(", ") || exit.country || "?"}</b> (IP {exit.ip}){exit.proxied ? " · via your proxy" : ""}.
+            {!exit.us && " This isn't a US location — US-only lookups may fail. Add a US proxy above."}
+          </div>)}
+        <p className="muted small" style={{ margin: 0 }}>Lookups are pinned to run from the US, so US-only sites see a US address. If one still blocks Modo (some block all datacenters), add a US proxy above.</p>
       </div>
       {err && <div className="err">{err}</div>}{msg && <div className="receipt">{msg}</div>}
       <div><button onClick={save}><Save size={15} /> Save lookups</button></div>

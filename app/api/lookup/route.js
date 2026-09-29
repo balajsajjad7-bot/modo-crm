@@ -5,6 +5,12 @@ import { parse } from "@/lib/connectors";
 import { getSettings } from "@/lib/settings";
 import { areaInfo, tzFor, stateFromName, STATE_NAMES } from "@/lib/usdata";
 
+// Run every lookup from a US East datacenter so it leaves with a US IP address —
+// this is Modo's built-in "US exit" so US-only lookups work without any VPN on the agent's device.
+export const runtime = "nodejs";
+export const preferredRegion = "iad1"; // US East (Washington D.C.)
+export const dynamic = "force-dynamic";
+
 const get = async (url, opts = {}) => {
   const { dispatcher, ...rest } = opts;
   const r = await fetch(url, { ...rest, headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CRM-Modo/1.0", accept: "application/json,text/html;q=0.9,*/*;q=0.8", ...(opts.headers || {}) }, signal: AbortSignal.timeout(15000), cache: "no-store", ...(dispatcher ? { dispatcher } : {}) });
@@ -147,6 +153,15 @@ export async function GET(req) {
   const s = await currentUser();
   if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   const p = new URL(req.url).searchParams; const type = p.get("type"); const q = (p.get("q") || "").trim().slice(0, 300);
+  if (type === "exitip") {
+    // Where Modo's lookups actually leave from (through the proxy, if one is set).
+    try {
+      const r = await get("https://ipwho.is/", { dispatcher: await proxyDispatcher() });
+      const j = r.json || {};
+      if (!j.ip) { const r2 = await get("https://ifconfig.co/json"); const j2 = r2.json || {}; return NextResponse.json({ ip: j2.ip, country: j2.country, countryCode: j2.country_iso, city: j2.city, us: j2.country_iso === "US" }); }
+      return NextResponse.json({ ip: j.ip, country: j.country, countryCode: j.country_code, region: j.region, city: j.city, us: j.country_code === "US", proxied: !!(await getSettings()).lookupProxy });
+    } catch (e) { return NextResponse.json({ error: "Couldn't check: " + (e.message || e) }, { status: 502 }); }
+  }
   if (type === "list") {
     const list = await db.connector.findMany({ where: { type: "lookup", enabled: true }, orderBy: { createdAt: "asc" } });
     const conn = list.map((c) => ({ id: "c:" + c.id, name: c.name, hint: parse(c).hint || "" }));
