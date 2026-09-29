@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import Shell from "@/components/Shell";
 import { AgentProvider, useAgent } from "@/components/agent/AgentContext";
-import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock } from "lucide-react";
+import Onboarding from "@/components/agent/Onboarding";
+import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText } from "lucide-react";
 
 function BreakButton({ onBreak, since, onClick }) {
   const [now, setNow] = useState(Date.now());
@@ -43,6 +44,7 @@ function Frame({ children }) {
       { href: "/agent/reports", label: "My stats", hint: "Your sales and attendance trends", icon: i(BarChart3) },
       { href: "/agent/lookups", label: "Lookups", hint: "USA phone, ZIP, address and email checks", icon: i(SearchCheck) },
       { href: "/agent/calculator", label: "Calculator", hint: "Quote a customer's discount", icon: i(Calculator) },
+      { href: "/agent/contract", label: "My contract", hint: "Your welcome and confidential contract", icon: i(FileText) },
     ] },
     { href: "/agent/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
     ...(secure ? [{ href: "/agent/vault", label: "Secure line", hint: "Encrypted room — invited by the CEO", icon: i(Lock) }] : []),
@@ -52,6 +54,7 @@ function Frame({ children }) {
     <Shell nav={nav} home="/agent" navAction={<BreakButton onBreak={onBreak} since={me?.breaks?.open?.start} onClick={toggleBreak} />} header={onBreak ? "On break" : ""} status={onBreak ? "warn" : ""} userSub={me ? `${me.agentId} · shift ${me.shiftStart}` : ""}
       userMenu={[{ label: onBreak ? "End break" : "Start break", icon: <Coffee size={16} />, onClick: toggleBreak }]} signOutLabel="End shift" onSignOut={endShift}>
       {me ? children : <p className="muted">Loading your shift…</p>}
+      <Onboarding />
     </Shell>
   );
 }

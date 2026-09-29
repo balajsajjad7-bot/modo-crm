@@ -81,7 +81,7 @@ export function Sales() {
 }
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const EMPTY = { name: "", email: "", phone: "", cnic: "", vicidialUser: "", baseSalary: "", shiftStart: "19:00", shiftHours: 9, graceMinutes: 0, workDays: "1,2,3,4,5,6", password: "", campaignId: "", departmentId: "" };
+const EMPTY = { name: "", email: "", phone: "", cnic: "", vicidialUser: "", baseSalary: "", shiftStart: "19:00", shiftHours: 9, graceMinutes: 0, workDays: "1,2,3,4,5,6", password: "", campaignId: "", departmentId: "", contract: "" };
 
 export function Agents() {
   const { openDM } = useShell();
@@ -123,6 +123,7 @@ export function Agents() {
           <label>{editing ? "New password (optional)" : "Password"}<input type="text" value={form.password} onChange={set("password")} required={!editing} /></label>
         </div>
         <div className="row small" role="group" aria-label="Working days">Working days:{DAYS.map((d, i) => <label key={d} className="row" style={{ fontWeight: 500, color: "var(--ink)" }}><input type="checkbox" style={{ width: "auto" }} checked={days.has(i)} onChange={() => toggleDay(i)} />{d}</label>)}</div>
+        <label>Employment contract (confidential — only this agent can read it)<textarea style={{ minHeight: 120 }} value={form.contract || ""} onChange={set("contract")} placeholder="Paste this agent's contract here. They'll see it on first sign-in and any time under My contract." /></label>
         {perSec > 0 && <p className="muted small" style={{ margin: 0 }}>Lateness costs {pkr(perSec * 3600 * form.shiftHours)} per day, {pkr(perSec * 3600)} per hour, {pkr(perSec * 60)} per minute ({perSec.toFixed(4)} per second). An absent working day deducts one full day.</p>}
         {msg && <div className="receipt">{msg}</div>}
         <div className="row"><button>{editing ? "Save changes" : "Add agent"}</button>{editing && <button type="button" className="ghost" onClick={() => { setEditing(null); setForm(EMPTY); }}>Cancel</button>}</div>
@@ -249,6 +250,11 @@ export function Settings() {
           <label>Bonus per sale above target (Rs)<input type="number" min="0" value={f.bonusPerSale} onChange={set("bonusPerSale")} /></label>
         </div>
         <p className="muted small" style={{ margin: 0 }}>Break time over the allowance is deducted per second, like lateness. Idle and away time is logged for you to review; it isn't deducted.</p>
+      </section>
+      <section className="panel stack">
+        <h2>New-agent welcome message</h2>
+        <p className="muted small" style={{ margin: 0 }}>Shown to every agent the first time they sign in, greeting them by name, alongside their confidential contract. Edit each agent's contract on their profile (Team → Agents).</p>
+        <label>Team onboarding message<textarea style={{ minHeight: 90 }} value={f.onboardMsg || ""} onChange={set("onboardMsg")} placeholder="Welcome to the team! Here's how we work, your shift, and who to ask for help…" /></label>
       </section>
       {me?.ceo && (
         <section className="panel stack">

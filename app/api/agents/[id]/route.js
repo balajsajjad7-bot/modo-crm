@@ -39,6 +39,7 @@ export async function PATCH(req, { params }) {
   const b = await req.json();
   const data = {};
   for (const k of ["name", "email", "phone", "cnic", "vicidialUser", "shiftStart", "workDays", "departmentId", "campaignId"]) if (k in b) data[k] = b[k] || null;
+  if ("contract" in b) data.contract = String(b.contract || "").slice(0, 20000) || null;
   for (const k of ["baseSalary", "shiftHours", "graceMinutes"]) if (k in b) data[k] = Number(b[k]) || 0;
   if ("active" in b) data.active = !!b.active;
   if (b.password) {
