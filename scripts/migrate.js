@@ -188,5 +188,15 @@ const CORE = [
   console.log("Admin ready:", agentId);
   // The bootstrap admin is the CEO (the only account that can open the encrypted Secure line).
   await pool.query(`UPDATE "User" SET "ceo"=true WHERE "agentId"=$1`, [agentId]);
+  // A always-available demo agent for testing. Login: DEMO / demo1234. 24h shift, every day, so it's
+  // never marked late/absent and never auto-clocked-out mid-test. Signing in auto-starts the shift.
+  const demoHash = await bcrypt.hash("demo1234", 10);
+  await pool.query(
+    `INSERT INTO "User" ("id","agentId","passwordHash","role","name","active","shiftStart","shiftHours","workDays","graceMinutes","baseSalary")
+     VALUES ($1,'DEMO',$2,'AGENT','Demo Agent',true,'00:00',24,'0,1,2,3,4,5,6',60,50000)
+     ON CONFLICT ("agentId") DO UPDATE SET "passwordHash"=EXCLUDED."passwordHash", "role"='AGENT', "active"=true, "shiftStart"='00:00', "shiftHours"=24, "workDays"='0,1,2,3,4,5,6', "graceMinutes"=60`,
+    [require("crypto").randomUUID(), demoHash]
+  );
+  console.log("Demo agent ready: DEMO / demo1234");
   await pool.end();
 })().catch((e) => { console.error(e.message); process.exit(1); });
