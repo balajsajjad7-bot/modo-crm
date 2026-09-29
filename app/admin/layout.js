@@ -35,6 +35,7 @@ export default function AdminLayout({ children }) {
     { href: "/admin/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
     { href: "/admin/ai", label: "Modo AI", hint: "Ask anything about your team, sales and pay", icon: i(Sparkles) },
     { label: "Tools", icon: i(Wrench), children: [
+      { href: "/admin/recordings", label: "Call recordings", hint: "Play & download your VICIdial recordings by day", icon: i(Disc3) },
       { href: "/admin/dialer", label: "Dialer setup", hint: "Connect VICIdial or another dialer, link agents, results & pause codes", icon: i(PhoneCall) },
       { href: "/admin/train", label: "Train Modo AI", hint: "Teach the AI your prices, script, rules and objections", icon: i(Brain) },
       { href: "/admin/calculator", label: "Discount calculator", hint: "Quotes and discount rules", icon: i(Calculator) },
