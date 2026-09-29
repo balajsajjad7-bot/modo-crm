@@ -73,6 +73,15 @@ export async function POST(req, { params }) {
       await db.adjustment.create({ data: { userId: u.id, month: b.month || now.toISOString().slice(0, 7), amount, reason: String(b.reason).trim().slice(0, 200), createdById: session.uid } }); break;
     }
     case "deleteAdjust": await db.adjustment.deleteMany({ where: { id: b.id, userId: u.id } }); break;
+    case "dock": {
+      const amount = Math.abs(Number(b.amount) || 0);
+      const reason = String(b.reason || "").trim();
+      if (!amount && !b.warning) return NextResponse.json({ error: "Dock some pay, log a warning, or both." }, { status: 400 });
+      if (!reason) return NextResponse.json({ error: "Add a reason." }, { status: 400 });
+      if (amount) await db.adjustment.create({ data: { userId: u.id, month: b.month || now.toISOString().slice(0, 7), amount: -amount, reason: "Dock: " + reason, createdById: session.uid } });
+      if (b.warning) await db.agentNote.create({ data: { userId: u.id, text: `⚠ Warning: ${reason}${amount ? ` (docked ${amount})` : ""}`, byId: session.uid } });
+      break;
+    }
     case "clockOut":
       await db.breakLog.updateMany({ where: { userId: u.id, end: null }, data: { end: now } });
       await db.attendance.updateMany({ where: { userId: u.id, shiftDate, clockOut: null }, data: { clockOut: now } }); break;

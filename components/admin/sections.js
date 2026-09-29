@@ -7,7 +7,7 @@ import CallTest from "./CallTest";
 export { api, usePoll };
 import Link from "next/link";
 import { useShell } from "@/components/Shell";
-import { Phone, MessageSquare, UserRound } from "lucide-react";
+import { Phone, MessageSquare, UserRound, X, AlertTriangle } from "lucide-react";
 
 export function Floor() {
   const [vici] = usePoll("/api/vicidial", 5000);
@@ -89,6 +89,7 @@ export function Agents() {
   const [{ data }, reload] = usePoll("/api/agents", 0);
   const [form, setForm] = useState(EMPTY); const [editing, setEditing] = useState(null); const [msg, setMsg] = useState("");
   const [org, setOrg] = useState({ departments: [], campaigns: [] });
+  const [dock, setDock] = useState(null);
   useEffect(() => { api("/api/org").then((r) => r.ok && setOrg(r.data)); }, []);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const days = new Set(form.workDays.split(",").filter(Boolean).map(Number));
@@ -143,12 +144,39 @@ export function Agents() {
                 <button className="ghost sm" title="Call" aria-label={"Call " + a.name} onClick={() => openDM(a.id, { call: true })}><Phone size={14} /></button>
                 <button className="ghost sm" title="Message" aria-label={"Message " + a.name} onClick={() => openDM(a.id)}><MessageSquare size={14} /></button>
                 <button className="ghost sm" onClick={() => edit(a)}>Quick edit</button>
+                <button className="ghost sm" onClick={() => setDock(a)} title="Dock pay and/or warn">Dock</button>
                 <button className="ghost sm" onClick={() => toggleActive(a)}>{a.active ? "Suspend" : "Restore"}</button></td>
             </tr>))}
           </tbody>
         </table>
         {data && !data.length && <p className="muted">No agents yet. Add your first agent above.</p>}
       </section>
+      {dock && <DockModal agent={dock} onClose={() => setDock(null)} onDone={() => { setDock(null); reload(); }} />}
+    </div>
+  );
+}
+
+function DockModal({ agent, onClose, onDone }) {
+  const [amount, setAmount] = useState(""); const [reason, setReason] = useState(""); const [warn, setWarn] = useState(true);
+  const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
+  async function submit(e) {
+    e.preventDefault(); setBusy(true); setErr("");
+    const r = await api(`/api/agents/${agent.id}`, "POST", { action: "dock", amount: amount || 0, reason, warning: warn });
+    setBusy(false); if (!r.ok) return setErr(r.data.error || "Couldn't save."); onDone();
+  }
+  return (
+    <div className="ai-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="ai-modal" role="dialog" aria-modal="true">
+        <header className="ai-modal-head"><b className="row" style={{ gap: 7 }}><AlertTriangle size={15} /> Dock {agent.name}</b><button className="ghost sm icon-btn" onClick={onClose} aria-label="Close"><X size={15} /></button></header>
+        <form className="ai-modal-body stack" onSubmit={submit}>
+          <label>Amount to dock (Rs)<input type="number" min="0" step="any" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Leave blank for a warning only" /></label>
+          <label>Reason<textarea style={{ minHeight: 70 }} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="What happened" required /></label>
+          <label className="row" style={{ color: "var(--ink)" }}><input type="checkbox" style={{ width: "auto" }} checked={warn} onChange={(e) => setWarn(e.target.checked)} /> Also record a formal warning on their record</label>
+          <p className="muted small" style={{ margin: 0 }}>A dock shows as a deduction in this month's payroll; a warning shows in the agent's profile notes.</p>
+          {err && <div className="err">{err}</div>}
+        </form>
+        <footer className="ai-modal-foot"><button className="ghost sm" type="button" onClick={onClose}>Cancel</button><button className="sm" onClick={submit} disabled={busy}>{busy ? "Applying…" : "Apply"}</button></footer>
+      </div>
     </div>
   );
 }
