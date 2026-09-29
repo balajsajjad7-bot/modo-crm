@@ -5,6 +5,14 @@ import { sectionForPath } from "./lib/supaccess";
 export async function middleware(req) {
   const s = await readSession(req.cookies.get(COOKIE)?.value);
   const p = req.nextUrl.pathname;
+  // Supervisors are view-only: they may read (GET) but never change anything. Block every write
+  // to any API, so no edit/save/delete button anywhere works for them (logging out is allowed).
+  if (p.startsWith("/api") && s?.role === "SUPERVISOR") {
+    const writing = !["GET", "HEAD", "OPTIONS"].includes(req.method);
+    if (writing && p !== "/api/auth/logout") return NextResponse.json({ error: "View-only: supervisors can monitor but not change anything." }, { status: 403 });
+    return NextResponse.next();
+  }
+  if (p.startsWith("/api")) return NextResponse.next();
   if (p.startsWith("/kiosk") && s?.role !== "ADMIN") return NextResponse.redirect(new URL("/", req.url));
   if (p.startsWith("/admin") && s?.role !== "ADMIN" && s?.role !== "SUPERVISOR") return NextResponse.redirect(new URL("/", req.url));
   if (p.startsWith("/agent") && s?.role !== "AGENT") return NextResponse.redirect(new URL("/", req.url));
@@ -27,4 +35,4 @@ export async function middleware(req) {
   }
   return res;
 }
-export const config = { matcher: ["/admin/:path*", "/agent/:path*", "/kiosk"] };
+export const config = { matcher: ["/admin/:path*", "/agent/:path*", "/kiosk", "/api/:path*"] };

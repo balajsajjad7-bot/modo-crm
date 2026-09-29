@@ -66,5 +66,8 @@ export default function AdminLayout({ children }) {
     shownNav = nav.map((it) => it.children ? (() => { const kids = it.children.filter((c) => ok(c.href)); return kids.length ? { ...it, children: kids } : null; })() : (ok(it.href) ? it : null)).filter(Boolean);
   }
   const signOut = async (leaveCall) => { await leaveCall(); await fetch("/api/auth/logout", { method: "POST" }); location.href = "/"; };
-  return <Shell nav={shownNav} home="/admin" onSignOut={signOut}>{children}</Shell>;
+  return <Shell nav={shownNav} home="/admin" onSignOut={signOut}>
+    {me?.role === "SUPERVISOR" && <div className="viewonly-banner"><ShieldCheck size={14} /> View-only supervisor — you can monitor everything you're given access to, but changes are turned off.</div>}
+    {children}
+  </Shell>;
 }
