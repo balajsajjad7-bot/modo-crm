@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Shell from "@/components/Shell";
 import { AgentProvider, useAgent } from "@/components/agent/AgentContext";
-import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall } from "lucide-react";
+import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock } from "lucide-react";
 
 function BreakButton({ onBreak, since, onClick }) {
   const [now, setNow] = useState(Date.now());
@@ -20,8 +20,8 @@ function Frame({ children }) {
   const { me, toggleBreak, endShift } = useAgent();
   const onBreak = !!me?.breaks?.open;
   const [perms, setPerms] = useState(null);
-  const [be, setBe] = useState(false); const [dialerOn, setDialerOn] = useState(true);
-  useEffect(() => { const l = () => fetch("/api/me").then((r) => r.json()).then((d) => { setPerms(d.perms || {}); setBe(!!d.budgetEase); setDialerOn(d.dialerOn !== false); }).catch(() => {}); l(); const t = setInterval(l, 60000); return () => clearInterval(t); }, []);
+  const [be, setBe] = useState(false); const [dialerOn, setDialerOn] = useState(true); const [secure, setSecure] = useState(false);
+  useEffect(() => { const l = () => fetch("/api/me").then((r) => r.json()).then((d) => { setPerms(d.perms || {}); setBe(!!d.budgetEase); setDialerOn(d.dialerOn !== false); setSecure(!!d.secureLine || !!d.ceo); }).catch(() => {}); l(); const t = setInterval(l, 60000); return () => clearInterval(t); }, []);
   const P = perms || { crm: true, notepad: true };
   const i = (C) => <C size={17} />;
   const nav = [
@@ -42,6 +42,7 @@ function Frame({ children }) {
        : { href: "/agent/sale", label: "Submit sale", hint: "Goes straight to admin", icon: i(ClipboardPaste) },
     { href: "/agent/call", label: "Call assist", hint: "Live suggestions while you talk", icon: i(Mic) },
     { href: "/agent/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
+    ...(secure ? [{ href: "/agent/vault", label: "Secure line", hint: "Encrypted room — invited by the CEO", icon: i(Lock) }] : []),
     { href: "/agent/ai", label: "Modo AI", hint: "Scripts, objections and quick help", icon: i(Sparkles) },
   ];
   return (

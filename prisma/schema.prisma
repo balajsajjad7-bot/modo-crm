@@ -38,6 +38,7 @@ model User {
   totpSecret   String?      // encrypted
   totpEnabled  Boolean      @default(false)
   ceo          Boolean      @default(false) // the one CEO account that can open the encrypted Secure line
+  secureLine   Boolean      @default(false) // invited by the CEO to the shared Secure line room
   padText      String?      // agent's personal scratchpad
   createdAt    DateTime     @default(now())
   attendance   Attendance[]
@@ -525,9 +526,11 @@ model RecordingQa {
 // CEO-only encrypted Secure line. Body is AES-256-GCM ciphertext produced in the browser
 // from the CEO's passphrase — the server (and anyone with DB access) only ever sees ciphertext.
 model VaultMsg {
-  id        String   @id @default(cuid())
-  body      String   // base64(salt).base64(iv).base64(ciphertext) — undecryptable without the passphrase
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  body       String   // base64(iv).base64(ciphertext) — undecryptable without the shared passphrase
+  userId     String?  // who sent it (for the sender label; not required to decrypt)
+  senderName String?
+  createdAt  DateTime @default(now())
 
   @@index([createdAt])
 }

@@ -1,9 +1,11 @@
 "use client";
-// CEO-only Secure line. End-to-end encrypted in the browser with AES-256-GCM; the key is derived
-// from a passphrase (PBKDF2, 310k rounds) that is never sent anywhere. The server stores ciphertext only.
+// Shared Secure line room. End-to-end encrypted in the browser with AES-256-GCM; the key is derived
+// from a passphrase (PBKDF2, 310k rounds) that is never sent anywhere. The CEO invites members;
+// everyone in the room shares the same passphrase. The server stores ciphertext + sender name only.
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
-import { ShieldCheck, Lock, Send, Trash2, LogOut, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { useShell } from "@/components/Shell";
+import { ShieldCheck, Lock, Send, Trash2, LogOut, KeyRound, AlertTriangle, Eye, EyeOff, Users, X, Check } from "lucide-react";
 
 const SALT = new TextEncoder().encode("modo-ceo-secure-line-v1");
 const te = new TextEncoder(), td = new TextDecoder();
@@ -27,18 +29,31 @@ async function decryptMsg(key, body) {
 const when = (d) => new Date(d).toLocaleString("en-US", { timeZone: "Asia/Karachi", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 export default function CeoVault() {
-  const [raw, setRaw] = useState(null);        // ciphertext rows from server
-  const [key, setKey] = useState(null);        // CryptoKey, in memory only
-  const [msgs, setMsgs] = useState([]);        // decrypted {id, text, createdAt}
+  const { me } = useShell();
+  const [raw, setRaw] = useState(null);
+  const [key, setKey] = useState(null);
+  const [msgs, setMsgs] = useState([]);
   const [pass, setPass] = useState(""); const [pass2, setPass2] = useState(""); const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
   const [draft, setDraft] = useState("");
+  const [members, setMembers] = useState(null); // null = closed, [] = open/loading
   const supported = typeof crypto !== "undefined" && crypto.subtle;
   const end = useRef(null);
 
   const load = () => api("/api/vault").then((r) => r.ok && setRaw(r.data));
   useEffect(() => { load(); }, []);
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  // Live refresh while unlocked so members see each other's messages
+  useEffect(() => {
+    if (!key) return;
+    const t = setInterval(async () => {
+      const r = await api("/api/vault"); if (!r.ok) return;
+      const out = [];
+      for (const m of r.data) { try { out.push({ ...m, text: await decryptMsg(key, m.body) }); } catch { out.push({ ...m, text: null }); } }
+      setMsgs(out);
+    }, 5000);
+    return () => clearInterval(t);
+  }, [key]);
 
   const firstTime = raw != null && raw.length === 0;
 
@@ -51,18 +66,17 @@ export default function CeoVault() {
     try {
       const k = await deriveKey(pass);
       if (raw.length) {
-        // Validate by decrypting the newest message — a wrong passphrase fails GCM auth.
         try { await decryptMsg(k, raw[raw.length - 1].body); }
-        catch { setBusy(false); return setErr("Wrong passphrase. Nothing here can be read without the exact passphrase."); }
+        catch { setBusy(false); return setErr("Wrong passphrase. Everyone in this room must use the same passphrase."); }
       }
       const out = [];
-      for (const m of raw) { try { out.push({ id: m.id, createdAt: m.createdAt, text: await decryptMsg(k, m.body) }); } catch { out.push({ id: m.id, createdAt: m.createdAt, text: null }); } }
+      for (const m of raw) { try { out.push({ ...m, text: await decryptMsg(k, m.body) }); } catch { out.push({ ...m, text: null }); } }
       setMsgs(out); setKey(k); setPass(""); setPass2("");
     } catch { setErr("Couldn't unlock. Try again."); }
     setBusy(false);
   }
 
-  function lock() { setKey(null); setMsgs([]); setDraft(""); setErr(""); }
+  function lock() { setKey(null); setMsgs([]); setDraft(""); setErr(""); setMembers(null); }
 
   async function send(e) {
     e?.preventDefault(); const text = draft.trim(); if (!text || !key) return;
@@ -71,7 +85,7 @@ export default function CeoVault() {
       const body = await encryptMsg(key, text);
       const r = await api("/api/vault", "POST", { body });
       if (!r.ok) { setErr(r.data.error || "Couldn't save."); setDraft(text); }
-      else setMsgs((m) => [...m, { id: r.data.id, createdAt: r.data.createdAt, text }]);
+      else setMsgs((m) => [...m, { ...r.data, text }]);
     } catch { setErr("Couldn't encrypt/save."); setDraft(text); }
     setBusy(false);
   }
@@ -82,6 +96,12 @@ export default function CeoVault() {
     await api("/api/vault?id=" + id, "DELETE");
   }
 
+  async function openMembers() { setMembers([]); const r = await api("/api/vault/members"); if (r.ok) setMembers(r.data); }
+  async function toggleMember(u) {
+    setMembers((list) => list.map((x) => x.id === u.id ? { ...x, secureLine: !x.secureLine } : x));
+    await api("/api/vault/members", "PATCH", { id: u.id, on: !u.secureLine });
+  }
+
   // ── Locked screen ──
   if (!key) {
     return (
@@ -89,13 +109,13 @@ export default function CeoVault() {
         <section className="panel vault-lock">
           <div className="vault-badge"><ShieldCheck size={40} /></div>
           <h1>Secure line</h1>
-          <p className="muted">CEO-only, end-to-end encrypted. Messages are locked with AES-256 using your passphrase. It's never sent to the server — if you forget it, nothing here can be recovered.</p>
+          <p className="muted">End-to-end encrypted. Messages are locked with AES-256 using a passphrase shared by everyone in the room. It's never sent to the server — if it's lost, nothing here can be recovered.</p>
           {raw == null ? <p className="muted small">Loading…</p> : (
             <form className="stack" onSubmit={unlock} style={{ maxWidth: 380, margin: "0 auto", width: "100%" }}>
-              {firstTime && <div className="receipt" style={{ margin: 0 }}>First time — choose a passphrase. Write it down somewhere safe; it cannot be reset.</div>}
+              {firstTime && <div className="receipt" style={{ margin: 0 }}>First time — set the room passphrase. Share it with members in person; it cannot be reset.</div>}
               <label className="vault-pass">
                 <KeyRound size={15} />
-                <input type={show ? "text" : "password"} value={pass} onChange={(e) => setPass(e.target.value)} placeholder={firstTime ? "Choose a passphrase" : "Enter your passphrase"} autoFocus autoComplete="off" />
+                <input type={show ? "text" : "password"} value={pass} onChange={(e) => setPass(e.target.value)} placeholder={firstTime ? "Choose a passphrase" : "Enter the room passphrase"} autoFocus autoComplete="off" />
                 <button type="button" className="ghost sm icon-btn" onClick={() => setShow(!show)} aria-label={show ? "Hide" : "Show"}>{show ? <EyeOff size={14} /> : <Eye size={14} />}</button>
               </label>
               {firstTime && <label className="vault-pass"><KeyRound size={15} /><input type={show ? "text" : "password"} value={pass2} onChange={(e) => setPass2(e.target.value)} placeholder="Confirm passphrase" autoComplete="off" /></label>}
@@ -112,20 +132,25 @@ export default function CeoVault() {
   return (
     <div className="stack vault-open">
       <div className="vault-bar">
-        <div className="row" style={{ gap: 8 }}><span className="vault-live"><ShieldCheck size={16} /></span><b>Secure line</b><span className="muted small">encrypted · CEO only</span></div>
+        <div className="row" style={{ gap: 8 }}><span className="vault-live"><ShieldCheck size={16} /></span><b>Secure line</b><span className="muted small">encrypted</span></div>
         <div className="row" style={{ gap: 6 }}>
-          {msgs.length > 0 && <button className="ghost sm" onClick={async () => { if (confirm("Delete ALL messages permanently?")) { setMsgs([]); await api("/api/vault?id=all", "DELETE"); } }}><Trash2 size={13} /> Clear all</button>}
+          {me?.ceo && <button className="ghost sm" onClick={openMembers}><Users size={13} /> Members</button>}
+          {me?.ceo && msgs.length > 0 && <button className="ghost sm" onClick={async () => { if (confirm("Delete ALL messages permanently?")) { setMsgs([]); await api("/api/vault?id=all", "DELETE"); } }}><Trash2 size={13} /> Clear all</button>}
           <button className="ghost sm" onClick={lock}><LogOut size={13} /> Lock</button>
         </div>
       </div>
       <div className="vault-thread">
-        {msgs.length === 0 ? <p className="muted" style={{ textAlign: "center", margin: "auto" }}>No messages yet. Anything you type here is encrypted before it leaves this page.</p> :
-          msgs.map((m) => (
-            <div key={m.id} className="vault-msg">
-              <div className="vault-bubble">{m.text == null ? <i className="muted">[can't decrypt — different passphrase]</i> : m.text}</div>
-              <div className="vault-meta"><span>{when(m.createdAt)}</span><button className="ghost sm icon-btn" onClick={() => del(m.id)} aria-label="Delete"><Trash2 size={12} /></button></div>
-            </div>
-          ))}
+        {msgs.length === 0 ? <p className="muted" style={{ textAlign: "center", margin: "auto" }}>No messages yet. Anything you type is encrypted before it leaves this page.</p> :
+          msgs.map((m) => {
+            const mine = m.userId && me?.uid && m.userId === me.uid;
+            return (
+              <div key={m.id} className={"vault-msg" + (mine ? " mine" : "")}>
+                {!mine && <span className="vault-who">{m.senderName || "Member"}</span>}
+                <div className="vault-bubble">{m.text == null ? <i className="muted">[can't decrypt — different passphrase]</i> : m.text}</div>
+                <div className="vault-meta"><span>{when(m.createdAt)}</span>{(mine || me?.ceo) && <button className="ghost sm icon-btn" onClick={() => del(m.id)} aria-label="Delete"><Trash2 size={12} /></button>}</div>
+              </div>
+            );
+          })}
         <div ref={end} />
       </div>
       {err && <div className="err" style={{ margin: 0 }}>{err}</div>}
@@ -133,6 +158,24 @@ export default function CeoVault() {
         <textarea value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(e); } }} placeholder="Write a secure message…" rows={1} />
         <button disabled={busy || !draft.trim()} aria-label="Send"><Send size={16} /></button>
       </form>
+
+      {members !== null && (
+        <div className="ai-overlay" onMouseDown={(e) => e.target === e.currentTarget && setMembers(null)}>
+          <div className="ai-modal" role="dialog" aria-modal="true">
+            <header className="ai-modal-head"><b className="row" style={{ gap: 7 }}><Users size={15} /> Who's on the Secure line</b><button className="ghost sm icon-btn" onClick={() => setMembers(null)} aria-label="Close"><X size={15} /></button></header>
+            <div className="ai-modal-body">
+              <p className="muted small" style={{ marginTop: 0 }}>Turn people on to let them open this room. Then tell them the passphrase in person — Modo never stores or sends it.</p>
+              {members.length === 0 ? <p className="muted">Loading…</p> : members.map((u) => (
+                <div key={u.id} className="row" style={{ justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.07)" }}>
+                  <div><b>{u.name}</b>{u.ceo && <span className="chip ok" style={{ marginLeft: 6 }}>CEO</span>}<div className="muted small num">{u.agentId} · {u.role === "ADMIN" ? "Admin" : "Agent"}</div></div>
+                  {u.ceo ? <span className="muted small">always on</span> :
+                    <button role="switch" aria-checked={u.secureLine} className={"toggle" + (u.secureLine ? " on" : "")} onClick={() => toggleMember(u)}><span /></button>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

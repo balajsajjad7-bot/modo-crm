@@ -1346,9 +1346,13 @@ a.se-toast{color:inherit;text-decoration:none;cursor:pointer}
 .vault-live{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;color:#fff;background:linear-gradient(135deg,#22d3ee,#a78bfa)}
 .vault-thread{flex:1;overflow:auto;display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:
   radial-gradient(1200px 400px at 100% 0,rgba(167,139,250,.10),transparent),radial-gradient(900px 400px at 0 100%,rgba(34,211,238,.08),transparent),rgba(0,0,0,.22);border:1px solid var(--border)}
-.vault-msg{max-width:min(560px,86%);align-self:flex-end;display:grid;gap:3px;justify-items:end}
-.vault-bubble{padding:11px 14px;border-radius:16px 16px 4px 16px;background:linear-gradient(135deg,#7c5cff,#b06bff);color:#fff;font-weight:600;white-space:pre-wrap;word-break:break-word;box-shadow:0 10px 30px rgba(120,80,240,.3)}
+.vault-msg{max-width:min(560px,86%);align-self:flex-start;display:grid;gap:3px;justify-items:start}
+.vault-msg.mine{align-self:flex-end;justify-items:end}
+.vault-who{font-size:11px;font-weight:700;color:#c4b5fd;padding:0 4px}
+.vault-bubble{padding:11px 14px;border-radius:16px 16px 16px 4px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);color:#f3effb;font-weight:600;white-space:pre-wrap;word-break:break-word}
+.vault-msg.mine .vault-bubble{border-radius:16px 16px 4px 16px;background:linear-gradient(135deg,#7c5cff,#b06bff);border:none;color:#fff;box-shadow:0 10px 30px rgba(120,80,240,.3)}
 .vault-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted-fg)}
+[data-appearance="light"] .vault-bubble{background:rgba(20,20,30,.06);border-color:rgba(20,20,30,.08);color:#241d33}
 .vault-composer{display:flex;gap:8px;align-items:flex-end;padding:8px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--border)}
 .vault-composer textarea{flex:1;border:none!important;background:none!important;resize:none;min-height:44px;max-height:160px;padding:11px 12px}
 .vault-composer button{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
