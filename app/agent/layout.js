@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Shell from "@/components/Shell";
 import { AgentProvider, useAgent } from "@/components/agent/AgentContext";
 import Onboarding from "@/components/agent/Onboarding";
+import GeoReporter from "@/components/agent/GeoReporter";
 import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText } from "lucide-react";
 
 function BreakButton({ onBreak, since, onClick }) {
@@ -55,6 +56,7 @@ function Frame({ children }) {
       userMenu={[{ label: onBreak ? "End break" : "Start break", icon: <Coffee size={16} />, onClick: toggleBreak }]} signOutLabel="End shift" onSignOut={endShift}>
       {me ? children : <p className="muted">Loading your shift…</p>}
       <Onboarding />
+      <GeoReporter />
     </Shell>
   );
 }

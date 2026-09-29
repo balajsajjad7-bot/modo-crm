@@ -41,6 +41,8 @@ model User {
   secureLine   Boolean      @default(false) // invited by the CEO to the shared Secure line room
   contract     String?      // confidential employment contract, editable by admin, visible only to this agent
   onboardedAt  DateTime?    // when this agent acknowledged the welcome + contract
+  geoInside    Boolean?     // currently inside the office geofence (null = unknown)
+  geoAt        DateTime?    // when the geo state last changed
   padText      String?      // agent's personal scratchpad
   createdAt    DateTime     @default(now())
   attendance   Attendance[]
@@ -553,4 +555,18 @@ model PushSub {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+// Geofencing: whether an agent is currently inside the office radius, and a log of leave/return events.
+model GeoEvent {
+  id       String   @id @default(cuid())
+  userId   String
+  type     String   // "left" | "returned"
+  distance Int?     // metres from office at the moment
+  lat      Float?
+  lng      Float?
+  at       DateTime @default(now())
+
+  @@index([userId, at])
+  @@index([at])
 }

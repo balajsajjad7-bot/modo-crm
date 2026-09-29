@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 
@@ -31,6 +31,7 @@ export default function AdminLayout({ children }) {
     ] },
     { label: "Team", icon: i(UsersRound), children: [
       { href: "/admin/attendance", label: "Attendance", hint: "Who's in, office or remote, auto clock-in/out", icon: i(Fingerprint) },
+      { href: "/admin/whereabouts", label: "Whereabouts", hint: "Live map of who's at the office; leave/return alerts", icon: i(MapPin) },
       { href: "/admin/agents", label: "Agents", hint: "Add, edit, call and manage agents", icon: i(Users) },
       { href: "/admin/shifts", label: "Shifts", hint: "Edit everyone's shift times; automatic clock-out at shift end", icon: i(CalendarClock) },
       { href: "/admin/breaks", label: "Break report", hint: "Every break, per agent per day", icon: i(Coffee) },
@@ -50,6 +51,7 @@ export default function AdminLayout({ children }) {
       { href: "/admin/connectors", label: "Connectors", hint: "Slack, Discord, Sheets, webhooks, AI, VICIdial", icon: i(Plug) },
       { href: "/admin/settings", label: "Settings", hint: "IP lock, breaks, idle and targets", icon: i(Settings) },
       { href: "/admin/app", label: "Windows app", hint: "Download the installer and lock down PCs", icon: i(MonitorDown) },
+      { href: "/install", label: "Install on phones", hint: "Add Modo to Android & iPhone (QR + steps)", icon: i(MonitorSmartphone) },
       { href: "/admin/updates", label: "Updates", hint: "Modo version and what's new", icon: i(Download) },
     ] },
   ];
