@@ -5,10 +5,6 @@ import { parse } from "@/lib/connectors";
 import { getSettings } from "@/lib/settings";
 import { areaInfo, tzFor, stateFromName, STATE_NAMES } from "@/lib/usdata";
 
-// Run every lookup from a US East datacenter so it leaves with a US IP address —
-// this is Modo's built-in "US exit" so US-only lookups work without any VPN on the agent's device.
-export const runtime = "nodejs";
-export const preferredRegion = "iad1"; // US East (Washington D.C.)
 export const dynamic = "force-dynamic";
 
 const get = async (url, opts = {}) => {
