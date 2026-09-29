@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3 } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 
 export default function AdminLayout({ children }) {
