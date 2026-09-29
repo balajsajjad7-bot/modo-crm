@@ -130,6 +130,9 @@ const SQL = [
   `CREATE INDEX IF NOT EXISTS "ShiftEndRequest_userId_createdAt_idx" ON "ShiftEndRequest"("userId", "createdAt")`,
   `CREATE INDEX IF NOT EXISTS "ShiftEndRequest_status_idx" ON "ShiftEndRequest"("status")`,
   `CREATE TABLE IF NOT EXISTS "RecordingQa" ("id" TEXT NOT NULL, "recId" TEXT NOT NULL, "agentUser" TEXT, "callDate" TEXT, "phone" TEXT, "url" TEXT, "score" INTEGER NOT NULL DEFAULT 0, "checklist" TEXT NOT NULL DEFAULT '{}', "notes" TEXT, "outcome" TEXT, "reviewedBy" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "RecordingQa_pkey" PRIMARY KEY ("id"))`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "ceo" BOOLEAN NOT NULL DEFAULT false`,
+  `CREATE TABLE IF NOT EXISTS "VaultMsg" ("id" TEXT NOT NULL, "body" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "VaultMsg_pkey" PRIMARY KEY ("id"))`,
+  `CREATE INDEX IF NOT EXISTS "VaultMsg_createdAt_idx" ON "VaultMsg"("createdAt")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "RecordingQa_recId_key" ON "RecordingQa"("recId")`,
   `CREATE INDEX IF NOT EXISTS "RecordingQa_callDate_idx" ON "RecordingQa"("callDate")`,
   fk("ConvMember", "ConvMember_conversationId_fkey", "conversationId", "Conversation"),
@@ -178,5 +181,7 @@ const CORE = [
     [id, agentId, hash]
   );
   console.log("Admin ready:", agentId);
+  // The bootstrap admin is the CEO (the only account that can open the encrypted Secure line).
+  await pool.query(`UPDATE "User" SET "ceo"=true WHERE "agentId"=$1`, [agentId]);
   await pool.end();
 })().catch((e) => { console.error(e.message); process.exit(1); });

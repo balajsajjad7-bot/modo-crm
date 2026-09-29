@@ -1,11 +1,14 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3 } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
+import { useEffect, useState } from "react";
 
 export default function AdminLayout({ children }) {
   const [{ data: sales }] = usePoll("/api/sales", 30000);
   const fresh = (sales || []).filter((s) => s.status === "NEW").length;
+  const [isCeo, setIsCeo] = useState(false);
+  useEffect(() => { fetch("/api/me").then((r) => r.json()).then((m) => setIsCeo(!!m?.ceo)).catch(() => {}); }, []);
   const i = (C) => <C size={17} />;
   const nav = [
     { href: "/admin/lookups", label: "Lookups", hint: "USA phone, ZIP, address, email and your own lookup APIs", icon: i(SearchCheck) },
@@ -33,6 +36,7 @@ export default function AdminLayout({ children }) {
       { href: "/kiosk", label: "Office kiosk", hint: "Check-in screen for the office entrance", icon: i(MonitorSmartphone) },
     ] },
     { href: "/admin/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
+    ...(isCeo ? [{ href: "/admin/vault", label: "Secure line", hint: "Encrypted, CEO-only messages", icon: i(Lock) }] : []),
     { href: "/admin/ai", label: "Modo AI", hint: "Ask anything about your team, sales and pay", icon: i(Sparkles) },
     { label: "Tools", icon: i(Wrench), children: [
       { href: "/admin/recordings", label: "Call recordings", hint: "Play & download your VICIdial recordings by day", icon: i(Disc3) },
