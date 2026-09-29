@@ -7,9 +7,21 @@ import { areaInfo, tzFor, stateFromName, STATE_NAMES } from "@/lib/usdata";
 
 export const dynamic = "force-dynamic";
 
+// Look like a real Chrome browser so sites with basic bot filters don't 403 us.
+const BROWSER_HEADERS = {
+  "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  accept: "text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7",
+  "accept-language": "en-US,en;q=0.9",
+  "upgrade-insecure-requests": "1",
+  "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+  "sec-ch-ua-mobile": "?0",
+  "sec-ch-ua-platform": '"Windows"',
+  "sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "none", "sec-fetch-user": "?1",
+};
 const get = async (url, opts = {}) => {
   const { dispatcher, ...rest } = opts;
-  const r = await fetch(url, { ...rest, headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CRM-Modo/1.0", accept: "application/json,text/html;q=0.9,*/*;q=0.8", ...(opts.headers || {}) }, signal: AbortSignal.timeout(15000), cache: "no-store", ...(dispatcher ? { dispatcher } : {}) });
+  let ref; try { ref = new URL(url).origin + "/"; } catch {}
+  const r = await fetch(url, { ...rest, headers: { ...BROWSER_HEADERS, ...(ref ? { referer: ref } : {}), ...(opts.headers || {}) }, redirect: "follow", signal: AbortSignal.timeout(15000), cache: "no-store", ...(dispatcher ? { dispatcher } : {}) });
   const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {}
   return { ok: r.ok, status: r.status, json, text };
 };
