@@ -189,6 +189,7 @@ model Setting {
   switchHash     String? // bcrypt of the passphrase that switches an agent seat to the CEO admin profile
   lookupUrls     String  @default("[]") // your own free lookup URLs (each with {q}); Modo fetches them server-side
   lookupProxy    String? // optional proxy/VPN endpoint Modo routes those lookups through
+  quickLinks     String  @default("[]") // one-click links (carrier portals, order trackers) agents open in a new tab
   onboardMsg     String? // team onboarding message shown to a new agent on first sign-in
   companyName    String? // used on generated employment contracts
 }

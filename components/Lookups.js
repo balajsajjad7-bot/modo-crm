@@ -2,6 +2,7 @@
 // USA lookups: free built-ins (ZIP, address, phone, email, time) + any API admin adds in Connectors.
 import { useEffect, useState } from "react";
 import { MapPin, Home, Phone, Mail, Clock, Search, Plug, Copy, ExternalLink, Building, Ruler, CloudSun, CalendarDays } from "lucide-react";
+const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
 
 const BUILT = [
   { id: "phone", name: "Phone number", icon: Phone, hint: "10-digit US number", ph: "(512) 555-0142", desc: "Format, area code state, time zone and whether it's OK to call now" },
@@ -20,7 +21,9 @@ export default function Lookups({ compact = false, preset = null }) {
   useEffect(() => { if (preset?.q) { setTool(preset.tool || "phone"); setQ(preset.q); run(null, { tool: preset.tool || "phone", q: preset.q }); } }, [preset?.q, preset?.tool]); // eslint-disable-line
   const [res, setRes] = useState(null); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [history, setHistory] = useState([]);
   useEffect(() => { const h = (e) => { setTool(e.detail.tool); setQ(e.detail.q); run(null, e.detail); }; window.addEventListener("modo-lookup", h); return () => window.removeEventListener("modo-lookup", h); }); // eslint-disable-line
-  useEffect(() => { fetch("/api/lookup?type=list").then((r) => r.json()).then((d) => Array.isArray(d) && setCustom(d)).catch(() => {}); try { setHistory(JSON.parse(localStorage.getItem("modo-lookups") || "[]")); } catch {} }, []);
+  const [links, setLinks] = useState([]);
+  useEffect(() => { fetch("/api/lookup?type=list").then((r) => r.json()).then((d) => Array.isArray(d) && setCustom(d)).catch(() => {}); try { setHistory(JSON.parse(localStorage.getItem("modo-lookups") || "[]")); } catch {}
+    fetch("/api/settings").then((r) => r.json()).then((d) => { let q = []; try { q = JSON.parse(d.quickLinks || "[]"); } catch {} setLinks(Array.isArray(q) ? q : []); }).catch(() => {}); }, []);
   const all = [...BUILT, ...custom.map((c) => ({ id: c.id, name: c.name, icon: Plug, hint: c.hint || "Search", ph: c.hint || "", desc: c.id.startsWith("u:") ? "Your lookup" : "Your API" }))];
   const cur = all.find((t) => t.id === tool) || all[0];
   async function run(e, again) {
@@ -66,6 +69,13 @@ export default function Lookups({ compact = false, preset = null }) {
           <section className="panel stack">
             <h2 style={{ fontSize: 15 }}>Recent</h2>
             <div className="row" style={{ gap: 6 }}>{history.map((h, i) => <button key={i} className="ghost sm" onClick={() => { setTool(h.tool); setQ(h.q); run(null, h); }}>{all.find((t) => t.id === h.tool)?.name || "Lookup"}: {h.q}</button>)}</div>
+          </section>
+        )}
+        {links.length > 0 && (
+          <section className="panel stack">
+            <h2 style={{ fontSize: 15 }}><ExternalLink size={15} /> Quick links</h2>
+            <p className="muted small" style={{ margin: 0 }}>Open a carrier portal or tracker in a new tab (use your VPN if the site needs a US location).</p>
+            <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>{links.map((l, i) => <a key={i} className="btn-link" href={l.url} target="_blank" rel="noreferrer"><ExternalLink size={13} /> {l.label || hostOf(l.url)}</a>)}</div>
           </section>
         )}
         {!custom.length && <p className="muted small">More lookups (phone carrier, utility providers, internet providers…): admin can add any API in Tools → Connectors → Lookup API, and it shows up here.</p>}

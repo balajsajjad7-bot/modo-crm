@@ -10,7 +10,7 @@ export async function GET() {
   const s = await currentUser();
   if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   const st = await getSettings();
-  if (s.role !== "ADMIN") return NextResponse.json({ currency: st.currency, discountRates: st.discountRates, creatorName: st.creatorName, switchOn: !!st.switchHash });
+  if (s.role !== "ADMIN") return NextResponse.json({ currency: st.currency, discountRates: st.discountRates, creatorName: st.creatorName, switchOn: !!st.switchHash, quickLinks: st.quickLinks });
   const { switchHash, ...safe } = st; // never send the passphrase hash to the browser
   return NextResponse.json({ ...safe, switchSet: !!switchHash, yourIp: clientIp() });
 }
@@ -67,6 +67,19 @@ export async function PATCH(req) {
   }
   if ("onboardMsg" in b) data.onboardMsg = String(b.onboardMsg || "").slice(0, 5000) || null;
   if ("companyName" in b) data.companyName = String(b.companyName || "").slice(0, 120) || null;
+  if ("quickLinks" in b) {
+    let arr = b.quickLinks;
+    if (typeof arr === "string") { const t = arr.trim(); if (t.startsWith("[")) { try { arr = JSON.parse(t); } catch { arr = arr.split(/\r?\n/); } } else arr = arr.split(/\r?\n/); }
+    if (!Array.isArray(arr)) arr = [];
+    const clean = arr.map((x) => {
+      if (x && typeof x === "object") return { label: String(x.label || "").slice(0, 60), url: String(x.url || "").trim() };
+      const line = String(x || "").trim(); if (!line) return null;
+      const parts = line.split("|").map((y) => y.trim());
+      const url = parts.length > 1 ? parts[1] : parts[0];
+      return { label: parts.length > 1 ? parts[0].slice(0, 60) : "", url };
+    }).filter((x) => x && /^https?:\/\//i.test(x.url)).slice(0, 30);
+    data.quickLinks = JSON.stringify(clean);
+  }
   if ("lookupProxy" in b) { const pxy = String(b.lookupProxy || "").trim(); data.lookupProxy = pxy && /^https?:\/\//i.test(pxy) ? pxy : (pxy ? pxy : null); if (pxy && !/^(https?|socks\d?):\/\//i.test(pxy)) return NextResponse.json({ error: "Proxy must start with http://, https:// or socks5://" }, { status: 400 }); }
   const cur = await getSettings();
   if ((data.ipLock ?? cur.ipLock) && !(data.officeIps ?? cur.officeIps)) return NextResponse.json({ error: "Add at least one office IP before turning on the IP lock." }, { status: 400 });
