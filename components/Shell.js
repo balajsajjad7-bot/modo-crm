@@ -10,6 +10,22 @@ import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Pow
 const ShellCtx = createContext(null);
 export const useShell = () => useContext(ShellCtx);
 
+// Subscribe this device for web push so alerts reach a locked/closed phone.
+const b64ToU8 = (b64) => { const pad = "=".repeat((4 - (b64.length % 4)) % 4); const s = (b64 + pad).replace(/-/g, "+").replace(/_/g, "/"); const raw = atob(s); return Uint8Array.from([...raw].map((c) => c.charCodeAt(0))); };
+async function subscribePush() {
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const { key } = await fetch("/api/push/subscribe").then((r) => r.json());
+      if (!key) return;
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(key) });
+    }
+    await fetch("/api/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ subscription: sub.toJSON(), ua: navigator.userAgent }) });
+  } catch {}
+}
+
 // Ringtone played through the computer's current sound output (headphones if plugged in).
 // Browsers only allow sound after the person has clicked on the page once, so we unlock audio on the first click.
 let audioCtx = null;
@@ -92,9 +108,11 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
     const u = () => unlockAudio();
     window.addEventListener("pointerdown", u); window.addEventListener("keydown", u);
     if ("Notification" in window) setNotif(Notification.permission);
+    // Register the push service worker; if already allowed, make sure this device is subscribed.
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").then(() => { if (window.Notification?.permission === "granted") subscribePush(); }).catch(() => {});
     return () => { window.removeEventListener("pointerdown", u); window.removeEventListener("keydown", u); };
   }, []);
-  const askNotif = async () => { unlockAudio(); if ("Notification" in window) setNotif(await Notification.requestPermission()); };
+  const askNotif = async () => { unlockAudio(); if ("Notification" in window) { const p = await Notification.requestPermission(); setNotif(p); if (p === "granted") subscribePush(); } };
 
   const openDM = useCallback(async (userId, { call = false } = {}) => {
     const r = await fetch("/api/chat/conversations", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userIds: [userId] }) });
@@ -173,7 +191,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
       ))}
       {me?.role === "AGENT" && presence?.shiftEnded && <div className="toast" role="status"><AlarmClock size={20} style={{ color: "var(--amber)", flexShrink: 0 }} /><div><b>Your shift has ended</b><div className="small">You were clocked out automatically. Thanks for today!</div></div></div>}
       {seWaiting > 0 && typeof window !== "undefined" && !location.pathname.startsWith("/admin/attendance") && location.pathname !== "/admin" && <a className="toast se-toast" href="/admin/attendance"><Clock size={18} /><div><b>{seWaiting} agent{seWaiting > 1 ? "s want" : " wants"} to end their shift early</b><div className="small">Tap to approve or deny</div></div></a>}
-      {notif === "default" && <button className="notif-ask ghost" onClick={askNotif}><Phone size={14} /> Turn on call alerts</button>}
+      {notif !== "granted" && <button className="notif-ask ghost" onClick={askNotif}><Phone size={14} /> Turn on phone alerts</button>}
       {huddle.error && <div className="call-banner warn" role="alert"><div>{huddle.error}</div><button className="ghost" onClick={huddle.clearError}><X size={16} /></button></div>}
       {huddle.call && <CallPanel huddle={huddle} me={me} conv={chat.conversations.find((c) => c.id === huddle.call.conversationId)} />}
       <div ref={huddle.audioRef} hidden />

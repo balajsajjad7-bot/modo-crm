@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { isMember, MAX_FILE, shapeAll } from "@/lib/chat";
+import { sendPush } from "@/lib/push";
 
 // ?c=<conversation>  [&thread=<parent id>]  [&since=<ISO>]  (since = anything created or changed after)
 export async function GET(req) {
@@ -47,5 +48,13 @@ export async function POST(req) {
   const m = await db.message.create({ data });
   if (!parentId) await db.conversation.update({ where: { id: c }, data: { lastMessageAt: m.createdAt } });
   await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: m.createdAt } });
+  // Push the other people in this conversation (best-effort; reaches locked phones).
+  try {
+    const conv = await db.conversation.findUnique({ where: { id: c }, select: { name: true, isChannel: true } });
+    const preview = data.kind === "AUDIO" ? "🎤 Voice note" : data.kind === "FILE" ? "📎 " + (data.fileName || "File") : (text || "").slice(0, 120);
+    const title = conv?.isChannel ? `#${conv.name || "channel"} · ${s.name}` : s.name;
+    const others = (await db.convMember.findMany({ where: { conversationId: c, userId: { not: s.uid } }, select: { userId: true } })).map((x) => x.userId);
+    if (others.length) sendPush(others, { title, body: preview, url: "/", tag: "chat-" + c });
+  } catch {}
   return NextResponse.json((await shapeAll([m], s.uid))[0]);
 }

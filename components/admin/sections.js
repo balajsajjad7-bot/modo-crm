@@ -145,6 +145,7 @@ export function Agents() {
                 <button className="ghost sm" title="Message" aria-label={"Message " + a.name} onClick={() => openDM(a.id)}><MessageSquare size={14} /></button>
                 <button className="ghost sm" onClick={() => edit(a)}>Quick edit</button>
                 <button className="ghost sm" onClick={() => setDock(a)} title="Dock pay and/or warn">Dock</button>
+                <button className="ghost sm" title="Send a phone alert" onClick={async () => { const t = prompt(`Phone alert to ${a.name}:`); if (t) { const r = await api("/api/push/ping", "POST", { userId: a.id, body: t, urgent: true }); alert(r.ok ? "Alert sent to their phone." : (r.data.error || "Couldn't send.")); } }}>Notify</button>
                 <button className="ghost sm" onClick={() => toggleActive(a)}>{a.active ? "Suspend" : "Restore"}</button></td>
             </tr>))}
           </tbody>
@@ -153,6 +154,25 @@ export function Agents() {
       </section>
       {dock && <DockModal agent={dock} onClose={() => setDock(null)} onDone={() => { setDock(null); reload(); }} />}
     </div>
+  );
+}
+
+function Broadcast() {
+  const [msg, setMsg] = useState(""); const [urgent, setUrgent] = useState(true); const [busy, setBusy] = useState(false); const [note, setNote] = useState("");
+  async function send() {
+    if (!msg.trim()) return; setBusy(true); setNote("");
+    const r = await api("/api/push/ping", "POST", { all: true, body: msg, urgent });
+    setBusy(false); if (r.ok) { setNote(`Sent to ${r.data.sent} teammate(s)' phones.`); setMsg(""); } else setNote(r.data.error || "Couldn't send.");
+  }
+  return (
+    <section className="panel stack">
+      <h2><AlertTriangle size={17} /> Send a phone alert to everyone</h2>
+      <p className="muted small" style={{ margin: 0 }}>Reaches every teammate who turned on phone alerts — even on a locked phone. Great for urgent, must-see messages.</p>
+      <label>Message<textarea style={{ minHeight: 60 }} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="e.g. All agents log in now — big campaign push." /></label>
+      <label className="row" style={{ color: "var(--ink)" }}><input type="checkbox" style={{ width: "auto" }} checked={urgent} onChange={(e) => setUrgent(e.target.checked)} /> Urgent (stays on screen until tapped)</label>
+      {note && <div className="receipt">{note}</div>}
+      <div><button onClick={send} disabled={busy || !msg.trim()}>{busy ? "Sending…" : "Send to all phones"}</button></div>
+    </section>
   );
 }
 
@@ -261,7 +281,7 @@ export function Settings() {
     setMsg("Settings saved."); reload();
   }
   return (
-    <div className="stack"><SystemCheck /><CallTest /><Security />
+    <div className="stack"><SystemCheck /><CallTest /><Broadcast /><Security />
     <form className="stack" onSubmit={save}>
       <section className="panel stack">
         <h2>Office IP lock</h2>

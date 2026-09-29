@@ -10,6 +10,6 @@ module.exports = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ["ogl"],
-  experimental: { serverComponentsExternalPackages: ["ws", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/client", "nodemailer", "undici"] },
+  experimental: { serverComponentsExternalPackages: ["ws", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/client", "nodemailer", "undici", "web-push"] },
   async headers() { return [{ source: "/:path*", headers: security }]; },
 };

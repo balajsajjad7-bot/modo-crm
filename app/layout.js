@@ -1,7 +1,7 @@
 import "./globals.css";
 import PlasmaBackground from "@/components/PlasmaBackground";
 import { bootScript } from "@/components/Appearance";
-export const metadata = { title: "CRM Modo", description: "Call-center CRM: attendance, pipeline, sales, chat and AI" };
+export const metadata = { title: "CRM Modo", description: "Call-center CRM: attendance, pipeline, sales, chat and AI", manifest: "/manifest.json", appleWebApp: { capable: true, title: "Modo", statusBarStyle: "black-translucent" } };
 export const viewport = { themeColor: "#1a1a1b", width: "device-width", initialScale: 1 };
 export default function RootLayout({ children }) {
   return (

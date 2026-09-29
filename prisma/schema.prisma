@@ -541,3 +541,16 @@ model VaultMsg {
 
   @@index([createdAt])
 }
+
+// A browser/phone push subscription so Modo can alert an agent even when Modo isn't open.
+model PushSub {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  ua        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
