@@ -221,7 +221,7 @@ function Message({ m, me, names, grouped, onThread, reload, active, inThread, is
         ) : (
           <>
             {m.text && <div className="sl-text"><RichText text={m.text} names={names} meName={me?.name} />{m.editedAt && <span className="sl-edited"> (edited)</span>}</div>}
-            {m.kind === "AUDIO" && <div className="sl-voice"><Mic size={14} /><audio controls preload="none" src={"/api/chat/file/" + m.file.id} /></div>}
+            {m.kind === "AUDIO" && <div className="sl-voice"><Mic size={14} /><audio controls preload="metadata" src={"/api/chat/file/" + m.file.id} /><a className="ghost sm icon-btn" href={"/api/chat/file/" + m.file.id + "?download=1"} title="Download voice note" aria-label="Download voice note"><Download size={14} /></a></div>}
             {m.kind === "FILE" && (m.file.mime?.startsWith("image/")
               ? <a href={"/api/chat/file/" + m.file.id} target="_blank" rel="noreferrer"><img className="sl-img" src={"/api/chat/file/" + m.file.id} alt={m.file.name} /></a>
               : <a className="sl-file" href={"/api/chat/file/" + m.file.id + "?download=1"}><FileText size={26} /><span><b className="ellipsis" style={{ display: "block" }}>{m.file.name}</b><span className="muted small">{kb(m.file.size)}</span></span><Download size={16} /></a>)}

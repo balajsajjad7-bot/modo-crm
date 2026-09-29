@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { pkr, dur } from "@/lib/fmt";
 import { api, usePoll } from "./api";
 import Security from "./Security";
+import CallTest from "./CallTest";
 export { api, usePoll };
 import Link from "next/link";
 import { useShell } from "@/components/Shell";
@@ -232,7 +233,7 @@ export function Settings() {
     setMsg("Settings saved."); reload();
   }
   return (
-    <div className="stack"><SystemCheck /><Security />
+    <div className="stack"><SystemCheck /><CallTest /><Security />
     <form className="stack" onSubmit={save}>
       <section className="panel stack">
         <h2>Office IP lock</h2>
