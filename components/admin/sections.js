@@ -125,12 +125,28 @@ export function Agents() {
           <label>{editing ? "New password (optional)" : "Password"}<input type="text" value={form.password} onChange={set("password")} required={!editing} /></label>
         </div>
         <div className="row small" role="group" aria-label="Working days">Working days:{DAYS.map((d, i) => <label key={d} className="row" style={{ fontWeight: 500, color: "var(--ink)" }}><input type="checkbox" style={{ width: "auto" }} checked={days.has(i)} onChange={() => toggleDay(i)} />{d}</label>)}</div>
-        <label>Employment contract (confidential — only this agent can read it)<textarea style={{ minHeight: 120 }} value={form.contract || ""} onChange={set("contract")} placeholder="Paste this agent's contract here. They'll see it on first sign-in and any time under My contract." /></label>
+        <label>Employment contract (confidential — only this agent can read it)
+          <div className="row" style={{ gap: 6, margin: "4px 0" }}>
+            <button type="button" className="ghost sm" onClick={async () => {
+              if (form.contract && !confirm("Replace the contract text with a freshly generated one?")) return;
+              const r = await api("/api/contract/generate", "POST", { name: form.name, agentId: editing ? (data.find((a) => a.id === editing)?.agentId) : "", baseSalary: form.baseSalary, shiftStart: form.shiftStart, shiftHours: form.shiftHours, workDays: form.workDays, departmentId: form.departmentId, campaignId: form.campaignId });
+              if (r.ok) setForm((f) => ({ ...f, contract: r.data.contract })); else setMsg(r.data.error || "Couldn't generate.");
+            }}>✨ Generate contract from their details</button>
+          </div>
+          <textarea style={{ minHeight: 160 }} value={form.contract || ""} onChange={set("contract")} placeholder="Click Generate to auto-fill a professional contract with their salary and shift — then edit anything and Save. They'll see it on first sign-in and under My contract." /></label>
         {perSec > 0 && <p className="muted small" style={{ margin: 0 }}>Lateness costs {pkr(perSec * 3600 * form.shiftHours)} per day, {pkr(perSec * 3600)} per hour, {pkr(perSec * 60)} per minute ({perSec.toFixed(4)} per second). An absent working day deducts one full day.</p>}
         {msg && <div className="receipt">{msg}</div>}
         <div className="row"><button>{editing ? "Save changes" : "Add agent"}</button>{editing && <button type="button" className="ghost" onClick={() => { setEditing(null); setForm(EMPTY); }}>Cancel</button>}</div>
       </form>
 
+      <div className="row" style={{ justifyContent: "flex-end" }}>
+        <button className="ghost sm" onClick={async () => {
+          if (!confirm("Generate a contract for every agent who doesn't have one yet? (Existing contracts are kept.)")) return;
+          const r = await api("/api/contract/generate", "POST", { all: true, onlyMissing: true });
+          alert(r.ok ? `Generated contracts for ${r.data.count} agent(s). Open any agent to review or edit.` : (r.data.error || "Couldn't generate."));
+          if (r.ok) reload();
+        }}>✨ Generate contracts for everyone missing one</button>
+      </div>
       <section className="panel tablewrap">
         <table>
           <thead><tr><th>ID</th><th>Name</th><th>Shift</th><th className="r">Salary</th><th className="r">Net so far</th><th>Status</th><th></th></tr></thead>
@@ -306,6 +322,7 @@ export function Settings() {
       <section className="panel stack">
         <h2>New-agent welcome message</h2>
         <p className="muted small" style={{ margin: 0 }}>Shown to every agent the first time they sign in, greeting them by name, alongside their confidential contract. Edit each agent's contract on their profile (Team → Agents).</p>
+        <label>Company name (used on generated contracts)<input value={f.companyName || ""} onChange={set("companyName")} placeholder="e.g. VoiceVerve Pvt Ltd" /></label>
         <label>Team onboarding message<textarea style={{ minHeight: 90 }} value={f.onboardMsg || ""} onChange={set("onboardMsg")} placeholder="Welcome to the team! Here's how we work, your shift, and who to ask for help…" /></label>
       </section>
       {me?.ceo && (

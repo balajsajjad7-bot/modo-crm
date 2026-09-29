@@ -187,6 +187,7 @@ model Setting {
   lookupUrls     String  @default("[]") // your own free lookup URLs (each with {q}); Modo fetches them server-side
   lookupProxy    String? // optional proxy/VPN endpoint Modo routes those lookups through
   onboardMsg     String? // team onboarding message shown to a new agent on first sign-in
+  companyName    String? // used on generated employment contracts
 }
 
 // Integrations: webhooks (Slack, Discord, Zapier, Make, Google Sheets…), AI key, VICIdial, TURN.

@@ -66,6 +66,7 @@ export async function PATCH(req) {
     data.lookupUrls = JSON.stringify(clean);
   }
   if ("onboardMsg" in b) data.onboardMsg = String(b.onboardMsg || "").slice(0, 5000) || null;
+  if ("companyName" in b) data.companyName = String(b.companyName || "").slice(0, 120) || null;
   if ("lookupProxy" in b) { const pxy = String(b.lookupProxy || "").trim(); data.lookupProxy = pxy && /^https?:\/\//i.test(pxy) ? pxy : (pxy ? pxy : null); if (pxy && !/^(https?|socks\d?):\/\//i.test(pxy)) return NextResponse.json({ error: "Proxy must start with http://, https:// or socks5://" }, { status: 400 }); }
   const cur = await getSettings();
   if ((data.ipLock ?? cur.ipLock) && !(data.officeIps ?? cur.officeIps)) return NextResponse.json({ error: "Add at least one office IP before turning on the IP lock." }, { status: 400 });
