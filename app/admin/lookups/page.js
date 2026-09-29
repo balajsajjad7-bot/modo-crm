@@ -1,3 +1,4 @@
 "use client";
 import Lookups from "@/components/Lookups";
-export default function Page() { return <Lookups />; }
+import LookupUrls from "@/components/admin/LookupUrls";
+export default function Page() { return <div className="stack"><Lookups /><LookupUrls /></div>; }

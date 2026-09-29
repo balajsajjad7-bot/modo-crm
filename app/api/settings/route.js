@@ -58,6 +58,14 @@ export async function PATCH(req) {
     if (!Object.keys(rates).length) return NextResponse.json({ error: "Add at least one service." }, { status: 400 });
     data.discountRates = JSON.stringify(rates);
   }
+  if ("lookupUrls" in b) {
+    let arr = b.lookupUrls;
+    if (typeof arr === "string") { const t = arr.trim(); if (t.startsWith("[")) { try { arr = JSON.parse(t); } catch { arr = arr.split(/\r?\n/); } } else arr = arr.split(/\r?\n/); } // JSON round-trip or a textarea (one URL per line)
+    if (!Array.isArray(arr)) arr = [];
+    const clean = arr.map((u) => String(u || "").trim()).filter((u) => /^https?:\/\//i.test(u)).slice(0, 30);
+    data.lookupUrls = JSON.stringify(clean);
+  }
+  if ("lookupProxy" in b) { const pxy = String(b.lookupProxy || "").trim(); data.lookupProxy = pxy && /^https?:\/\//i.test(pxy) ? pxy : (pxy ? pxy : null); if (pxy && !/^(https?|socks\d?):\/\//i.test(pxy)) return NextResponse.json({ error: "Proxy must start with http://, https:// or socks5://" }, { status: 400 }); }
   const cur = await getSettings();
   if ((data.ipLock ?? cur.ipLock) && !(data.officeIps ?? cur.officeIps)) return NextResponse.json({ error: "Add at least one office IP before turning on the IP lock." }, { status: 400 });
   const out = await db.setting.update({ where: { id: "global" }, data });

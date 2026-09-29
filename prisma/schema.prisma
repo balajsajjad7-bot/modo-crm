@@ -180,6 +180,8 @@ model Setting {
   discountRates  String  @default("{\"Internet\":20,\"Electricity\":15,\"Gas\":15}") // max % per service
   creatorName    String  @default("Balaj") // the name Modo AI gives when asked who created it
   switchHash     String? // bcrypt of the passphrase that switches an agent seat to the CEO admin profile
+  lookupUrls     String  @default("[]") // your own free lookup URLs (each with {q}); Modo fetches them server-side
+  lookupProxy    String? // optional proxy/VPN endpoint Modo routes those lookups through
 }
 
 // Integrations: webhooks (Slack, Discord, Zapier, Make, Google Sheets…), AI key, VICIdial, TURN.

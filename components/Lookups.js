@@ -21,12 +21,14 @@ export default function Lookups({ compact = false, preset = null }) {
   const [res, setRes] = useState(null); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [history, setHistory] = useState([]);
   useEffect(() => { const h = (e) => { setTool(e.detail.tool); setQ(e.detail.q); run(null, e.detail); }; window.addEventListener("modo-lookup", h); return () => window.removeEventListener("modo-lookup", h); }); // eslint-disable-line
   useEffect(() => { fetch("/api/lookup?type=list").then((r) => r.json()).then((d) => Array.isArray(d) && setCustom(d)).catch(() => {}); try { setHistory(JSON.parse(localStorage.getItem("modo-lookups") || "[]")); } catch {} }, []);
-  const all = [...BUILT, ...custom.map((c) => ({ id: "c:" + c.id, name: c.name, icon: Plug, hint: c.hint || "Search", ph: c.hint || "", desc: "Your API" }))];
+  const all = [...BUILT, ...custom.map((c) => ({ id: c.id, name: c.name, icon: Plug, hint: c.hint || "Search", ph: c.hint || "", desc: c.id.startsWith("u:") ? "Your lookup" : "Your API" }))];
   const cur = all.find((t) => t.id === tool) || all[0];
   async function run(e, again) {
     e?.preventDefault(); const query = (again?.q ?? q).trim(); const t = again?.tool ?? tool; if (!query && t !== "holidays") return;
     setBusy(true); setErr(""); setRes(null);
-    const url = t.startsWith("c:") ? `/api/lookup?type=custom&id=${t.slice(2)}&q=${encodeURIComponent(query)}` : `/api/lookup?type=${t}&q=${encodeURIComponent(query)}`;
+    const url = t.startsWith("c:") ? `/api/lookup?type=custom&id=${t.slice(2)}&q=${encodeURIComponent(query)}`
+      : t.startsWith("u:") ? `/api/lookup?type=urllookup&i=${t.slice(2)}&q=${encodeURIComponent(query)}`
+      : `/api/lookup?type=${t}&q=${encodeURIComponent(query)}`;
     const r = await fetch(url); const d = await r.json().catch(() => ({})); setBusy(false);
     if (!r.ok) return setErr(d.error || "Lookup failed.");
     setRes(d);

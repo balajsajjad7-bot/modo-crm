@@ -2,13 +2,39 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { parse } from "@/lib/connectors";
+import { getSettings } from "@/lib/settings";
 import { areaInfo, tzFor, stateFromName, STATE_NAMES } from "@/lib/usdata";
 
 const get = async (url, opts = {}) => {
-  const r = await fetch(url, { ...opts, headers: { "user-agent": "CRM-Modo/1.0", accept: "application/json", ...(opts.headers || {}) }, signal: AbortSignal.timeout(10000), cache: "no-store" });
+  const { dispatcher, ...rest } = opts;
+  const r = await fetch(url, { ...rest, headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CRM-Modo/1.0", accept: "application/json,text/html;q=0.9,*/*;q=0.8", ...(opts.headers || {}) }, signal: AbortSignal.timeout(15000), cache: "no-store", ...(dispatcher ? { dispatcher } : {}) });
   const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {}
   return { ok: r.ok, status: r.status, json, text };
 };
+
+// Optional "Modo VPN": route these lookups through a proxy the admin configured, so requests
+// leave from that endpoint instead of Modo's own server IP. Cached per proxy string.
+let _pxy = { url: undefined, agent: undefined };
+async function proxyDispatcher() {
+  const proxy = (await getSettings()).lookupProxy;
+  if (!proxy) return undefined;
+  if (_pxy.url === proxy) return _pxy.agent;
+  try { const { ProxyAgent } = await import(/* webpackIgnore: true */ "undici"); _pxy = { url: proxy, agent: new ProxyAgent(proxy) }; }
+  catch { _pxy = { url: proxy, agent: undefined }; }
+  return _pxy.agent;
+}
+const hostName = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return "Lookup"; } };
+
+// Your own free lookups: just a URL with {q}. Modo fetches it server-side (optionally via the proxy).
+async function urlLookup(tmpl, q, dispatcher) {
+  const url = tmpl.replace(/\{q\}/g, encodeURIComponent(q));
+  const r = await get(url, { dispatcher });
+  if (!r.ok) throw new Error(`That lookup answered ${r.status}. If it needs a US/other location, set a proxy in Settings → Your own lookups.`);
+  const flat = [];
+  const walk = (o, pre = "") => { if (flat.length > 60) return; if (o && typeof o === "object") { for (const [k, v] of Object.entries(o)) walk(v, pre ? `${pre} › ${k}` : k); } else flat.push([pre || "result", String(o)]); };
+  if (r.json != null) walk(r.json); else flat.push(["result", (r.text || "").slice(0, 4000)]);
+  return { title: `${hostName(tmpl)}: ${q}`, rows: flat, note: "Your own lookup — fetched by Modo's server." };
+}
 
 async function zip(q) {
   const z = String(q).replace(/\D/g, "").slice(0, 5);
@@ -60,7 +86,7 @@ async function custom(c, q) {
   if (!cfg.url) throw new Error("This lookup has no URL yet (Admin → Connectors).");
   const url = cfg.url.replace(/\{q\}/g, encodeURIComponent(q)).replace(/\{key\}/g, encodeURIComponent(cfg.apiKey || ""));
   const headers = cfg.header && cfg.apiKey ? { [cfg.header]: cfg.apiKey } : {};
-  const r = await get(url, { headers });
+  const r = await get(url, { headers, dispatcher: await proxyDispatcher() });
   if (!r.ok) throw new Error(`${c.name} answered ${r.status}: ${(r.json?.message || r.json?.error?.message || r.text || "").toString().slice(0, 200)}`);
   const flat = [];
   const walk = (o, pre = "") => { if (flat.length > 40) return; if (o && typeof o === "object") { for (const [k, v] of Object.entries(o)) walk(v, pre ? `${pre} › ${k}` : k); } else flat.push([pre || "result", String(o)]); };
@@ -123,7 +149,11 @@ export async function GET(req) {
   const p = new URL(req.url).searchParams; const type = p.get("type"); const q = (p.get("q") || "").trim().slice(0, 300);
   if (type === "list") {
     const list = await db.connector.findMany({ where: { type: "lookup", enabled: true }, orderBy: { createdAt: "asc" } });
-    return NextResponse.json(list.map((c) => ({ id: c.id, name: c.name, hint: parse(c).hint || "" })));
+    const conn = list.map((c) => ({ id: "c:" + c.id, name: c.name, hint: parse(c).hint || "" }));
+    let urls = [];
+    try { urls = JSON.parse((await getSettings()).lookupUrls || "[]"); } catch {}
+    const urlItems = (Array.isArray(urls) ? urls : []).map((u, i) => ({ id: "u:" + i, name: hostName(u), hint: "Your lookup" }));
+    return NextResponse.json([...conn, ...urlItems]);
   }
   if (!q && type !== "holidays") return NextResponse.json({ error: "Type something to look up." }, { status: 400 });
   try {
@@ -132,6 +162,7 @@ export async function GET(req) {
     else if (type === "email") out = await email(q); else if (type === "time") out = timeIn(q);
     else if (type === "city") out = await cityZips(q); else if (type === "distance") out = await distance(q); else if (type === "weather") out = await weather(q); else if (type === "holidays") out = holidays(q);
     else if (type === "custom") { const c = await db.connector.findFirst({ where: { id: p.get("id"), type: "lookup", enabled: true } }); if (!c) throw new Error("Lookup not found."); out = await custom(c, q); }
+    else if (type === "urllookup") { let urls = []; try { urls = JSON.parse((await getSettings()).lookupUrls || "[]"); } catch {} const t = urls[parseInt(p.get("i"))]; if (!t) throw new Error("Lookup not found."); out = await urlLookup(t, q, await proxyDispatcher()); }
     else throw new Error("Unknown lookup.");
     return NextResponse.json(out);
   } catch (e) { return NextResponse.json({ error: e.message || "Lookup failed." }, { status: 400 }); }
