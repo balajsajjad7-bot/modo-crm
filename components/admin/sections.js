@@ -217,6 +217,7 @@ function SystemCheck() {
 }
 
 export function Settings() {
+  const { me } = useShell();
   const [{ data }, reload] = usePoll("/api/settings", 0);
   const [f, setF] = useState(null); const [msg, setMsg] = useState(""); const [err, setErr] = useState("");
   useEffect(() => { if (data) setF(data); }, [data]);
@@ -249,6 +250,18 @@ export function Settings() {
         </div>
         <p className="muted small" style={{ margin: 0 }}>Break time over the allowance is deducted per second, like lateness. Idle and away time is logged for you to review; it isn't deducted.</p>
       </section>
+      {me?.ceo && (
+        <section className="panel stack">
+          <h2>Creator &amp; secret admin switch</h2>
+          <p className="muted small" style={{ margin: 0 }}>When someone asks Modo AI who created it, it answers with this name. If a person then tells the AI they are that person, it asks for the passphrase below — and only that passphrase switches their agent seat to your admin profile. Leave the passphrase blank to keep the current one; the switch is off until you set one.</p>
+          <div className="form">
+            <label>Creator name (what the AI says)<input value={f.creatorName || ""} onChange={set("creatorName")} placeholder="Balaj" /></label>
+            <label>Switch passphrase {f.switchSet ? "(one is set — type to change)" : "(none set yet)"}<input type="text" value={f.switchPassword || ""} onChange={set("switchPassword")} placeholder="6+ characters" autoComplete="new-password" /></label>
+          </div>
+          {f.switchSet && <label className="row" style={{ color: "var(--ink)" }}><input type="checkbox" style={{ width: "auto" }} checked={!!f.clearSwitch} onChange={(e) => setF({ ...f, clearSwitch: e.target.checked })} /> Turn the switch off (remove the passphrase)</label>}
+          <p className="muted small" style={{ margin: 0 }}>Keep this passphrase to yourself. Anyone who knows it can become admin from an agent seat.</p>
+        </section>
+      )}
       {err && <div className="err">{err}</div>}
       {msg && <div className="receipt">{msg}</div>}
       <div><button>Save settings</button></div>

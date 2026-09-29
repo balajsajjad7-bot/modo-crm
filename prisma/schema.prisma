@@ -178,6 +178,8 @@ model Setting {
   dialer         String  @default("{}") // which dialer Modo drives (vicidial | custom | off) + custom URL templates
   aiKnowledge    String  @default("{}") // "Train Modo AI": company facts, scripts, objection answers, rules // what agents are allowed to do (Team → Agent access)
   discountRates  String  @default("{\"Internet\":20,\"Electricity\":15,\"Gas\":15}") // max % per service
+  creatorName    String  @default("Balaj") // the name Modo AI gives when asked who created it
+  switchHash     String? // bcrypt of the passphrase that switches an agent seat to the CEO admin profile
 }
 
 // Integrations: webhooks (Slack, Discord, Zapier, Make, Google Sheets…), AI key, VICIdial, TURN.

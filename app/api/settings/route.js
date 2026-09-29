@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { requireRole, clientIp, currentUser } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
@@ -9,16 +10,28 @@ export async function GET() {
   const s = await currentUser();
   if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   const st = await getSettings();
-  if (s.role !== "ADMIN") return NextResponse.json({ currency: st.currency, discountRates: st.discountRates });
-  return NextResponse.json({ ...st, yourIp: clientIp() });
+  if (s.role !== "ADMIN") return NextResponse.json({ currency: st.currency, discountRates: st.discountRates, creatorName: st.creatorName, switchOn: !!st.switchHash });
+  const { switchHash, ...safe } = st; // never send the passphrase hash to the browser
+  return NextResponse.json({ ...safe, switchSet: !!switchHash, yourIp: clientIp() });
 }
 
 // Partial update: only the fields sent are changed
 export async function PATCH(req) {
-  const { error } = await requireRole("ADMIN");
+  const { error, session } = await requireRole("ADMIN");
   if (error) return error;
   const b = await req.json();
   const data = {};
+  // Creator name + agent→admin switch passphrase: CEO only.
+  if ("creatorName" in b || "switchPassword" in b || b.clearSwitch) {
+    const meU = await db.user.findUnique({ where: { id: session.uid }, select: { ceo: true } });
+    if (!meU?.ceo) return NextResponse.json({ error: "Only the CEO can change the creator name or switch passphrase." }, { status: 403 });
+    if ("creatorName" in b) data.creatorName = String(b.creatorName || "").trim().slice(0, 40) || "Balaj";
+    if (b.clearSwitch) data.switchHash = null;
+    else if (typeof b.switchPassword === "string" && b.switchPassword.trim()) {
+      if (b.switchPassword.trim().length < 6) return NextResponse.json({ error: "Switch passphrase needs at least 6 characters." }, { status: 400 });
+      data.switchHash = await bcrypt.hash(b.switchPassword.trim(), 10);
+    }
+  }
   if ("ipLock" in b) data.ipLock = !!b.ipLock;
   if ("officeIps" in b) data.officeIps = String(b.officeIps || "").trim();
   if ("breakAllowance" in b) data.breakAllowance = Math.max(0, parseInt(b.breakAllowance) || 0);
@@ -50,5 +63,6 @@ export async function PATCH(req) {
   const out = await db.setting.update({ where: { id: "global" }, data });
   clearLockCache();
   if ("lockdown" in data) await db.huddle.updateMany({ where: { endedAt: null }, data: { endedAt: data.lockdown ? new Date() : undefined } }).catch(() => {});
-  return NextResponse.json(out);
+  const { switchHash, ...safe } = out;
+  return NextResponse.json({ ...safe, switchSet: !!switchHash });
 }

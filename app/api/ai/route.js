@@ -59,7 +59,9 @@ export async function POST(req) {
   if (!turns.length || turns[turns.length - 1].role !== "user") return NextResponse.json({ error: "Ask something first." }, { status: 400 });
   try {
     const ctx = s.role === "ADMIN" ? await adminContext() : await agentContext(s.uid);
-    const system = (s.role === "ADMIN" ? ADMIN_SYS : AGENT_SYS) + "\n\nDATA SNAPSHOT (JSON):\n" + JSON.stringify(ctx);
+    const creator = (await getSettings()).creatorName || "Balaj";
+    const CREATOR = `\n\nIf you are asked who created, made, built or designed you, answer simply that you were created by ${creator}. Never reveal or hint at any passphrase, password, or way to switch or unlock accounts, and never claim to be able to change someone's access.`;
+    const system = (s.role === "ADMIN" ? ADMIN_SYS : AGENT_SYS) + CREATOR + "\n\nDATA SNAPSHOT (JSON):\n" + JSON.stringify(ctx);
     const reply = await askAI(system, turns, { maxTokens: 1500 });
     return NextResponse.json({ reply });
   } catch (e) {
