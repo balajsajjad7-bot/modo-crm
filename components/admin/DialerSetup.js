@@ -2,7 +2,7 @@
 // Admin → Tools → Dialer setup: pick the dialer, connect it, link agents, set results and pause codes. All in one place.
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2 } from "lucide-react";
+import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search } from "lucide-react";
 
 const PROVIDERS = [["vicidial", "VICIdial", "Built in. Modo drives VICIdial through its Agent API."], ["custom", "Other dialer", "Any dialer with a web API (future-proof): you type its URLs below."], ["off", "Off", "Hide the dialer from agents."]];
 const V_FIELDS = [["url", "VICIdial address", "https://dialer.yourcompany.com"], ["user", "API user", "a VICIdial user with API access"], ["pass", "API password", ""], ["agentUrl", "Agent screen URL (optional)", "defaults to …/agc/vicidial.php"], ["monitorPhone", "Your phone login (for Listen/Whisper/Barge)", "e.g. 350a"], ["serverIp", "Dialer server IP (only if needed)", ""]];
@@ -24,9 +24,21 @@ function CodeList({ items, onChange }) {
 }
 
 export default function DialerSetup() {
+  const [dz, setDz] = useState(null); const [dzBusy, setDzBusy] = useState(false); const [dzErr, setDzErr] = useState(""); const [dzQ, setDzQ] = useState("");
   const [d, setD] = useState(null); const [v, setV] = useState({}); const [links, setLinks] = useState({}); const [msg, setMsg] = useState(""); const [test, setTest] = useState(""); const [custom, setCustom] = useState({}); const [tAgent, setTAgent] = useState("");
   const load = () => api("/api/dialer/config").then((r) => { if (!r.ok) return; setD(r.data); setV(r.data.vicidial?.config || {}); setCustom(r.data.custom || {}); setLinks(Object.fromEntries(r.data.agents.map((a) => [a.id, a.vicidialUser || ""]))); });
   useEffect(() => { load(); }, []);
+  async function detectAgents() {
+    setDzBusy(true); setDzErr(""); setDz(null);
+    const r = await api("/api/vicidial/agents");
+    setDzBusy(false); if (r.ok) setDz(r.data); else setDzErr(r.data.error || "Couldn't read agents.");
+  }
+  async function applyCampaign(camp) {
+    if (!d.vicidial?.id) { setDzErr("Save the VICIdial connection first."); return; }
+    const r = await api(`/api/connectors/${d.vicidial.id}`, "PATCH", { config: { campaigns: camp } });
+    if (r.ok) setV((x) => ({ ...x, campaigns: camp }));
+    setMsg(r.ok ? `Now showing only campaign "${camp}". Refresh the home screen.` : (r.data.error || "Couldn't save."));
+  }
   if (!d) return <p className="muted">Loading dialer setup…</p>;
   const say = (m) => { setMsg(m); setTimeout(() => setMsg(""), 4000); };
   const save = async (patch, ok = "Saved.") => { const r = await api("/api/dialer/config", "PATCH", patch); say(r.ok ? ok : r.data.error); load(); return r; };
@@ -65,6 +77,35 @@ export default function DialerSetup() {
           <div className="form">{V_FIELDS.map(([k, l, ph]) => <label key={k}>{l}<input type={k === "pass" ? "password" : "text"} value={v[k] || ""} placeholder={k === "pass" && d.vicidial ? "saved (type to change)" : ph} onChange={(e) => setV({ ...v, [k]: e.target.value })} /></label>)}</div>
           <p className="muted small" style={{ margin: 0 }}>In VICIdial: Admin → Users → your API user → set User Level 8+, turn on <b>API Access</b>, <b>Agent API Access</b> and <b>View Reports</b>.</p>
           <div className="row"><button onClick={saveVici}><Save size={15} /> Save & test</button>{d.vicidial && <button className="ghost" onClick={() => testVici(d.vicidial.id)}><Zap size={14} /> Test again</button>}{test && <span className="small" style={{ color: /^OK/.test(test) ? "var(--green)" : "var(--amber)" }}>{test}</span>}</div>
+        </section>
+      )}
+
+      {d.provider === "vicidial" && d.vicidial && (
+        <section className="panel stack">
+          <h2><Users size={17} /> Find your agents & campaign</h2>
+          <p className="muted small" style={{ margin: 0 }}>Seeing agents that aren't yours? Show everyone on the dialer right now, find your people (e.g. Tom), then tap their campaign to show only that team on the home screen.</p>
+          <div className="row"><button onClick={detectAgents} disabled={dzBusy}><Search size={15} /> {dzBusy ? "Reading dialer…" : "Show agents on my dialer"}</button>{dz && <input placeholder="Filter by name or user…" value={dzQ} onChange={(e) => setDzQ(e.target.value)} style={{ flex: 1, minWidth: 160 }} />}</div>
+          {dzErr && <p className="err small" style={{ margin: 0 }}>{dzErr}</p>}
+          {dz && (
+            <>
+              {dz.campaigns.length > 0 && (
+                <div className="stack" style={{ gap: 6 }}>
+                  <span className="sf-l">Campaigns on the dialer — tap yours to show only it:</span>
+                  <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
+                    {dz.campaigns.map((c) => <button key={c} className="chip" style={v.campaigns === c ? { outline: "2px solid var(--accent, #7aa2ff)", fontWeight: 700, cursor: "pointer" } : { cursor: "pointer" }} onClick={() => applyCampaign(c)}>{c} — use this</button>)}
+                  </div>
+                </div>
+              )}
+              <div className="tablewrap">
+                <table><thead><tr><th>Name</th><th>Dialer user</th><th>Campaign</th><th>Group</th><th>Status</th></tr></thead>
+                  <tbody>{dz.agents.filter((a) => { const q = dzQ.toLowerCase(); return !q || (a.name + " " + a.user).toLowerCase().includes(q); }).map((a, i) => (
+                    <tr key={i}><td>{a.name || "—"}</td><td>{a.user}</td><td><b>{a.campaign || "—"}</b></td><td>{a.group || "—"}</td><td className="muted small">{a.status}</td></tr>
+                  ))}</tbody>
+                </table>
+              </div>
+              <p className="muted small" style={{ margin: 0 }}>{dz.count} agent(s) live on the dialer.</p>
+            </>
+          )}
         </section>
       )}
 
