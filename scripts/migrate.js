@@ -216,5 +216,15 @@ const CORE = [
     [require("crypto").randomUUID(), demoHash]
   );
   console.log("Demo agent ready: DEMO / demo1234");
+  // A ready supervisor login with the recommended access preset. Login: SUP1 / budgetease123.
+  const supHash = await bcrypt.hash("budgetease123", 10);
+  const supAccess = JSON.stringify(["sales", "quality", "recordings", "attendance", "whereabouts", "breaks", "chat", "reports", "agents"]);
+  await pool.query(
+    `INSERT INTO "User" ("id","agentId","passwordHash","role","name","active","supAccess")
+     VALUES ($1,'SUP1',$2,'SUPERVISOR','Supervisor',true,$3)
+     ON CONFLICT ("agentId") DO UPDATE SET "passwordHash"=EXCLUDED."passwordHash", "role"='SUPERVISOR', "active"=true, "supAccess"=EXCLUDED."supAccess"`,
+    [require("crypto").randomUUID(), supHash, supAccess]
+  );
+  console.log("Supervisor ready: SUP1 / budgetease123");
   await pool.end();
 })().catch((e) => { console.error(e.message); process.exit(1); });

@@ -9,6 +9,8 @@ import { SECTIONS } from "@/lib/supaccess";
 
 const EMPTY = { name: "", loginId: "", password: "", email: "", departmentId: "", role: "ADMIN", supAccess: [] };
 const roleLabel = (r) => (r === "ADMIN" ? "Admin" : r === "SUPERVISOR" ? "Supervisor" : "Agent");
+// Recommended floor-supervisor access: watch the team & calls, not the money/settings.
+const PRESET = ["sales", "quality", "recordings", "attendance", "whereabouts", "breaks", "chat", "reports", "agents"];
 
 export default function Users() {
   const { me } = useShell();
@@ -30,7 +32,7 @@ export default function Users() {
         <h2><UserPlus size={17} /> Create a login</h2>
         <p className="muted small" style={{ margin: 0 }}>Admins can do everything. Supervisors get only the sections you tick below. To add agents, use <Link href="/admin/agents">Team → Agents</Link>.</p>
         <div className="form">
-          <label>Role<select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })}><option value="ADMIN">Admin (full access)</option><option value="SUPERVISOR">Supervisor (limited)</option></select></label>
+          <label>Role<select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value, supAccess: e.target.value === "SUPERVISOR" && !f.supAccess.length ? PRESET : f.supAccess })}><option value="ADMIN">Admin (full access)</option><option value="SUPERVISOR">Supervisor (limited)</option></select></label>
           <label>Full name<input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required /></label>
           <label>Login ID<input value={f.loginId} onChange={(e) => setF({ ...f, loginId: e.target.value.toUpperCase() })} placeholder="e.g. SUP1" required /></label>
           <label>Password (8+ characters)<input type="text" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} required minLength={8} autoComplete="new-password" /></label>
@@ -40,7 +42,7 @@ export default function Users() {
         {f.role === "SUPERVISOR" && (
           <div className="stack" style={{ gap: 6 }}>
             <div className="row" style={{ justifyContent: "space-between" }}><b>What this supervisor can open</b>
-              <div className="row" style={{ gap: 6 }}><button type="button" className="ghost sm" onClick={() => setF({ ...f, supAccess: SECTIONS.map((s) => s.key) })}>All</button><button type="button" className="ghost sm" onClick={() => setF({ ...f, supAccess: [] })}>None</button></div></div>
+              <div className="row" style={{ gap: 6 }}><button type="button" className="ghost sm" onClick={() => setF({ ...f, supAccess: PRESET })}>Recommended preset</button><button type="button" className="ghost sm" onClick={() => setF({ ...f, supAccess: SECTIONS.map((s) => s.key) })}>All</button><button type="button" className="ghost sm" onClick={() => setF({ ...f, supAccess: [] })}>None</button></div></div>
             <div className="sup-grid">{SECTIONS.map((s) => (
               <label key={s.key} className="sup-check"><input type="checkbox" checked={f.supAccess.includes(s.key)} onChange={() => toggleSec(s.key)} /> {s.label}</label>
             ))}</div>
