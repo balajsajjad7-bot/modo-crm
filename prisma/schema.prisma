@@ -500,3 +500,23 @@ model ShiftEndRequest {
   @@index([userId, createdAt])
   @@index([status])
 }
+
+// Manual QA an admin marks on a VICIdial call recording (listen + score)
+model RecordingQa {
+  id         String   @id @default(cuid())
+  recId      String   @unique
+  agentUser  String?
+  callDate   String?
+  phone      String?
+  url        String?
+  score      Int      @default(0)
+  checklist  String   @default("{}")
+  notes      String?
+  outcome    String?
+  reviewedBy String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([callDate])
+  @@index([agentUser])
+}
