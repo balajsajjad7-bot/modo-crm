@@ -34,6 +34,7 @@ export default function AdminLayout({ children }) {
     { label: "Team", icon: i(UsersRound), children: [
       { href: "/admin/attendance", label: "Attendance", hint: "Who's in, office or remote, auto clock-in/out", icon: i(Fingerprint) },
       { href: "/admin/whereabouts", label: "Whereabouts", hint: "Live map of who's at the office; leave/return alerts", icon: i(MapPin) },
+      { href: "/admin/notepads", label: "Agent notepads", hint: "Every agent's personal notepad, read-only", icon: i(NotebookPen) },
       { href: "/admin/agents", label: "Agents", hint: "Add, edit, call and manage agents", icon: i(Users) },
       { href: "/admin/shifts", label: "Shifts", hint: "Edit everyone's shift times; automatic clock-out at shift end", icon: i(CalendarClock) },
       { href: "/admin/breaks", label: "Break report", hint: "Every break, per agent per day", icon: i(Coffee) },
