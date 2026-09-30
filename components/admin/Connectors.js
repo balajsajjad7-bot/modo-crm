@@ -10,9 +10,18 @@ const LOOKUP_PRESETS = [
   { name: "Phone carrier (NumVerify)", url: "http://apilayer.net/api/validate?access_key={key}&number=1{q}", hint: "10-digit phone", get: "Free key: numverify.com" },
   { name: "Phone check (Abstract)", url: "https://phonevalidation.abstractapi.com/v1/?api_key={key}&phone=1{q}", hint: "10-digit phone", get: "Free key: abstractapi.com" },
   { name: "Email verifier (Hunter)", url: "https://api.hunter.io/v2/email-verifier?email={q}&api_key={key}", hint: "email address", get: "Free key: hunter.io" },
+  { name: "Email check (Abstract)", url: "https://emailvalidation.abstractapi.com/v1/?api_key={key}&email={q}", hint: "email address", get: "Free key: abstractapi.com" },
+  { name: "ZIP → city/state (Zippopotam)", url: "https://api.zippopotam.us/us/{q}", hint: "5-digit ZIP", get: "No key needed — leave key blank" },
+  { name: "Address autocomplete (Geoapify)", url: "https://api.geoapify.com/v1/geocode/search?text={q}&format=json&apiKey={key}", hint: "any address", get: "Free key: geoapify.com" },
+  { name: "IP location", url: "https://ipapi.co/{q}/json/", hint: "an IP address", get: "No key needed — leave key blank" },
+  { name: "Company by name (OpenCorporates)", url: "https://api.opencorporates.com/v0.4/companies/search?q={q}&api_token={key}", hint: "company name", get: "Free token: opencorporates.com/api_accounts/new" },
+  { name: "Business EIN (US)", url: "https://api.thecompaniesapi.com/v1/companies?search={q}&token={key}", hint: "company name", get: "Free key: thecompaniesapi.com" },
+  { name: "Currency rate", url: "https://api.exchangerate.host/convert?from=USD&to={q}", hint: "currency code e.g. EUR", get: "No key needed — leave key blank" },
+  { name: "Bank by routing number", url: "https://www.routingnumbers.info/api/data.json?rn={q}", hint: "9-digit routing number", get: "No key needed — leave key blank" },
+  { name: "Weather at a place", url: "https://api.openweathermap.org/data/2.5/weather?q={q}&appid={key}&units=imperial", hint: "city name", get: "Free key: openweathermap.org/api" },
 ];
-const ICON = { lookup: "🔎", smtp: "✉️", slack: "💬", discord: "🎮", sheets: "📊", webhook: "🔗", ai: "✨", vicidial: "☎️", turn: "🎧" };
-const FIELD = { campaigns: "Your campaign(s) — only these agents show (comma-separated, e.g. BUDGET,VERIZON)", userGroups: "Or your user group(s) (comma-separated) — leave blank to use campaigns", agentUrl: "Agent screen URL (optional, default …/agc/vicidial.php)", dispositions: "Dispositions for the Modo dialer, e.g. SALE:Sale, NI:Not interested, CALLBK:Callback, NA:No answer, DNC:Do not call", pauseCodes: "Pause codes, e.g. BREAK:Break, LUNCH:Lunch, TRAIN:Training", monitorPhone: "Your phone login for listening (e.g. 350a)", serverIp: "Dialer server IP (only if listening says it needs it)", proxy: "Proxy for the dialer (optional) — if your host firewalls Modo, put a fixed-IP proxy here (http://user:pass@host:port) and whitelist that IP with your dialer host", header: "Key header name (optional, e.g. x-api-key)", hint: "What to type (shown to agents)", host: "SMTP host", port: "Port (465 or 587)", fromName: "From name", fromEmail: "From email", url: "URL", secret: "Secret (optional, sent as x-modo-secret header)", apiKey: "API key", provider: "Provider", model: "Model (optional)", user: "Username", pass: "Password" };
+const ICON = { lookup: "🔎", smtp: "✉️", slack: "💬", discord: "🎮", teams: "🟣", googlechat: "💠", mattermost: "🟦", rocketchat: "🚀", telegram: "✈️", ntfy: "🔔", pushover: "📲", twilio: "📱", whatsapp: "🟢", sms: "📨", sheets: "📊", webhook: "🔗", ai: "✨", vicidial: "☎️", turn: "🎧" };
+const FIELD = { campaigns: "Your campaign(s) — only these agents show (comma-separated, e.g. BUDGET,VERIZON)", userGroups: "Or your user group(s) (comma-separated) — leave blank to use campaigns", agentUrl: "Agent screen URL (optional, default …/agc/vicidial.php)", dispositions: "Dispositions for the Modo dialer, e.g. SALE:Sale, NI:Not interested, CALLBK:Callback, NA:No answer, DNC:Do not call", pauseCodes: "Pause codes, e.g. BREAK:Break, LUNCH:Lunch, TRAIN:Training", monitorPhone: "Your phone login for listening (e.g. 350a)", serverIp: "Dialer server IP (only if listening says it needs it)", proxy: "Proxy for the dialer (optional) — if your host firewalls Modo, put a fixed-IP proxy here (http://user:pass@host:port) and whitelist that IP with your dialer host", header: "Key header name (optional, e.g. x-api-key)", hint: "What to type (shown to agents)", host: "SMTP host", port: "Port (465 or 587)", fromName: "From name", fromEmail: "From email", url: "URL", secret: "Secret (optional, sent as x-modo-secret header)", apiKey: "API key", provider: "Provider", model: "Model (optional)", baseUrl: "Base URL (only for Ollama / custom / OpenAI-compatible — leave blank for the rest)", user: "Username", pass: "Password", token: "Token", chatId: "Chat ID", userKey: "User key", sid: "Account SID", from: "From number (e.g. +1…)", to: "To number (e.g. +1…)", phoneId: "Phone-number ID", template: "Template name (optional, default hello_world)" };
 
 export default function Connectors() {
   const [data, setData] = useState(null); const [adding, setAdding] = useState(null); const [editing, setEditing] = useState(null); const [msg, setMsg] = useState({});
@@ -29,13 +38,21 @@ export default function Connectors() {
       <section className="panel stack">
         <div className="row" style={{ justifyContent: "space-between" }}><h2>Add a connector</h2></div>
         <p className="muted small" style={{ margin: 0 }}>Send CRM events to Slack, Discord, Google Sheets, Zapier or Make, or set up your AI key, VICIdial and call relay here instead of the .env file.</p>
-        <div className="conn-grid">
-          {Object.entries(data.types).map(([k, t]) => (
+        {(() => {
+          const entries = Object.entries(data.types);
+          const groups = [...new Set(entries.map(([, t]) => t.group || "Other"))];
+          const tile = (k, t) => (
             <button key={k} className="conn-tile" onClick={() => setAdding({ type: k, name: k === "ai" ? "Groq" : t.label, config: k === "ai" ? { provider: "groq", model: "openai/gpt-oss-120b" } : {}, events: t.events ? Object.keys(data.events) : [] })}>
               <span className="conn-ico">{ICON[k]}</span><b>{t.label}</b><span className="muted small">{t.hint}</span><span className="conn-add"><Plus size={14} /> Add</span>
             </button>
-          ))}
-        </div>
+          );
+          return groups.map((g) => (
+            <div key={g} className="stack" style={{ gap: 8 }}>
+              <span className="sf-l" style={{ opacity: 0.7 }}>{g}</span>
+              <div className="conn-grid">{entries.filter(([, t]) => (t.group || "Other") === g).map(([k, t]) => tile(k, t))}</div>
+            </div>
+          ));
+        })()}
       </section>
 
       {adding && <Editor title={`Add ${data.types[adding.type].label}`} value={adding} types={data.types} events={data.events} onClose={() => setAdding(null)}
@@ -81,14 +98,35 @@ function Editor({ title, value, types, events, onClose, onSave }) {
         {t.fields.map((f) => f === "secure"
           ? <label key={f}>Security<select value={v.config.secure ?? "true"} onChange={(e) => setCfg("secure", e.target.value)}><option value="true">SSL/TLS (port 465)</option><option value="false">STARTTLS (port 587)</option></select></label>
           : f === "provider"
-          ? <label key={f}>{FIELD[f]}<select value={v.config.provider || "gemini"} onChange={(e) => setCfg("provider", e.target.value)}><option value="groq">Groq (free tier, fastest)</option><option value="gemini">Google Gemini (free tier)</option><option value="anthropic">Anthropic Claude</option></select></label>
+          ? <label key={f}>{FIELD[f]}<select value={v.config.provider || "groq"} onChange={(e) => setCfg("provider", e.target.value)}>
+              <option value="groq">Groq (free tier, fastest)</option>
+              <option value="gemini">Google Gemini (free tier)</option>
+              <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+              <option value="anthropic">Anthropic Claude</option>
+              <option value="openrouter">OpenRouter (any model, one key)</option>
+              <option value="deepseek">DeepSeek (very cheap)</option>
+              <option value="mistral">Mistral</option>
+              <option value="xai">xAI · Grok</option>
+              <option value="together">Together AI</option>
+              <option value="ollama">Ollama (runs on your PC, no key)</option>
+              <option value="custom">Custom (any OpenAI-compatible URL)</option>
+            </select></label>
           : <label key={f}>{FIELD[f]}<input type={["pass", "apiKey", "secret"].includes(f) ? "password" : "text"} value={v.config[f] || ""} placeholder={String(v.config[f] || "").startsWith("••••") ? "Leave as is to keep" : ""} onChange={(e) => setCfg(f, e.target.value)} autoComplete="off" /></label>)}
       </div>
       {v.type === "ai" && (
-        <p className="muted small" style={{ margin: 0 }}>{(v.config.provider || "groq") === "groq"
-          ? <>Get a free key at <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer">console.groq.com/keys</a> (starts with <code>gsk_</code>). Model: <code>openai/gpt-oss-120b</code> (smartest) or <code>openai/gpt-oss-20b</code> (fastest). Groq changes models often; if one is retired, <b>Test</b> switches to a working one automatically.</>
-          : (v.config.provider === "gemini") ? <>Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a>. Model: <code>gemini-2.5-flash</code>.</>
-          : <>Get a key at console.anthropic.com. Put the model name from your Anthropic account.</>}
+        <p className="muted small" style={{ margin: 0 }}>{(() => { const p = v.config.provider || "groq"; return (
+          p === "groq" ? <>Free key at <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer">console.groq.com/keys</a> (<code>gsk_</code>). Model: <code>openai/gpt-oss-120b</code> (smartest) or <code>openai/gpt-oss-20b</code> (fastest). If a model is retired, <b>Test</b> auto-switches.</>
+          : p === "gemini" ? <>Free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a>. Model: <code>gemini-2.5-flash</code>.</>
+          : p === "openai" ? <>Key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">platform.openai.com</a>. Model: <code>gpt-4o-mini</code> (cheap) or <code>gpt-4o</code>.</>
+          : p === "anthropic" ? <>Key at console.anthropic.com. Use a model name from your account, e.g. <code>claude-sonnet-4-5</code>.</>
+          : p === "openrouter" ? <>Key at <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">openrouter.ai/keys</a>. Any model, e.g. <code>openai/gpt-4o-mini</code>, <code>anthropic/claude-3.5-sonnet</code>.</>
+          : p === "deepseek" ? <>Key at <a href="https://platform.deepseek.com" target="_blank" rel="noreferrer">platform.deepseek.com</a>. Model: <code>deepseek-chat</code>.</>
+          : p === "mistral" ? <>Key at <a href="https://console.mistral.ai" target="_blank" rel="noreferrer">console.mistral.ai</a>. Model: <code>mistral-small-latest</code>.</>
+          : p === "xai" ? <>Key at <a href="https://console.x.ai" target="_blank" rel="noreferrer">console.x.ai</a>. Model: <code>grok-2-latest</code>.</>
+          : p === "together" ? <>Key at <a href="https://api.together.ai" target="_blank" rel="noreferrer">api.together.ai</a>. Pick any model from their list.</>
+          : p === "ollama" ? <>Runs on your own PC — no key needed. Install <a href="https://ollama.com" target="_blank" rel="noreferrer">ollama.com</a>, run <code>ollama pull llama3.1</code>, set Base URL to <code>http://localhost:11434/v1</code> and Model to <code>llama3.1</code>.</>
+          : <>Custom: paste any OpenAI-compatible <b>Base URL</b> (ending in <code>/v1</code>), the key if it needs one, and the model name.</>
+        ); })()}
           {" "}Press <b>Test</b> after saving. Only one AI connector is used: the newest one that's turned on.</p>
       )}
       {v.type === "lookup" && (
