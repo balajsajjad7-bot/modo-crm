@@ -17,6 +17,7 @@ export default function Floor() {
   const [sess] = usePoll("/api/sessions", 3000);
   const [pres] = usePoll("/api/presence", 15000);
   const [vici, reloadVici] = usePoll("/api/vicidial", 10000);
+  const [recs] = usePoll("/api/vicidial/recordings", 60000);
   const [board] = usePoll("/api/leaderboard", 20000);
   const [brief, setBrief] = useState(null); const [briefing, setBriefing] = useState(false);
   const [listening, setListening] = useState([]); const [mutedIds, setMutedIds] = useState({});
@@ -24,6 +25,8 @@ export default function Floor() {
   const viciListen = async (body) => { setPhoneMsg({ busy: true, text: "Asking VICIdial to ring your phone…" }); const r = await api("/api/vicidial/monitor", "POST", body); setPhoneMsg(r.ok ? { text: r.data.message } : { err: r.data.error }); };
   const listen = (id) => { setListening((l) => (l.includes(id) ? l : [...l, id])); setMutedIds((m) => Object.fromEntries([...Object.keys(m).map((k) => [k, true]), [id, false]])); }; // newest one is heard, others muted
   const all = sess.data || []; const live = all.filter((s) => !s.endedAt); const done = all.filter((s) => s.endedAt);
+  const viciConnected = vici.data && !vici.error && (vici.data.provider === "vicidial" || vici.data.agents);
+  const viciCalls = (recs.data?.rows || []); // real finished calls from the dialer (recordings)
   const p = pres.data || []; const count = (st) => p.filter((x) => st.includes(x.status)).length;
   async function getBrief() { setBriefing(true); const r = await api("/api/floor-ai", "POST"); setBriefing(false); setBrief(r.ok ? r.data.text : r.data.error || "AI couldn't summarise right now."); }
 
@@ -122,8 +125,12 @@ export default function Floor() {
       </div>
 
       <section className="panel stack">
-        <h2><History size={17} /> Recent calls</h2>
-        {!done.length ? <p className="muted">No finished calls in the last 12 hours.</p> : (
+        <div className="row" style={{ justifyContent: "space-between" }}>
+          <h2><History size={17} /> Recent calls</h2>
+          {viciConnected && <Link className="ghost sm" href="/admin/recordings">All recordings</Link>}
+        </div>
+        {done.length ? (
+          // Calls that ran through Modo's own dialer (with AI transcript/score)
           <div className="tablewrap"><table>
             <thead><tr><th>Agent</th><th>When</th><th>Length</th><th>What happened</th><th>Confused</th><th>Ended by</th><th className="r">Score</th></tr></thead>
             <tbody>{done.slice(0, 30).map((s) => (
@@ -137,7 +144,30 @@ export default function Floor() {
               </tr>
             ))}</tbody>
           </table></div>
-        )}
+        ) : viciCalls.length ? (
+          // No Modo-tracked calls, but the dialer has real recordings today — show those with playback
+          <>
+            <p className="muted small" style={{ margin: "0 0 6px" }}>Straight from the dialer — your agents dial in VICIdial, so these are their recorded calls.</p>
+            <div className="tablewrap"><table>
+              <thead><tr><th>Agent</th><th>When</th><th>Length</th><th>Number</th><th>Play</th></tr></thead>
+              <tbody>{viciCalls.slice(0, 30).map((r, i) => (
+                <tr key={r.id || r.url || i}>
+                  <td>{r.agent || "—"}</td>
+                  <td className="small muted">{r.start ? new Date(isNaN(+r.start) ? r.start : +r.start * 1000).toLocaleString([], { hour: "numeric", minute: "2-digit", month: "short", day: "numeric" }) : "—"}</td>
+                  <td className="small">{r.seconds ? dur(r.seconds) : "—"}</td>
+                  <td className="small num">{r.phone || (r.leadId ? "lead " + r.leadId : "—")}</td>
+                  <td><audio controls preload="none" src={r.url} style={{ height: 30, maxWidth: 220 }} /></td>
+                </tr>
+              ))}</tbody>
+            </table></div>
+          </>
+        ) : viciConnected ? (
+          <p className="muted small" style={{ margin: 0 }}>
+            No recorded calls came back from the dialer for today. Your agents are dialing inside VICIdial (see the counts above),
+            so calls only show here if <b>recording is on</b> for their campaign (VICIdial → Admin → Campaigns → <i>Recording = ALLCALLS</i>)
+            and the API user has <i>View Reports</i> access. Live listening works regardless.
+          </p>
+        ) : <p className="muted">No finished calls in the last 12 hours.</p>}
       </section>
     </div>
   );

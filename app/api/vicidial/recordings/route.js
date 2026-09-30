@@ -8,7 +8,9 @@ export async function GET(req) {
   const { error } = await requireManager("recordings");
   if (error) return error;
   const q = new URL(req.url).searchParams;
-  const date = q.get("date"); const agent = q.get("agent"); const phone = q.get("phone"); const lead = q.get("lead");
+  const phone = q.get("phone"); const lead = q.get("lead"); const agent = q.get("agent");
+  // Default to today (dialer's own day) when the caller doesn't specify one, so the Overview "Recent calls" panel finds them.
+  const date = q.get("date") || (phone || lead ? null : new Date().toISOString().slice(0, 10));
   try {
     let rows = [];
     if (agent || phone || lead) {
