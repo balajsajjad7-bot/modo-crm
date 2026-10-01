@@ -38,7 +38,8 @@ export async function startSending(id, streams, onEnded) {
 
 // Admin side: receive and hand back each stream labelled "agent" / "customer".
 // `target` is a callSessionId string (live call) or { agentId } to listen to the agent's mic off-call.
-export async function startListening(target, onStream, onEnded) {
+// onState(state) reports the WebRTC connection state ("connecting" | "connected" | "failed" | …).
+export async function startListening(target, onStream, onEnded, onState) {
   const body = typeof target === "string" ? { callSessionId: target } : target;
   const r = await post("/api/listen", body);
   if (!r.id) throw new Error(r.error || "Couldn't start listening.");
@@ -48,6 +49,7 @@ export async function startListening(target, onStream, onEnded) {
     pc = new RTCPeerConnection({ iceServers: await ice() });
     pc.onicecandidate = (e) => e.candidate && post("/api/listen/signal", { id, type: "ice", payload: e.candidate.toJSON() });
     pc.ontrack = (e) => { const st = e.streams[0]; if (st) onStream(meta[st.id] || "agent", st); };
+    pc.onconnectionstatechange = () => onState?.(pc.connectionState);
     return pc;
   };
   const stopLoop = loop(id, async (s) => {

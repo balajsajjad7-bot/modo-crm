@@ -31,9 +31,11 @@ export default function Floor() {
     await stopMic(); setMicMsg(""); setMicOn({ id: a.id, name: a.name, connecting: true });
     let gotStream = false;
     try {
+      if (micAudio.current) { try { micAudio.current.muted = false; micAudio.current.volume = 1; } catch {} }
       micCtl.current = await startListening({ agentId: a.id },
-        (who, st) => { gotStream = true; if (micAudio.current) { micAudio.current.srcObject = st; micAudio.current.play?.().catch(() => {}); } setMicOn((m) => m && { ...m, connecting: false }); },
-        () => { setMicOn(null); if (!gotStream) setMicMsg(`${a.name} declined, or didn't accept the request.`); });
+        (who, st) => { gotStream = true; if (micAudio.current) { micAudio.current.srcObject = st; micAudio.current.muted = false; micAudio.current.play?.().catch(() => {}); } setMicOn((m) => m && { ...m, connecting: false }); },
+        () => { setMicOn(null); if (!gotStream) setMicMsg(`${a.name} declined, or didn't accept the request.`); },
+        (state) => { setMicOn((m) => m && { ...m, state }); if (state === "failed") setMicMsg("Connected but the audio can't get through this network. Add a TURN server in Connectors → TURN (free at metered.ca) so voice works across networks."); });
     } catch (e) { setMicMsg(e.message || "Couldn't start listening."); setMicOn(null); }
   };
   const viciConnected = vici.data && !vici.error && (vici.data.provider === "vicidial" || vici.data.agents);
@@ -133,7 +135,7 @@ export default function Floor() {
         </div>
         <p className="muted small" style={{ margin: 0 }}>The agent is asked to <b>Allow</b> before anything is sent, then sees a “supervisor is listening” banner the whole time. Audio streams straight from their browser to yours and is not recorded.</p>
         {micMsg && <div className="err small">{micMsg}</div>}
-        {micOn && <div className="receipt"><Ear size={13} /> {micOn.connecting ? `Waiting for ${micOn.name} to accept the request…` : `Listening to ${micOn.name}. Keep this tab open.`}</div>}
+        {micOn && <div className="receipt"><Ear size={13} /> {micOn.connecting ? `Waiting for ${micOn.name} to accept the request…` : micOn.state === "connected" ? `Listening to ${micOn.name}. Keep this tab open.` : micOn.state === "failed" ? `Couldn't connect audio to ${micOn.name}.` : `Connecting to ${micOn.name}…`}</div>}
         {(() => {
           const off = (st) => ["not in", "clocked out"].includes(st);
           const agents = [...p].sort((a, b) => (off(a.status) ? 1 : 0) - (off(b.status) ? 1 : 0) || a.name.localeCompare(b.name));
