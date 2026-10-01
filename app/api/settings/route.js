@@ -10,7 +10,16 @@ export async function GET() {
   const s = await currentUser();
   if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   const st = await getSettings();
-  if (s.role !== "ADMIN") return NextResponse.json({ currency: st.currency, discountRates: st.discountRates, creatorName: st.creatorName, switchOn: !!st.switchHash, quickLinks: st.quickLinks });
+  if (s.role !== "ADMIN") {
+    // Agents never get "pay a bill" links — strip them before sending.
+    let ql = st.quickLinks;
+    try {
+      const arr = JSON.parse(st.quickLinks || "[]");
+      const isPay = (l) => /\bpay\b|pay-?bill|bill-?pay|payment|\/bill|billing|quick-?pay|doxo/i.test(((l.label || "") + " " + (l.url || "")));
+      ql = JSON.stringify((Array.isArray(arr) ? arr : []).filter((l) => !isPay(l)));
+    } catch {}
+    return NextResponse.json({ currency: st.currency, discountRates: st.discountRates, creatorName: st.creatorName, switchOn: !!st.switchHash, quickLinks: ql });
+  }
   const { switchHash, ...safe } = st; // never send the passphrase hash to the browser
   return NextResponse.json({ ...safe, switchSet: !!switchHash, yourIp: clientIp() });
 }

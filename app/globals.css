@@ -1488,3 +1488,10 @@ body:has(.mic-banner) .chat-fab{bottom:calc(60px + env(safe-area-inset-bottom,0p
 .listen-ask-bg{position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
 .listen-ask{max-width:380px;width:100%;border:1px solid var(--accent)}
 .la-ico{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);flex-shrink:0}
+
+/* ── Quick links grid (search & click) ── */
+.ql-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ql-tile{display:flex;flex-direction:column;gap:6px;padding:12px 13px;border-radius:14px;border:1px solid var(--border);background:var(--card);text-decoration:none;color:var(--foreground);transition:border-color .18s,transform .15s,background .18s}
+.ql-tile:hover{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-1px)}
+.ql-label{font-weight:600;font-size:13.5px;line-height:1.25}
+.ql-host{color:var(--muted-fg);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

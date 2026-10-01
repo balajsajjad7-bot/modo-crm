@@ -1,8 +1,20 @@
 "use client";
 // USA lookups: free built-ins (ZIP, address, phone, email, time) + any API admin adds in Connectors.
 import { useEffect, useState } from "react";
-import { MapPin, Home, Phone, Mail, Clock, Search, Plug, Copy, ExternalLink, Building, Ruler, CloudSun, CalendarDays } from "lucide-react";
+import { MapPin, Home, Phone, Mail, Clock, Search, Plug, Copy, ExternalLink, Building, Ruler, CloudSun, CalendarDays, CreditCard, PackageSearch, UserRound, Link2 } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
+
+// Group a quick link by what it's for (used for the grid + to keep "pay a bill" admin-only).
+function linkCategory(l) {
+  const s = ((l.label || "") + " " + (l.url || "")).toLowerCase();
+  if (/\bpay\b|pay-?bill|bill-?pay|payment|\/bill|billing|quick-?pay|doxo/.test(s)) return "pay";
+  if (/track|order-?status|orderstatus|\/orders|purchase|shipment|package|transfer/.test(s)) return "track";
+  if (/sign-?in|signin|my-?account|\baccount\b|login|profile/.test(s)) return "account";
+  return "other";
+}
+const CAT_META = { pay: { label: "Pay a bill", icon: CreditCard }, account: { label: "Carrier accounts", icon: UserRound }, track: { label: "Track an order or package", icon: PackageSearch }, other: { label: "Other links", icon: Link2 } };
+const CAT_ORDER = ["pay", "account", "track", "other"];
 
 const BUILT = [
   { id: "phone", name: "Phone number", icon: Phone, hint: "10-digit US number", ph: "(512) 555-0142", desc: "Format, area code state, time zone and whether it's OK to call now" },
@@ -21,8 +33,9 @@ export default function Lookups({ compact = false, preset = null }) {
   useEffect(() => { if (preset?.q) { setTool(preset.tool || "phone"); setQ(preset.q); run(null, { tool: preset.tool || "phone", q: preset.q }); } }, [preset?.q, preset?.tool]); // eslint-disable-line
   const [res, setRes] = useState(null); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [history, setHistory] = useState([]);
   useEffect(() => { const h = (e) => { setTool(e.detail.tool); setQ(e.detail.q); run(null, e.detail); }; window.addEventListener("modo-lookup", h); return () => window.removeEventListener("modo-lookup", h); }); // eslint-disable-line
-  const [links, setLinks] = useState([]);
+  const [links, setLinks] = useState([]); const [linkQ, setLinkQ] = useState(""); const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => { fetch("/api/lookup?type=list").then((r) => r.json()).then((d) => Array.isArray(d) && setCustom(d)).catch(() => {}); try { setHistory(JSON.parse(localStorage.getItem("modo-lookups") || "[]")); } catch {}
+    fetch("/api/me").then((r) => r.json()).then((m) => setIsAdmin(m?.role === "ADMIN")).catch(() => {});
     fetch("/api/settings").then((r) => r.json()).then((d) => { let q = []; try { q = JSON.parse(d.quickLinks || "[]"); } catch {} setLinks(Array.isArray(q) ? q : []); }).catch(() => {}); }, []);
   const all = [...BUILT, ...custom.map((c) => ({ id: c.id, name: c.name, icon: Plug, hint: c.hint || "Search", ph: c.hint || "", desc: c.id.startsWith("u:") ? "Your lookup" : "Your API" }))];
   const cur = all.find((t) => t.id === tool) || all[0];
@@ -71,13 +84,38 @@ export default function Lookups({ compact = false, preset = null }) {
             <div className="row" style={{ gap: 6 }}>{history.map((h, i) => <button key={i} className="ghost sm" onClick={() => { setTool(h.tool); setQ(h.q); run(null, h); }}>{all.find((t) => t.id === h.tool)?.name || "Lookup"}: {h.q}</button>)}</div>
           </section>
         )}
-        {links.length > 0 && (
-          <section className="panel stack">
-            <h2 style={{ fontSize: 15 }}><ExternalLink size={15} /> Quick links</h2>
-            <p className="muted small" style={{ margin: 0 }}>Open a carrier portal or tracker in a new tab (use your VPN if the site needs a US location).</p>
-            <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>{links.map((l, i) => <a key={i} className="btn-link" href={l.url} target="_blank" rel="noreferrer"><ExternalLink size={13} /> {l.label || hostOf(l.url)}</a>)}</div>
-          </section>
-        )}
+        {links.length > 0 && (() => {
+          // Agents never see "pay a bill" links — admin only.
+          const visible = links.filter((l) => isAdmin || linkCategory(l) !== "pay");
+          const s = linkQ.trim().toLowerCase();
+          const filtered = s ? visible.filter((l) => ((l.label || "") + " " + (l.url || "")).toLowerCase().includes(s)) : visible;
+          const groups = CAT_ORDER.filter((g) => filtered.some((l) => linkCategory(l) === g));
+          if (!visible.length) return null;
+          return (
+            <section className="panel stack">
+              <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                <h2 style={{ fontSize: 15 }}><ExternalLink size={15} /> Quick links</h2>
+                <label className="sl-search" style={{ margin: 0, maxWidth: 240, background: "rgba(255,255,255,.06)" }}><Search size={14} /><input placeholder="Search links…" value={linkQ} onChange={(e) => setLinkQ(e.target.value)} /></label>
+              </div>
+              {groups.map((g) => { const M = CAT_META[g]; const Ico = M.icon; return (
+                <div key={g} className="stack" style={{ gap: 8 }}>
+                  <span className="sf-l" style={{ display: "flex", alignItems: "center", gap: 6 }}><Ico size={14} /> {M.label}</span>
+                  <div className="ql-grid">
+                    {filtered.filter((l) => linkCategory(l) === g).map((l, i) => (
+                      <a key={i} className="ql-tile" href={l.url} target="_blank" rel="noreferrer" title={l.url}>
+                        <BrandLogo name={l.label || hostOf(l.url)} size={26} />
+                        <span className="ql-label">{l.label || hostOf(l.url)}</span>
+                        <span className="ql-host">{hostOf(l.url)}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ); })}
+              {!filtered.length && <p className="muted small" style={{ margin: 0 }}>No links match “{linkQ}”.</p>}
+              <p className="muted small" style={{ margin: 0 }}>Opens in a new tab. Some US portals block visitors outside the US — if a site says “access denied”, open it through a US VPN on this device.</p>
+            </section>
+          );
+        })()}
         {!custom.length && <p className="muted small">More lookups (phone carrier, utility providers, internet providers…): admin can add any API in Tools → Connectors → Lookup API, and it shows up here.</p>}
       </div>
     </div>
