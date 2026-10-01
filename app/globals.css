@@ -1495,3 +1495,21 @@ body:has(.mic-banner) .chat-fab{bottom:calc(60px + env(safe-area-inset-bottom,0p
 .ql-tile:hover{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-1px)}
 .ql-label{font-weight:600;font-size:13.5px;line-height:1.25}
 .ql-host{color:var(--muted-fg);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── Top bar: guarantee the nav never overlaps the controls ── */
+/* Center without transform so position:fixed dropdowns are viewport-relative (never clipped by the scroll area) */
+.pillnav{flex-wrap:nowrap;left:0;right:0;transform:none;width:max-content;max-width:calc(100vw - 24px);margin-inline:auto}
+.pn-scroll{flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;scroll-snap-type:none}
+.pn-scroll::-webkit-scrollbar{display:none}
+.pn-logo,.pn-sep,.appear2,.pn-user,.pn-burger{flex-shrink:0}
+/* Dropdowns float (fixed) so the scrolling nav can't clip them and they never push the bar wider */
+.pn-menu{position:fixed;top:64px;left:50%;right:auto;transform:translateX(-50%);min-width:260px;max-width:min(520px,calc(100vw - 16px));max-height:calc(100vh - 90px);overflow:auto;z-index:95}
+.pn-menu.right{left:auto;right:12px;transform:none}
+@media (max-width:820px){.pn-menu,.pn-menu.right{top:70px;left:8px;right:8px;transform:none;max-width:none}}
+/* Appearance toggle inside the mobile menu */
+.pn-sheet-appear{display:flex;justify-content:center;padding:10px 12px 2px}
+.pn-sheet-appear .appear2{margin:0}
+.pn-sheet-appear .appear2 .lbl{display:inline}
+
+/* Keep the mobile nav full-width (desktop max-content centering must not leak here) */
+@media (max-width:820px){ .pillnav{width:auto;left:8px;right:8px;margin:0} }

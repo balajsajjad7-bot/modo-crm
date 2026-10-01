@@ -76,6 +76,7 @@ export default function PillNav({ nav, home, user, userMenu, action }) {
           <div className="pn-sheet" role="menu" aria-label="All options">
             <div className="pn-sheet-user"><span className="sl-avatar" style={{ width: 40, height: 40, background: "var(--grad)", fontSize: 15 }}>{(user.name || "?").split(" ").map((w) => w[0]).slice(0, 2).join("")}</span>
               <div style={{flex:1}}><b>{user.name}</b><span className="sub" style={{ display: "block", color: "var(--muted-fg)", fontSize: 13 }}>{user.sub}</span></div></div>
+            <div className="pn-sheet-appear"><AppearanceToggle /></div>
             <div className="pn-sheet-scroll">
               {nav.map((it) => it.children ? (
                 <div key={it.label} className="pn-sheet-group">
