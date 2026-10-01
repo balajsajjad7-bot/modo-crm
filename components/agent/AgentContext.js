@@ -1,7 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { post, useIdleTracking } from "./sections";
-import EndShiftDialog from "./EndShiftDialog";
 
 const Ctx = createContext(null);
 export const useAgent = () => useContext(Ctx);
@@ -14,15 +13,13 @@ export function AgentProvider({ children }) {
   useEffect(() => { load(); const t = setInterval(() => setNow(Date.now()), 1000); const r = setInterval(load, 60000); return () => { clearInterval(t); clearInterval(r); }; }, [load]);
   useIdleTracking(me?.idleAfter);
   const toggleBreak = async () => { await post("/api/breaks", { action: me?.breaks.open ? "end" : "start" }); await load(); };
-  const [endDlg, setEndDlg] = useState(null); // { leaveCall }
   const finish = async (leaveCall) => { await leaveCall?.(); await post("/api/auth/logout"); location.href = "/"; };
+  // Ending a shift is one simple step — no code or admin approval. (Shifts also end
+  // automatically at shift start + shift hours; see autoCloseStale / shiftEndOut.)
   const endShift = async (leaveCall) => {
-    const st = await fetch("/api/shift-end", { cache: "no-store" }).then((r) => r.json()).catch(() => ({}));
-    if (st.early) { setEndDlg({ leaveCall }); return false; } // shift not over: approval needed
     if (!confirm("End your shift and sign out?")) return false;
-    const r = await post("/api/attendance");
-    if (r.status === 403) { setEndDlg({ leaveCall }); return false; }
+    await post("/api/attendance").catch(() => {});
     await finish(leaveCall); return true;
   };
-  return <Ctx.Provider value={{ me, now, reload: load, toggleBreak, endShift }}>{children}{endDlg && <EndShiftDialog onClose={() => setEndDlg(null)} onDone={() => finish(endDlg.leaveCall)} />}</Ctx.Provider>;
+  return <Ctx.Provider value={{ me, now, reload: load, toggleBreak, endShift }}>{children}</Ctx.Provider>;
 }

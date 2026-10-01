@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { beforeShiftEnd } from "@/lib/shiftEnd";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { resolveShift, rates, breakSeconds } from "@/lib/payroll";
@@ -29,17 +28,13 @@ export async function GET() {
   });
 }
 
-// Agent: clock out (also closes an open break)
+// Agent: clock out (also closes an open break). One tap — no code or admin approval.
 export async function POST() {
   const { session, error } = await requireRole("AGENT");
   if (error) return error;
   const user = await db.user.findUnique({ where: { id: session.uid } });
   const { shiftDate } = resolveShift(user);
   const now = new Date();
-  // Before the shift is over, ending it needs admin's approval code (Menu → End shift → Ask to leave early)
-  const { early } = beforeShiftEnd(user, now);
-  const open = await db.attendance.findFirst({ where: { userId: user.id, shiftDate, clockOut: null } });
-  if (early && open) return NextResponse.json({ needsApproval: true, error: "Your shift isn't over yet. Ask admin to approve leaving early." }, { status: 403 });
   await db.breakLog.updateMany({ where: { userId: user.id, end: null }, data: { end: now } });
   await db.attendance.updateMany({ where: { userId: user.id, shiftDate, clockOut: null }, data: { clockOut: now } });
   return NextResponse.json({ ok: true });
