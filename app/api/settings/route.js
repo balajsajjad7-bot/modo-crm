@@ -18,7 +18,7 @@ export async function GET() {
       const isPay = (l) => /\bpay\b|pay-?bill|bill-?pay|payment|\/bill|billing|quick-?pay|doxo/i.test(((l.label || "") + " " + (l.url || "")));
       ql = JSON.stringify((Array.isArray(arr) ? arr : []).filter((l) => !isPay(l)));
     } catch {}
-    return NextResponse.json({ currency: st.currency, discountRates: st.discountRates, creatorName: st.creatorName, switchOn: !!st.switchHash, quickLinks: ql });
+    return NextResponse.json({ currency: st.currency, discountRates: st.discountRates, creatorName: st.creatorName, switchOn: !!st.switchHash, quickLinks: st.quickLinksOn === false ? "[]" : ql, quickLinksOn: st.quickLinksOn !== false });
   }
   const { switchHash, ...safe } = st; // never send the passphrase hash to the browser
   return NextResponse.json({ ...safe, switchSet: !!switchHash, yourIp: clientIp() });
@@ -76,6 +76,7 @@ export async function PATCH(req) {
   }
   if ("onboardMsg" in b) data.onboardMsg = String(b.onboardMsg || "").slice(0, 5000) || null;
   if ("companyName" in b) data.companyName = String(b.companyName || "").slice(0, 120) || null;
+  if ("quickLinksOn" in b) data.quickLinksOn = !!b.quickLinksOn;
   if ("quickLinks" in b) {
     let arr = b.quickLinks;
     if (typeof arr === "string") { const t = arr.trim(); if (t.startsWith("[")) { try { arr = JSON.parse(t); } catch { arr = arr.split(/\r?\n/); } } else arr = arr.split(/\r?\n/); }

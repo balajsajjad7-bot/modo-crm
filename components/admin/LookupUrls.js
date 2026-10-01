@@ -9,14 +9,15 @@ import LINK_PACK from "@/lib/quicklinks.json";
 
 export default function LookupUrls() {
   const [urls, setUrls] = useState(""); const [proxy, setProxy] = useState(""); const [quick, setQuick] = useState(""); const [loaded, setLoaded] = useState(false);
+  const [linksOn, setLinksOn] = useState(true);
   const [msg, setMsg] = useState(""); const [err, setErr] = useState("");
   const [exit, setExit] = useState(null); const [exitBusy, setExitBusy] = useState(false);
   async function checkExit() { setExitBusy(true); setExit(null); const r = await api("/api/lookup?type=exitip"); setExitBusy(false); setExit(r.ok ? r.data : { error: r.data.error || "Couldn't check." }); }
   useEffect(() => { api("/api/settings").then((r) => { if (!r.ok) return; let a = []; try { a = JSON.parse(r.data.lookupUrls || "[]"); } catch {} setUrls((Array.isArray(a) ? a : []).join("\n")); setProxy(r.data.lookupProxy || "");
-    let q = []; try { q = JSON.parse(r.data.quickLinks || "[]"); } catch {} setQuick((Array.isArray(q) ? q : []).map((x) => x.label ? `${x.label} | ${x.url}` : x.url).join("\n")); setLoaded(true); }); }, []);
+    let q = []; try { q = JSON.parse(r.data.quickLinks || "[]"); } catch {} setQuick((Array.isArray(q) ? q : []).map((x) => x.label ? `${x.label} | ${x.url}` : x.url).join("\n")); setLinksOn(r.data.quickLinksOn !== false); setLoaded(true); }); }, []);
   async function save() {
     setMsg(""); setErr("");
-    const r = await api("/api/settings", "PATCH", { lookupUrls: urls, lookupProxy: proxy, quickLinks: quick });
+    const r = await api("/api/settings", "PATCH", { lookupUrls: urls, lookupProxy: proxy, quickLinks: quick, quickLinksOn: linksOn });
     if (!r.ok) return setErr(r.data.error || "Couldn't save.");
     let a = []; try { a = JSON.parse(r.data.lookupUrls || "[]"); } catch {}
     setUrls((Array.isArray(a) ? a : []).join("\n"));
@@ -41,9 +42,11 @@ export default function LookupUrls() {
           placeholder={"https://example.com/api?number={q}\nhttps://another-free-lookup.com/search/{q}"} />
       </label>
       <div className="row" style={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-        <label style={{ margin: 0 }}>Quick links (open a site in a new tab — carriers, bill pay, order & shipment tracking)</label>
+        <label className="row" style={{ margin: 0, color: "var(--foreground)", gap: 8, flexWrap: "nowrap" }}>Show quick links to everyone
+          <button type="button" role="switch" aria-checked={linksOn} className={"toggle" + (linksOn ? " on" : "")} onClick={() => setLinksOn(!linksOn)}><span /></button></label>
         <button type="button" className="ghost sm" onClick={addPack}><Plus size={13} /> Add built-in link pack ({LINK_PACK.length})</button>
       </div>
+      <label style={{ margin: 0 }}>Quick links (carriers, bill pay, order &amp; shipment tracking)</label>
       <label>
         <textarea style={{ minHeight: 90, fontFamily: "monospace", fontSize: 13 }} value={quick} onChange={(e) => setQuick(e.target.value)}
           placeholder={"Verizon — Track my order | https://www.verizon.com/digital/nsa/nos/ui/orders/trackmyorder/\nAT&T portal | https://www.att.com/..."} />

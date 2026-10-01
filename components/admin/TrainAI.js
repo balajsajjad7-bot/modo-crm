@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { api } from "./api";
 import { Brain, Save, Plus, Trash2, Download, MessageSquare } from "lucide-react";
 
-const FIELDS = [["company", "About the company & products", "Who we are, what we sell, which US states, which providers (Verizon, AT&T, Spectrum…), what Budget Ease is…"],
+const FIELDS = [["company", "About the company", "Who we are, what we do, which US states we cover, what Budget Ease is…"],
+  ["products", "Products & plans we sell", "Every product/plan with what it includes — e.g. Verizon Unlimited Plus (5G, hotspot, 30GB premium), AT&T Fiber 500 (500 Mbps), Spectrum Internet Ultra, Budget Ease utility-bill discount…"],
   ["prices", "Prices, discounts & offers", "e.g. Verizon unlimited: $65/line, 4 lines $35/line. Budget Ease: up to 35% off. Activation fee $49 one-time…"],
   ["script", "Our call script", "Opening, discovery questions, pitch, close, how we confirm a sale…"],
   ["rules", "Rules the AI must always follow", "e.g. Always say 'this call may be recorded'. Never promise a price we don't offer. Never ask for full SSN…"],

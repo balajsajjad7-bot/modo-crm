@@ -2,6 +2,7 @@
 // Shared frame for every signed-in page: the dock, chat badge, incoming-call banner and the call panel.
 // It lives in the layout, so a call keeps going while you move between pages.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import PillNav from "./PillNav";
 import { useHuddle } from "./useHuddle";
@@ -216,7 +217,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
         <div className="bar">
           <div>{current && <><h1>{current.label}</h1>{current.hint && <div className="page-title">{current.hint}</div>}</>}</div>
           <div className="row small muted" style={{ gap: 8 }}>
-            <SearchPalette nav={nav} home={home} role={me?.role} />
+            <ErrorBoundary resetKey={path}><SearchPalette nav={nav} home={home} role={me?.role} /></ErrorBoundary>
             {header && <span>{header}</span>}
             {me?.role === "AGENT" && presence?.attendance && (
               <span className={"chip " + (loc === "office" ? "ok" : loc === "remote" ? "late" : "")}><MapPin size={12} /> {loc === "office" ? "In office" : loc === "remote" ? "Remote" : "Clocked in"}{presence.how ? ` · ${presence.how}` : ""}</span>
@@ -296,14 +297,9 @@ function SearchPalette({ nav, home, role }) {
   }, []);
   useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 30); else setQ(""); }, [open]);
 
-  const go = (r) => { if (!r) return; setOpen(false); router.push(r.href); };
+  const go = (r) => { if (!r) return; setOpen(false); try { router.push(r.href); } catch {} };
 
-  return (
-    <>
-      <button className="search-trigger" onClick={() => setOpen(true)} aria-label="Search Modo">
-        <Search size={14} /> <span className="search-trigger-t">Search</span> <kbd>⌘K</kbd>
-      </button>
-      {open && (
+  const overlay = open && (
         <div className="search-overlay" onClick={() => setOpen(false)}>
           <div className="search-box panel" onClick={(e) => e.stopPropagation()}>
             <div className="search-head">
@@ -330,7 +326,14 @@ function SearchPalette({ nav, home, role }) {
             <div className="search-foot muted small">↑↓ to move · Enter to open · Esc to close</div>
           </div>
         </div>
-      )}
+      );
+
+  return (
+    <>
+      <button className="search-trigger" onClick={() => setOpen(true)} aria-label="Search Modo">
+        <Search size={14} /> <span className="search-trigger-t">Search</span> <kbd>⌘K</kbd>
+      </button>
+      {typeof document !== "undefined" && overlay ? createPortal(overlay, document.body) : null}
     </>
   );
 }

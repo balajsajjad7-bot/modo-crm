@@ -141,6 +141,7 @@ const SQL = [
   `ALTER TABLE "Setting" ADD COLUMN IF NOT EXISTS "onboardMsg" TEXT`,
   `ALTER TABLE "Setting" ADD COLUMN IF NOT EXISTS "companyName" TEXT`,
   `ALTER TABLE "Setting" ADD COLUMN IF NOT EXISTS "quickLinks" TEXT NOT NULL DEFAULT '[]'`,
+  `ALTER TABLE "Setting" ADD COLUMN IF NOT EXISTS "quickLinksOn" BOOLEAN NOT NULL DEFAULT true`,
   `UPDATE "Setting" SET "quickLinks" = '[{"label":"Verizon — Track my order","url":"https://www.verizon.com/digital/nsa/nos/ui/orders/trackmyorder/"}]' WHERE "quickLinks" IS NULL OR "quickLinks" = '[]'`,
   `CREATE TABLE IF NOT EXISTS "PushSub" ("id" TEXT NOT NULL, "userId" TEXT NOT NULL, "endpoint" TEXT NOT NULL, "p256dh" TEXT NOT NULL, "auth" TEXT NOT NULL, "ua" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "PushSub_pkey" PRIMARY KEY ("id"))`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "PushSub_endpoint_key" ON "PushSub"("endpoint")`,

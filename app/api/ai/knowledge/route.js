@@ -18,7 +18,7 @@ export async function PATCH(req) {
     try { return NextResponse.json({ answer: await askAI("You are Modo AI helping a call-center agent. Answer briefly and only with approved company info when it applies.", String(b.tryIt).slice(0, 800), { maxTokens: 500 }) }); }
     catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }); }
   }
-  const k = { enabled: b.enabled !== false, company: String(b.company || "").slice(0, 4000), prices: String(b.prices || "").slice(0, 3000), script: String(b.script || "").slice(0, 4000),
+  const k = { enabled: b.enabled !== false, partners: b.partners !== false, company: String(b.company || "").slice(0, 4000), products: String(b.products || "").slice(0, 4000), prices: String(b.prices || "").slice(0, 3000), script: String(b.script || "").slice(0, 4000),
     objections: (Array.isArray(b.objections) ? b.objections : []).slice(0, 40).map((o) => ({ q: String(o.q || "").slice(0, 200), a: String(o.a || "").slice(0, 600) })), rules: String(b.rules || "").slice(0, 3000), words: String(b.words || "").slice(0, 2000), updatedAt: new Date().toISOString() };
   await db.setting.update({ where: { id: "global" }, data: { aiKnowledge: JSON.stringify(k) } });
   clearKnowledgeCache();
