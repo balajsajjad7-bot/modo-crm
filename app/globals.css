@@ -1537,3 +1537,9 @@ body:has(.mic-banner) .chat-fab{bottom:calc(60px + env(safe-area-inset-bottom,0p
 /* RTL niceties for Urdu/Arabic etc. */
 :root[dir="rtl"] .bar,:root[dir="rtl"] .row{direction:rtl}
 :root[dir="rtl"] .chat-fab{right:auto;left:calc(18px + env(safe-area-inset-left,0px))}
+
+/* ── Quick-pick chips (sale form: gift, storage) ── */
+.chip-pick{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.chip-btn{padding:7px 13px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--foreground);font:600 13px var(--font);cursor:pointer;transition:border-color .15s,background .15s}
+.chip-btn:hover{border-color:var(--accent)}
+.chip-btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}

@@ -6,6 +6,8 @@ import { useShell } from "@/components/Shell";
 import { Send, Wand2, Eraser } from "lucide-react";
 
 const EMPTY = { saleType: "new", campaignId: "", customer: "", phone: "", email: "", address: "", zip: "", orderNumber: "", billBefore: "", discountPct: "", billAfter: "", nextBillDate: "", lines: "", overcharged: "", device: "", deviceColor: "", storage: "", specs: "", gift: "", office: "Islamabad", locationCode: "", closerId: "", notes: "" };
+const GIFT_OPTS = ["Cover", "Screen protector", "Charger", "Earbuds", "Smartwatch", "Gift card", "Free line", "Accessory bundle", "Tablet"];
+const STORAGE_OPTS = ["128 GB", "256 GB", "512 GB", "1 TB"];
 const OFFICES = ["Islamabad", "Karachi", "Lahore", "Rawalpindi", "Other"];
 
 export default function SaleForm({ onDone }) {
@@ -44,6 +46,10 @@ export default function SaleForm({ onDone }) {
   }
   const closerName = people.find((p) => p.id === f.closerId)?.name || me?.name;
   const I = (k, label, props = {}) => <label>{label}<input value={f[k]} onChange={set(k)} {...props} /></label>;
+  // Quick-pick buttons that fill a field. multi = toggle several (comma-joined); single = pick one.
+  const inList = (k, v) => (f[k] || "").split(",").map((s) => s.trim()).includes(v);
+  const toggleWord = (k, v) => { const cur = (f[k] || "").split(",").map((s) => s.trim()).filter(Boolean); const i = cur.indexOf(v); i >= 0 ? cur.splice(i, 1) : cur.push(v); setF({ ...f, [k]: cur.join(", ") }); };
+  const chips = (k, opts, multi) => <div className="chip-pick" role="group">{opts.map((o) => <button key={o} type="button" className={"chip-btn" + ((multi ? inList(k, o) : f[k] === o) ? " on" : "")} onClick={() => (multi ? toggleWord(k, o) : setF({ ...f, [k]: f[k] === o ? "" : o }))}>{o}</button>)}</div>;
 
   return (
     <div className="sale-form-wrap sales-page">
@@ -76,8 +82,9 @@ export default function SaleForm({ onDone }) {
 
         <fieldset><legend>Device</legend><div className="form">
           {I("device", "Device", { placeholder: "e.g. iPhone 16 Pro" })}{I("deviceColor", "Color", { placeholder: "e.g. Desert Titanium" })}
-          {I("storage", "Storage", { placeholder: "e.g. 256 GB" })}{I("specs", "Specifications", { placeholder: "e.g. 5G, eSIM, 6.3\"" })}
-          {I("gift", "Gift", { placeholder: "e.g. Cover + screen protector" })}
+          <label>Storage{chips("storage", STORAGE_OPTS, false)}<input value={f.storage} onChange={set("storage")} placeholder="or type another size" /></label>
+          {I("specs", "Specifications", { placeholder: "e.g. 5G, eSIM, 6.3\"" })}
+          <label style={{ gridColumn: "1/-1" }}>Gift <span className="muted small">tap all that apply</span>{chips("gift", GIFT_OPTS, true)}<input value={f.gift} onChange={set("gift")} placeholder="or type a custom gift" /></label>
         </div></fieldset>
 
         <fieldset><legend>Order</legend><div className="form">
