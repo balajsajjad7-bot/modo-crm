@@ -1527,3 +1527,13 @@ body:has(.mic-banner) .chat-fab{bottom:calc(60px + env(safe-area-inset-bottom,0p
 .quote-card{display:flex;align-items:center;gap:12px;padding:16px 18px}
 .quote-card svg{color:var(--accent);flex-shrink:0}
 .quote-card p{margin:0;font-size:16px;font-weight:500;font-style:italic;line-height:1.4}
+
+/* ── Language picker ── */
+.langpick{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted-fg);flex-shrink:0}
+.langpick select{background:none;border:none;color:var(--foreground);font:600 13px var(--font);outline:none;cursor:pointer;max-width:140px}
+.langpick select option{background:var(--card-solid);color:var(--foreground)}
+.pn-sheet-appear .langpick{width:100%;justify-content:center}
+.pn-sheet-appear .langpick select{max-width:none;flex:1}
+/* RTL niceties for Urdu/Arabic etc. */
+:root[dir="rtl"] .bar,:root[dir="rtl"] .row{direction:rtl}
+:root[dir="rtl"] .chat-fab{right:auto;left:calc(18px + env(safe-area-inset-left,0px))}

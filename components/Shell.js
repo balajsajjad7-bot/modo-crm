@@ -10,6 +10,8 @@ import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Pow
 import { guideForRole } from "@/lib/guide";
 import { startSending } from "@/components/listen";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import Translator from "@/components/Translator";
+import LangPicker from "@/components/LangPicker";
 
 const ShellCtx = createContext(null);
 export const useShell = () => useContext(ShellCtx);
@@ -192,6 +194,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
 
   return (
     <ShellCtx.Provider value={{ me, chat, reloadChat: loadChat, huddle, openDM, presence }}>
+      <Translator />
       <PillNav nav={withBadges} home={home} action={navAction}
         user={{ name: me?.name || "", sub: userSub || (me?.role === "ADMIN" ? "Admin" : me?.agentId), status: status || (myStatus === "away" ? "off" : myStatus === "busy" ? "warn" : "") }}
         userMenu={[
@@ -218,6 +221,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
           <div>{current && <><h1>{current.label}</h1>{current.hint && <div className="page-title">{current.hint}</div>}</>}</div>
           <div className="row small muted" style={{ gap: 8 }}>
             <ErrorBoundary resetKey={path}><SearchPalette nav={nav} home={home} role={me?.role} /></ErrorBoundary>
+            <LangPicker compact />
             {header && <span>{header}</span>}
             {me?.role === "AGENT" && presence?.attendance && (
               <span className={"chip " + (loc === "office" ? "ok" : loc === "remote" ? "late" : "")}><MapPin size={12} /> {loc === "office" ? "In office" : loc === "remote" ? "Remote" : "Clocked in"}{presence.how ? ` · ${presence.how}` : ""}</span>

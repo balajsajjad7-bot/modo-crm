@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
 import AppearanceToggle from "./Appearance";
+import LangPicker from "./LangPicker";
 
 const isOn = (path, it) => (it.exact ? path === it.href : path === it.href || path.startsWith(it.href + "/"));
 
@@ -77,6 +78,7 @@ export default function PillNav({ nav, home, user, userMenu, action }) {
             <div className="pn-sheet-user"><span className="sl-avatar" style={{ width: 40, height: 40, background: "var(--grad)", fontSize: 15 }}>{(user.name || "?").split(" ").map((w) => w[0]).slice(0, 2).join("")}</span>
               <div style={{flex:1}}><b>{user.name}</b><span className="sub" style={{ display: "block", color: "var(--muted-fg)", fontSize: 13 }}>{user.sub}</span></div></div>
             <div className="pn-sheet-appear"><AppearanceToggle /></div>
+            <div className="pn-sheet-appear" data-no-translate><LangPicker /></div>
             <div className="pn-sheet-scroll">
               {nav.map((it) => it.children ? (
                 <div key={it.label} className="pn-sheet-group">
