@@ -1450,7 +1450,7 @@ a.se-toast{color:inherit;text-decoration:none;cursor:pointer}
   * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; scroll-behavior: auto !important; }
 }
 /* Long lists: let the browser skip rendering off-screen rows (cheap, big win on slow devices) */
-.live-grid > *, .be-list > *, .np-grid > *, .guide-grid > *, .sl-item, .dialer-list > * { content-visibility: auto; contain-intrinsic-size: auto 120px; }
+/* (content-visibility removed — it made interactive rows unresponsive in some mobile WebViews) */
 
 /* ── Brand logos ── */
 .brand-logo{object-fit:contain;background:#fff;padding:1px;flex-shrink:0;vertical-align:middle}

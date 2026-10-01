@@ -271,18 +271,21 @@ function SearchPalette({ nav, home, role }) {
   const guideBase = home === "/agent" ? "/agent/guide" : "/admin/guide";
 
   const index = useMemo(() => {
-    const pages = (nav || []).flatMap((n) => n.children || [n]).filter((n) => n.href)
-      .map((n) => ({ kind: "page", label: n.label, hint: n.hint || "", href: n.href }));
-    const seen = new Set();
-    const uniq = pages.filter((p) => (seen.has(p.href) ? false : (seen.add(p.href), true)));
-    const topics = guideForRole(role || "ADMIN").map((g) => ({ kind: "guide", label: g.title, hint: g.for, href: `${guideBase}?t=${g.id}` }));
-    return [...uniq, ...topics];
+    try {
+      const pages = (Array.isArray(nav) ? nav : []).flatMap((n) => (n && n.children) || [n]).filter((n) => n && n.href)
+        .map((n) => ({ kind: "page", label: n.label || n.href, hint: n.hint || "", href: n.href }));
+      const seen = new Set();
+      const uniq = pages.filter((p) => (seen.has(p.href) ? false : (seen.add(p.href), true)));
+      let topics = [];
+      try { topics = guideForRole(role || "ADMIN").map((g) => ({ kind: "guide", label: g.title || "", hint: g.for || "", href: `${guideBase}?t=${g.id}` })); } catch { topics = []; }
+      return [...uniq, ...topics];
+    } catch { return []; }
   }, [nav, role, guideBase]);
 
   const results = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return index.filter((x) => x.kind === "page").slice(0, 8);
-    const score = (x) => { const hay = (x.label + " " + x.hint).toLowerCase(); if (x.label.toLowerCase().startsWith(s)) return 0; if (x.label.toLowerCase().includes(s)) return 1; return hay.includes(s) ? 2 : 9; };
+    const score = (x) => { const lbl = String(x.label || "").toLowerCase(); const hay = (lbl + " " + String(x.hint || "")).toLowerCase(); if (lbl.startsWith(s)) return 0; if (lbl.includes(s)) return 1; return hay.includes(s) ? 2 : 9; };
     return index.map((x) => ({ x, s: score(x) })).filter((r) => r.s < 9).sort((a, b) => a.s - b.s).slice(0, 12).map((r) => r.x);
   }, [q, index]);
 
