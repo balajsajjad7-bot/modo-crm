@@ -5,10 +5,10 @@ import SaleCard from "@/components/SaleCard";
 import { useShell } from "@/components/Shell";
 import { Send, Wand2, Eraser } from "lucide-react";
 
-const EMPTY = { saleType: "new", campaignId: "", customer: "", phone: "", email: "", address: "", zip: "", orderNumber: "", billBefore: "", discountPct: "", billAfter: "", nextBillDate: "", lines: "", overcharged: "", device: "", deviceColor: "", storage: "", specs: "", gift: "", office: "Islamabad", locationCode: "", closerId: "", notes: "" };
+const EMPTY = { saleType: "new", campaignId: "", customer: "", phone: "", email: "", address: "", zip: "", orderNumber: "", billBefore: "", discountPct: "", billAfter: "", nextBillDate: "", lines: "", overcharged: "", device: "", deviceColor: "", storage: "", specs: "", gift: "", office: "Texas", locationCode: "", closerId: "", notes: "" };
 const GIFT_OPTS = ["Cover", "Screen protector", "Charger", "Earbuds", "Smartwatch", "Gift card", "Free line", "Accessory bundle", "Tablet"];
 const STORAGE_OPTS = ["128 GB", "256 GB", "512 GB", "1 TB"];
-const OFFICES = ["Islamabad", "Karachi", "Lahore", "Rawalpindi", "Other"];
+const OFFICES = ["Texas", "Florida", "California", "New York", "Georgia", "Arizona", "Nevada", "Ohio", "Other"];
 const COLOR_OPTS = ["Black", "White", "Blue", "Silver", "Gold", "Natural Titanium", "Desert Titanium", "Green", "Pink", "Gray"];
 
 export default function SaleForm({ onDone }) {
