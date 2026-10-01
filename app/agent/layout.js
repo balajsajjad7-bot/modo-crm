@@ -4,7 +4,7 @@ import Shell from "@/components/Shell";
 import { AgentProvider, useAgent } from "@/components/agent/AgentContext";
 import Onboarding from "@/components/agent/Onboarding";
 import GeoReporter from "@/components/agent/GeoReporter";
-import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText } from "lucide-react";
+import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText, GraduationCap } from "lucide-react";
 
 function BreakButton({ onBreak, since, onClick }) {
   const [now, setNow] = useState(Date.now());
@@ -51,6 +51,7 @@ function Frame({ children }) {
     ...(P.chat !== false ? [{ href: "/agent/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true }] : []),
     ...(secure ? [{ href: "/agent/vault", label: "Secure line", hint: "Encrypted room — invited by the CEO", icon: i(Lock) }] : []),
     ...(P.modoAI !== false ? [{ href: "/agent/ai", label: "Modo AI", hint: "Scripts, objections and quick help", icon: i(Sparkles) }] : []),
+    { href: "/agent/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },
   ];
   return (
     <Shell nav={nav} home="/agent" navAction={<BreakButton onBreak={onBreak} since={me?.breaks?.open?.start} onClick={toggleBreak} />} header={onBreak ? "On break" : ""} status={onBreak ? "warn" : ""} userSub={me ? `${me.agentId} · shift ${me.shiftStart}` : ""}

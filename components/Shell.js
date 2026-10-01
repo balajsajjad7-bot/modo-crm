@@ -1,11 +1,12 @@
 "use client";
 // Shared frame for every signed-in page: the dock, chat badge, incoming-call banner and the call panel.
 // It lives in the layout, so a call keeps going while you move between pages.
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import PillNav from "./PillNav";
 import { useHuddle } from "./useHuddle";
-import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock } from "lucide-react";
+import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap } from "lucide-react";
+import { guideForRole } from "@/lib/guide";
 
 const ShellCtx = createContext(null);
 export const useShell = () => useContext(ShellCtx);
@@ -164,6 +165,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
         <div className="bar">
           <div>{current && <><h1>{current.label}</h1>{current.hint && <div className="page-title">{current.hint}</div>}</>}</div>
           <div className="row small muted" style={{ gap: 8 }}>
+            <SearchPalette nav={nav} home={home} role={me?.role} />
             {header && <span>{header}</span>}
             {me?.role === "AGENT" && presence?.attendance && (
               <span className={"chip " + (loc === "office" ? "ok" : loc === "remote" ? "late" : "")}><MapPin size={12} /> {loc === "office" ? "In office" : loc === "remote" ? "Remote" : "Clocked in"}{presence.how ? ` · ${presence.how}` : ""}</span>
@@ -196,6 +198,81 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
       {huddle.call && <CallPanel huddle={huddle} me={me} conv={chat.conversations.find((c) => c.id === huddle.call.conversationId)} />}
       <div ref={huddle.audioRef} hidden />
     </ShellCtx.Provider>
+  );
+}
+
+// Global search: jump to any page or how-to. Open with the button or ⌘K / Ctrl+K.
+function SearchPalette({ nav, home, role }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [sel, setSel] = useState(0);
+  const inputRef = useRef(null);
+  const guideBase = home === "/agent" ? "/agent/guide" : "/admin/guide";
+
+  const index = useMemo(() => {
+    const pages = (nav || []).flatMap((n) => n.children || [n]).filter((n) => n.href)
+      .map((n) => ({ kind: "page", label: n.label, hint: n.hint || "", href: n.href }));
+    const seen = new Set();
+    const uniq = pages.filter((p) => (seen.has(p.href) ? false : (seen.add(p.href), true)));
+    const topics = guideForRole(role || "ADMIN").map((g) => ({ kind: "guide", label: g.title, hint: g.for, href: `${guideBase}?t=${g.id}` }));
+    return [...uniq, ...topics];
+  }, [nav, role, guideBase]);
+
+  const results = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return index.filter((x) => x.kind === "page").slice(0, 8);
+    const score = (x) => { const hay = (x.label + " " + x.hint).toLowerCase(); if (x.label.toLowerCase().startsWith(s)) return 0; if (x.label.toLowerCase().includes(s)) return 1; return hay.includes(s) ? 2 : 9; };
+    return index.map((x) => ({ x, s: score(x) })).filter((r) => r.s < 9).sort((a, b) => a.s - b.s).slice(0, 12).map((r) => r.x);
+  }, [q, index]);
+
+  useEffect(() => { setSel(0); }, [q, open]);
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setOpen((o) => !o); }
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 30); else setQ(""); }, [open]);
+
+  const go = (r) => { if (!r) return; setOpen(false); router.push(r.href); };
+
+  return (
+    <>
+      <button className="search-trigger" onClick={() => setOpen(true)} aria-label="Search Modo">
+        <Search size={14} /> <span className="search-trigger-t">Search</span> <kbd>⌘K</kbd>
+      </button>
+      {open && (
+        <div className="search-overlay" onClick={() => setOpen(false)}>
+          <div className="search-box panel" onClick={(e) => e.stopPropagation()}>
+            <div className="search-head">
+              <Search size={16} />
+              <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") { e.preventDefault(); setSel((i) => Math.min(i + 1, results.length - 1)); }
+                  if (e.key === "ArrowUp") { e.preventDefault(); setSel((i) => Math.max(i - 1, 0)); }
+                  if (e.key === "Enter") { e.preventDefault(); go(results[sel]); }
+                }}
+                placeholder="Search pages and how-to… (e.g. payroll, dock, listen)" />
+              <button className="ghost icon-btn" aria-label="Close" onClick={() => setOpen(false)}><X size={16} /></button>
+            </div>
+            <div className="search-results">
+              {!results.length && <p className="muted small" style={{ padding: "10px 12px", margin: 0 }}>Nothing matches “{q}”.</p>}
+              {results.map((r, i) => (
+                <button key={r.kind + r.href} className={"search-item" + (i === sel ? " on" : "")} onMouseEnter={() => setSel(i)} onClick={() => go(r)}>
+                  <span className="search-ico">{r.kind === "guide" ? <GraduationCap size={15} /> : <CornerDownLeft size={15} />}</span>
+                  <span className="search-txt"><b>{r.label}</b>{r.hint && <span className="muted small ellipsis"> — {r.hint}</span>}</span>
+                  <span className="search-tag">{r.kind === "guide" ? "How-to" : "Go"}</span>
+                </button>
+              ))}
+            </div>
+            <div className="search-foot muted small">↑↓ to move · Enter to open · Esc to close</div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
