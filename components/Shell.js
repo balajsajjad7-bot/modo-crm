@@ -5,9 +5,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { usePathname, useRouter } from "next/navigation";
 import PillNav from "./PillNav";
 import { useHuddle } from "./useHuddle";
-import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap } from "lucide-react";
+import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare } from "lucide-react";
 import { guideForRole } from "@/lib/guide";
 import { startSending } from "@/components/listen";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const ShellCtx = createContext(null);
 export const useShell = () => useContext(ShellCtx);
@@ -201,8 +202,16 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
             )}
           </div>
         </div>
-        {children}
+        <ErrorBoundary resetKey={path}>{children}</ErrorBoundary>
       </main>
+
+      {/* Floating chat button on every page */}
+      {!path.endsWith("/chat") && (
+        <button className="chat-fab" aria-label="Open chat" onClick={() => router.push(home === "/agent" ? "/agent/chat" : "/admin/chat")}>
+          <MessageSquare size={22} />
+          {unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
+        </button>
+      )}
 
       {invites.slice(0, 1).map((c) => (
         <div key={c.huddle.id} className="call-banner" role="alert">

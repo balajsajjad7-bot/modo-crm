@@ -131,15 +131,20 @@ export default function Floor() {
         <p className="muted small" style={{ margin: 0 }}>Audio streams straight from the agent's browser to yours and is not recorded. The agent sees a “supervisor is listening” banner the whole time.</p>
         {micMsg && <div className="err small">{micMsg}</div>}
         {micOn && <div className="receipt"><Ear size={13} /> {micOn.connecting ? `Connecting to ${micOn.name}…` : `Listening to ${micOn.name}. Keep this tab open.`}</div>}
-        {(() => { const online = p.filter((x) => !["not in", "clocked out"].includes(x.status)); return !online.length
-          ? <p className="muted small" style={{ margin: 0 }}>No agents are signed in right now.</p>
-          : <div className="dialer-list">{online.map((a) => (
-              <div key={a.id}><span className={"dot " + String(a.status || "").toLowerCase().replace(/\s+/g, "")} /><b>{a.name}</b><span className="chip">{a.status}</span>
-                <span className="row" style={{ gap: 4, marginLeft: "auto" }}>
-                  {micOn?.id === a.id ? <button className="sm" onClick={stopMic}><Square size={12} /> Stop</button>
-                    : <button className="ghost sm" onClick={() => listenMic(a)}><Headphones size={12} /> Listen</button>}
-                </span></div>
-            ))}</div>; })()}
+        {(() => {
+          const off = (st) => ["not in", "clocked out"].includes(st);
+          const agents = [...p].sort((a, b) => (off(a.status) ? 1 : 0) - (off(b.status) ? 1 : 0) || a.name.localeCompare(b.name));
+          return !agents.length
+            ? <p className="muted small" style={{ margin: 0 }}>No agents yet.</p>
+            : <div className="dialer-list">{agents.map((a) => { const offline = off(a.status); return (
+                <div key={a.id} style={offline ? { opacity: 0.55 } : undefined}><span className={"dot " + String(a.status || "").toLowerCase().replace(/\s+/g, "")} /><b>{a.name}</b><span className="chip">{a.status}</span>
+                  <span className="row" style={{ gap: 4, marginLeft: "auto" }}>
+                    {micOn?.id === a.id ? <button className="sm" onClick={stopMic}><Square size={12} /> Stop</button>
+                      : offline ? <span className="muted small">offline</span>
+                      : <button className="ghost sm" onClick={() => listenMic(a)}><Headphones size={12} /> Listen</button>}
+                  </span></div>
+              ); })}</div>;
+        })()}
         <audio ref={micAudio} autoPlay playsInline hidden />
       </section>
 
