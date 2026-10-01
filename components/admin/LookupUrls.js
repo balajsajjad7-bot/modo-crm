@@ -4,7 +4,8 @@
 // never need a VPN on their device — this proxy is only for sites that block datacenter servers.
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { Link2, ShieldCheck, Save, Globe } from "lucide-react";
+import { Link2, ShieldCheck, Save, Globe, Plus } from "lucide-react";
+import LINK_PACK from "@/lib/quicklinks.json";
 
 export default function LookupUrls() {
   const [urls, setUrls] = useState(""); const [proxy, setProxy] = useState(""); const [quick, setQuick] = useState(""); const [loaded, setLoaded] = useState(false);
@@ -22,6 +23,14 @@ export default function LookupUrls() {
     let q = []; try { q = JSON.parse(r.data.quickLinks || "[]"); } catch {} setQuick((Array.isArray(q) ? q : []).map((x) => x.label ? `${x.label} | ${x.url}` : x.url).join("\n"));
     setMsg("Saved. Your lookups and quick links now show up on the Lookups page.");
   }
+  function addPack() {
+    const lines = quick.split("\n").map((l) => l.trim()).filter(Boolean);
+    const haveUrl = new Set(lines.map((l) => (l.includes("|") ? l.split("|").slice(1).join("|") : l).trim()));
+    let added = 0;
+    for (const l of LINK_PACK) if (!haveUrl.has(l.url)) { lines.push(`${l.label} | ${l.url}`); haveUrl.add(l.url); added++; }
+    setQuick(lines.join("\n"));
+    setMsg(added ? `Added ${added} built-in links. Press Save to keep them.` : "All built-in links are already in your list.");
+  }
   if (!loaded) return null;
   return (
     <section className="panel stack">
@@ -31,8 +40,12 @@ export default function LookupUrls() {
         <textarea style={{ minHeight: 110, fontFamily: "monospace", fontSize: 13 }} value={urls} onChange={(e) => setUrls(e.target.value)}
           placeholder={"https://example.com/api?number={q}\nhttps://another-free-lookup.com/search/{q}"} />
       </label>
-      <label>Quick links (open a site in a new tab — for portals like Verizon order tracking)
-        <textarea style={{ minHeight: 70, fontFamily: "monospace", fontSize: 13 }} value={quick} onChange={(e) => setQuick(e.target.value)}
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <label style={{ margin: 0 }}>Quick links (open a site in a new tab — carriers, bill pay, order & shipment tracking)</label>
+        <button type="button" className="ghost sm" onClick={addPack}><Plus size={13} /> Add built-in link pack ({LINK_PACK.length})</button>
+      </div>
+      <label>
+        <textarea style={{ minHeight: 90, fontFamily: "monospace", fontSize: 13 }} value={quick} onChange={(e) => setQuick(e.target.value)}
           placeholder={"Verizon — Track my order | https://www.verizon.com/digital/nsa/nos/ui/orders/trackmyorder/\nAT&T portal | https://www.att.com/..."} />
         <span className="muted small">One per line. Use <code>Label | https://the-link</code>, or just the link. These open in a new tab (agents use their VPN if the site needs one) — they're not data lookups.</span>
       </label>

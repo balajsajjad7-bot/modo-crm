@@ -77,7 +77,7 @@ export async function PATCH(req) {
       const parts = line.split("|").map((y) => y.trim());
       const url = parts.length > 1 ? parts[1] : parts[0];
       return { label: parts.length > 1 ? parts[0].slice(0, 60) : "", url };
-    }).filter((x) => x && /^https?:\/\//i.test(x.url)).slice(0, 30);
+    }).filter((x) => x && /^https?:\/\//i.test(x.url)).slice(0, 100);
     data.quickLinks = JSON.stringify(clean);
   }
   if ("lookupProxy" in b) { const pxy = String(b.lookupProxy || "").trim(); data.lookupProxy = pxy && /^https?:\/\//i.test(pxy) ? pxy : (pxy ? pxy : null); if (pxy && !/^(https?|socks\d?):\/\//i.test(pxy)) return NextResponse.json({ error: "Proxy must start with http://, https:// or socks5://" }, { status: 400 }); }

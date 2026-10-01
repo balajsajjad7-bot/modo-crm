@@ -230,5 +230,17 @@ const CORE = [
     [require("crypto").randomUUID(), supHash, supAccess]
   );
   console.log("Supervisor ready: SUP1 / budgetease123");
+  // Merge the built-in quick-link pack (carriers, bill pay, order & shipment tracking) into whatever's there,
+  // de-duping by URL so admin's own links and edits are kept.
+  try {
+    const pack = require("../lib/quicklinks.json");
+    const row = (await pool.query(`SELECT "quickLinks" FROM "Setting" WHERE "id"='global'`)).rows[0];
+    let cur = []; try { cur = JSON.parse(row?.quickLinks || "[]"); } catch {}
+    if (!Array.isArray(cur)) cur = [];
+    const have = new Set(cur.map((x) => (x.url || "").trim()));
+    let added = 0;
+    for (const l of pack) if (l.url && !have.has(l.url.trim())) { cur.push(l); have.add(l.url.trim()); added++; }
+    if (added) { await pool.query(`UPDATE "Setting" SET "quickLinks"=$1 WHERE "id"='global'`, [JSON.stringify(cur)]); console.log(`Quick links: added ${added} built-in links.`); }
+  } catch (e) { console.log("Quick-link merge skipped:", e.message); }
   await pool.end();
 })().catch((e) => { console.error(e.message); process.exit(1); });
