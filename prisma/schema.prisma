@@ -434,7 +434,7 @@ model Campaign {
 // Supervisor listening live to an agent's call (audio goes browser-to-browser, never stored)
 model ListenRequest {
   id            String    @id @default(cuid())
-  callSessionId String
+  callSessionId String?   // null = listening to the agent's mic directly (off-call)
   adminId       String
   agentId       String
   createdAt     DateTime  @default(now())

@@ -37,8 +37,10 @@ export async function startSending(id, streams, onEnded) {
 }
 
 // Admin side: receive and hand back each stream labelled "agent" / "customer".
-export async function startListening(callSessionId, onStream, onEnded) {
-  const r = await post("/api/listen", { callSessionId });
+// `target` is a callSessionId string (live call) or { agentId } to listen to the agent's mic off-call.
+export async function startListening(target, onStream, onEnded) {
+  const body = typeof target === "string" ? { callSessionId: target } : target;
+  const r = await post("/api/listen", body);
   if (!r.id) throw new Error(r.error || "Couldn't start listening.");
   const id = r.id; let meta = {}; let pc = null; const pending = [];
   const make = async () => {

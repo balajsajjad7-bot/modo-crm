@@ -3,11 +3,19 @@ import { db } from "@/lib/db";
 import { currentUser, requireRole } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 
-// Admin: start listening to a live call. { callSessionId }
+// Admin: start listening. { callSessionId } to listen to a live call, or { agentId } to listen
+// to that agent's microphone directly (works even when they're not on a call).
 export async function POST(req) {
   const { session, error } = await requireRole("ADMIN");
   if (error) return error;
-  const { callSessionId } = await req.json();
+  const { callSessionId, agentId } = await req.json();
+  if (agentId) {
+    const u = await db.user.findUnique({ where: { id: agentId }, select: { id: true, role: true } });
+    if (!u || u.role !== "AGENT") return NextResponse.json({ error: "Agent not found." }, { status: 404 });
+    await db.listenRequest.updateMany({ where: { agentId: u.id, adminId: session.uid, callSessionId: null, endedAt: null }, data: { endedAt: new Date() } });
+    const r = await db.listenRequest.create({ data: { adminId: session.uid, agentId: u.id } });
+    return NextResponse.json({ id: r.id, agentId: u.id });
+  }
   const c = await db.callSession.findUnique({ where: { id: callSessionId || "" } });
   if (!c || c.endedAt) return NextResponse.json({ error: "That call has ended." }, { status: 404 });
   await db.listenRequest.updateMany({ where: { callSessionId: c.id, adminId: session.uid, endedAt: null }, data: { endedAt: new Date() } });

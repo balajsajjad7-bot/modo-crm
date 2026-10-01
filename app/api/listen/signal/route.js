@@ -27,8 +27,9 @@ export async function GET(req) {
   const r = await load(s, id);
   if (!r) return NextResponse.json({ ended: true });
   if (s.uid === r.adminId && !r.endedAt) await db.listenRequest.update({ where: { id: r.id }, data: { lastSeen: new Date() } });
-  const call = await db.callSession.findUnique({ where: { id: r.callSessionId }, select: { endedAt: true } });
-  const ended = !!r.endedAt || !!call?.endedAt || (s.uid === r.agentId && Date.now() - new Date(r.lastSeen) > 20000);
+  let callEnded = false;
+  if (r.callSessionId) { const call = await db.callSession.findUnique({ where: { id: r.callSessionId }, select: { endedAt: true } }); callEnded = !!call?.endedAt; }
+  const ended = !!r.endedAt || callEnded || (s.uid === r.agentId && Date.now() - new Date(r.lastSeen) > 20000);
   const sig = await db.signal.findMany({ where: { huddleId: r.id, toId: s.uid }, orderBy: { createdAt: "asc" } });
   if (sig.length) await db.signal.deleteMany({ where: { id: { in: sig.map((x) => x.id) } } });
   return NextResponse.json({ ended, signals: sig.map((x) => ({ type: x.type, payload: JSON.parse(x.payload) })) });

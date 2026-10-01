@@ -114,6 +114,7 @@ const SQL = [
   `ALTER TABLE "Setting" ADD COLUMN IF NOT EXISTS "monitorNotice" BOOLEAN NOT NULL DEFAULT false`,
   `CREATE TABLE IF NOT EXISTS "ListenRequest" ("id" TEXT NOT NULL, "callSessionId" TEXT NOT NULL, "adminId" TEXT NOT NULL, "agentId" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "lastSeen" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "endedAt" TIMESTAMP(3), CONSTRAINT "ListenRequest_pkey" PRIMARY KEY ("id"))`,
   `CREATE INDEX IF NOT EXISTS "ListenRequest_agentId_endedAt_idx" ON "ListenRequest"("agentId", "endedAt")`,
+  `ALTER TABLE "ListenRequest" ALTER COLUMN "callSessionId" DROP NOT NULL`,
   `ALTER TABLE "Setting" ADD COLUMN IF NOT EXISTS "shiftEndOut" BOOLEAN NOT NULL DEFAULT true`,
   `ALTER TABLE "Setting" ADD COLUMN IF NOT EXISTS "shiftEndGrace" INTEGER NOT NULL DEFAULT 0`,
   `CREATE TABLE IF NOT EXISTS "QaReview" ("id" TEXT NOT NULL, "callSessionId" TEXT NOT NULL, "userId" TEXT NOT NULL, "overall" INTEGER NOT NULL, "scores" TEXT NOT NULL, "grammar" TEXT NOT NULL, "nervous" TEXT NOT NULL, "compliance" TEXT NOT NULL, "highlights" TEXT NOT NULL, "fillers" INTEGER NOT NULL DEFAULT 0, "agentWords" INTEGER NOT NULL DEFAULT 0, "customerWords" INTEGER NOT NULL DEFAULT 0, "wpm" INTEGER, "agentNervous" INTEGER, "customerNervous" INTEGER, "sentiment" TEXT, "outcome" TEXT, "summary" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "QaReview_pkey" PRIMARY KEY ("id"))`,

@@ -1,11 +1,12 @@
 "use client";
 // Admin overview: live floor at a glance, live calls with subtitles + AI, dialer, recent calls, leaderboard.
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { usePoll, api } from "./api";
 import { dur } from "@/lib/fmt";
-import { Sparkles, PhoneCall, Radio, Coffee, Moon, Trophy, History, RefreshCw, HelpCircle, PhoneOff, Headphones, Ear } from "lucide-react";
+import { Sparkles, PhoneCall, Radio, Coffee, Moon, Trophy, History, RefreshCw, HelpCircle, PhoneOff, Headphones, Ear, Mic, Square } from "lucide-react";
 import ShiftEndRequests from "./ShiftEndRequests";
+import { startListening } from "@/components/listen";
 
 const lines = (t) => (t || "").split("\n").filter(Boolean).map((l) => (l.startsWith("C: ") ? { who: "C", text: l.slice(3) } : { who: "A", text: l.startsWith("A: ") ? l.slice(3) : l }));
 const mins = (a, b) => Math.max(0, Math.round(((b ? new Date(b) : Date.now()) - new Date(a)) / 1000));
@@ -23,6 +24,15 @@ export default function Floor() {
   // Listening = VICIdial blind monitor: your desk phone rings and VICIdial bridges you into the agent's live call.
   const viciListen = async (body) => { setPhoneMsg({ busy: true, text: "Asking VICIdial to ring your phone…" }); const r = await api("/api/vicidial/monitor", "POST", body); setPhoneMsg(r.ok ? { text: r.data.message } : { err: r.data.error }); };
   const all = sess.data || []; const live = all.filter((s) => !s.endedAt); const done = all.filter((s) => s.endedAt);
+  // Live mic listen (off-call, through Modo's own relay — not VICIdial)
+  const [micOn, setMicOn] = useState(null); const [micMsg, setMicMsg] = useState(""); const micCtl = useRef(null); const micAudio = useRef(null);
+  const stopMic = async () => { try { await micCtl.current?.close(); } catch {} micCtl.current = null; setMicOn(null); if (micAudio.current) micAudio.current.srcObject = null; };
+  const listenMic = async (a) => {
+    await stopMic(); setMicMsg(""); setMicOn({ id: a.id, name: a.name, connecting: true });
+    try {
+      micCtl.current = await startListening({ agentId: a.id }, (who, st) => { if (micAudio.current) { micAudio.current.srcObject = st; micAudio.current.play?.().catch(() => {}); } setMicOn((m) => m && { ...m, connecting: false }); }, () => setMicOn(null));
+    } catch (e) { setMicMsg(e.message || "Couldn't start listening."); setMicOn(null); }
+  };
   const viciConnected = vici.data && !vici.error && (vici.data.provider === "vicidial" || vici.data.agents);
   const viciCalls = (recs.data?.rows || []); // real finished calls from the dialer (recordings)
   const p = pres.data || []; const count = (st) => p.filter((x) => st.includes(x.status)).length;
@@ -112,6 +122,26 @@ export default function Floor() {
           )}
         </section>
       </div>
+
+      <section className="panel stack">
+        <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+          <h2><Mic size={17} /> Listen to an agent's mic <span className="muted small">live, through Modo — works even off-call</span></h2>
+          {micOn && <button className="danger sm" onClick={stopMic}><Square size={13} /> Stop listening to {micOn.name.split(" ")[0]}</button>}
+        </div>
+        <p className="muted small" style={{ margin: 0 }}>Audio streams straight from the agent's browser to yours and is not recorded. The agent sees a “supervisor is listening” banner the whole time.</p>
+        {micMsg && <div className="err small">{micMsg}</div>}
+        {micOn && <div className="receipt"><Ear size={13} /> {micOn.connecting ? `Connecting to ${micOn.name}…` : `Listening to ${micOn.name}. Keep this tab open.`}</div>}
+        {(() => { const online = p.filter((x) => !["not in", "clocked out"].includes(x.status)); return !online.length
+          ? <p className="muted small" style={{ margin: 0 }}>No agents are signed in right now.</p>
+          : <div className="dialer-list">{online.map((a) => (
+              <div key={a.id}><span className={"dot " + String(a.status || "").toLowerCase().replace(/\s+/g, "")} /><b>{a.name}</b><span className="chip">{a.status}</span>
+                <span className="row" style={{ gap: 4, marginLeft: "auto" }}>
+                  {micOn?.id === a.id ? <button className="sm" onClick={stopMic}><Square size={12} /> Stop</button>
+                    : <button className="ghost sm" onClick={() => listenMic(a)}><Headphones size={12} /> Listen</button>}
+                </span></div>
+            ))}</div>; })()}
+        <audio ref={micAudio} autoPlay playsInline hidden />
+      </section>
 
       <section className="panel stack">
         <div className="row" style={{ justifyContent: "space-between" }}>
