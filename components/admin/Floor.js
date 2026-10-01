@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePoll, api } from "./api";
 import { dur } from "@/lib/fmt";
-import { Sparkles, PhoneCall, Radio, Coffee, Moon, Trophy, History, RefreshCw, HelpCircle, PhoneOff, Headphones } from "lucide-react";
-import ListenPanel from "./ListenPanel";
+import { Sparkles, PhoneCall, Radio, Coffee, Moon, Trophy, History, RefreshCw, HelpCircle, PhoneOff, Headphones, Ear } from "lucide-react";
 import ShiftEndRequests from "./ShiftEndRequests";
 
 const lines = (t) => (t || "").split("\n").filter(Boolean).map((l) => (l.startsWith("C: ") ? { who: "C", text: l.slice(3) } : { who: "A", text: l.startsWith("A: ") ? l.slice(3) : l }));
@@ -20,10 +19,9 @@ export default function Floor() {
   const [recs] = usePoll("/api/vicidial/recordings", 60000);
   const [board] = usePoll("/api/leaderboard", 20000);
   const [brief, setBrief] = useState(null); const [briefing, setBriefing] = useState(false);
-  const [listening, setListening] = useState([]); const [mutedIds, setMutedIds] = useState({});
   const [phoneMsg, setPhoneMsg] = useState(null);
+  // Listening = VICIdial blind monitor: your desk phone rings and VICIdial bridges you into the agent's live call.
   const viciListen = async (body) => { setPhoneMsg({ busy: true, text: "Asking VICIdial to ring your phone…" }); const r = await api("/api/vicidial/monitor", "POST", body); setPhoneMsg(r.ok ? { text: r.data.message } : { err: r.data.error }); };
-  const listen = (id) => { setListening((l) => (l.includes(id) ? l : [...l, id])); setMutedIds((m) => Object.fromEntries([...Object.keys(m).map((k) => [k, true]), [id, false]])); }; // newest one is heard, others muted
   const all = sess.data || []; const live = all.filter((s) => !s.endedAt); const done = all.filter((s) => s.endedAt);
   const viciConnected = vici.data && !vici.error && (vici.data.provider === "vicidial" || vici.data.agents);
   const viciCalls = (recs.data?.rows || []); // real finished calls from the dialer (recordings)
@@ -50,24 +48,11 @@ export default function Floor() {
           : <p className="muted small" style={{ margin: 0 }}>Modo AI reads the dialer, every live call and the last few hours of calls, and tells you who needs help.</p>}
       </section>
 
-      {listening.length > 0 && (
-        <section className="stack">
-          <h2 className="sec-h"><Headphones size={17} /> Listening <span className="muted small">audio goes straight from the agent's browser to yours and is not recorded</span></h2>
-          <div className="listen-grid">
-            {listening.map((id) => { const c = all.find((x) => x.id === id); if (!c) return null; return (
-              <ListenPanel key={id} call={c} muted={!!mutedIds[id]} setMuted={(v) => setMutedIds((m) => ({ ...m, [id]: v }))} onClose={() => setListening((l) => l.filter((x) => x !== id))} />
-            ); })}
-          </div>
-        </section>
-      )}
+      {phoneMsg && <div className={phoneMsg.err ? "err" : "receipt"} style={{ margin: 0 }}><Ear size={14} /> {phoneMsg.err || phoneMsg.text}</div>}
 
       <section className="stack">
         <div className="row" style={{ justifyContent: "space-between" }}>
           <h2 className="sec-h"><PhoneCall size={17} /> Live calls <span className="muted small">{live.length ? "subtitles update every few seconds" : ""}</span></h2>
-          {live.length > 0 && <div className="row">
-            <button className="sm" onClick={() => { setListening(live.map((c) => c.id)); setMutedIds(Object.fromEntries(live.map((c, i) => [c.id, i > 0]))); }}><Headphones size={13} /> Listen to all ({live.length})</button>
-            {listening.length > 0 && <button className="ghost sm" onClick={() => setListening([])}>Stop all</button>}
-          </div>}
         </div>
         {!live.length ? <div className="panel muted">No one is on a call with live assist right now.</div> : (
           <div className="live-grid">
@@ -80,7 +65,9 @@ export default function Floor() {
                     <div className="row" style={{ gap: 4 }}>
                       {s.confused && s.confused !== "none" && <span className="chip late" title={s.confusedNote || ""}><HelpCircle size={11} /> {WHO[s.confused]}</span>}
                       {s.mood && s.mood !== "unknown" && <span className={"chip " + (s.mood === "interested" ? "ok" : s.mood === "annoyed" ? "red" : "")}>{s.mood}</span>}
-                      <button className={listening.includes(s.id) ? "sm" : "ghost sm"} onClick={() => listen(s.id)} title="Listen live"><Headphones size={13} /> {listening.includes(s.id) ? "Listening" : "Listen"}</button>
+                      <button className="ghost sm" onClick={() => viciListen({ userId: s.userId, stage: "MONITOR" })} title="VICIdial rings your phone and you hear both sides"><Headphones size={13} /> Listen</button>
+                      <button className="ghost sm" onClick={() => viciListen({ userId: s.userId, stage: "WHISPER" })} title="Talk to the agent only; the customer can't hear you">Whisper</button>
+                      <button className="ghost sm" onClick={() => viciListen({ userId: s.userId, stage: "BARGE" })} title="Join the call: both can hear you">Barge</button>
                     </div>
                   </header>
                   <div className="subs">{L.length ? L.map((l, i) => <p key={i} className={l.who === "C" ? "c" : "a"} style={{ opacity: 0.45 + (i + 1) / L.length * 0.55 }}><b>{l.who === "C" ? "Customer" : s.user.name.split(" ")[0]}</b>{l.text}</p>) : <p className="muted">Waiting for speech…</p>}</div>
@@ -103,7 +90,6 @@ export default function Floor() {
       <div className="two-col">
         <section className="panel stack">
           <div className="row" style={{ justifyContent: "space-between" }}><h2><Radio size={17} /> Dialer</h2><button className="ghost sm icon-btn" aria-label="Refresh" onClick={reloadVici}><RefreshCw size={13} /></button></div>
-          {phoneMsg && <div className={phoneMsg.err ? "err small" : "receipt"}>{phoneMsg.err || phoneMsg.text}</div>}
           {vici.error ? <p className="muted small" style={{ margin: 0 }}>{vici.error} <Link href="/admin/connectors">Connect VICIdial</Link></p> : !vici.data ? <p className="muted">Checking…</p> : !vici.data.agents.length ? <p className="muted">No one is logged into the dialer.</p> : (
             <div className="dialer-list">{vici.data.agents.map((a, i) => (
               <div key={i}><span className={"dot " + String(a.status || "").toLowerCase()} /><b>{a.full_name || a.user || a.f0}</b><span className="chip">{a.status}</span><span className="muted small">{a.campaign_id || a.campaign || ""}</span><span className="muted small" style={{ marginLeft: "auto" }}>{a.calls_today ? a.calls_today + " calls" : ""}</span>
