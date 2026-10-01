@@ -9,6 +9,7 @@ const EMPTY = { saleType: "new", campaignId: "", customer: "", phone: "", email:
 const GIFT_OPTS = ["Cover", "Screen protector", "Charger", "Earbuds", "Smartwatch", "Gift card", "Free line", "Accessory bundle", "Tablet"];
 const STORAGE_OPTS = ["128 GB", "256 GB", "512 GB", "1 TB"];
 const OFFICES = ["Islamabad", "Karachi", "Lahore", "Rawalpindi", "Other"];
+const COLOR_OPTS = ["Black", "White", "Blue", "Silver", "Gold", "Natural Titanium", "Desert Titanium", "Green", "Pink", "Gray"];
 
 export default function SaleForm({ onDone }) {
   const { me } = useShell();
@@ -81,7 +82,8 @@ export default function SaleForm({ onDone }) {
         </div></fieldset>
 
         <fieldset><legend>Device</legend><div className="form">
-          {I("device", "Device", { placeholder: "e.g. iPhone 16 Pro" })}{I("deviceColor", "Color", { placeholder: "e.g. Desert Titanium" })}
+          {I("device", "Device", { placeholder: "e.g. iPhone 16 Pro" })}
+          <label style={{ gridColumn: "1/-1" }}>Color{chips("deviceColor", COLOR_OPTS, false)}<input value={f.deviceColor} onChange={set("deviceColor")} placeholder="or type the exact color" /></label>
           <label>Storage{chips("storage", STORAGE_OPTS, false)}<input value={f.storage} onChange={set("storage")} placeholder="or type another size" /></label>
           {I("specs", "Specifications", { placeholder: "e.g. 5G, eSIM, 6.3\"" })}
           <label style={{ gridColumn: "1/-1" }}>Gift <span className="muted small">tap all that apply</span>{chips("gift", GIFT_OPTS, true)}<input value={f.gift} onChange={set("gift")} placeholder="or type a custom gift" /></label>
@@ -90,7 +92,7 @@ export default function SaleForm({ onDone }) {
         <fieldset><legend>Order</legend><div className="form">
           {I("orderNumber", "Order number *", { required: true, className: "order-input" })}
           <label>Campaign<select value={f.campaignId} onChange={set("campaignId")}><option value="">—</option>{camps.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-          <label>Office<select value={f.office} onChange={set("office")}>{OFFICES.map((o) => <option key={o}>{o}</option>)}</select></label>
+          <label style={{ gridColumn: "1/-1" }}>Office{chips("office", OFFICES, false)}</label>
           {I("locationCode", "Location code", { placeholder: "e.g. ISB-02" })}
           <label>Closed by<select value={f.closerId} onChange={set("closerId")}><option value="">Me ({me?.name})</option>{people.filter((p) => p.role !== "ADMIN").map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
         </div></fieldset>
