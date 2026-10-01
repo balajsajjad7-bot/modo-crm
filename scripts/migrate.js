@@ -123,6 +123,7 @@ const SQL = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "BeSale_consumerId_key" ON "BeSale"("consumerId")`,
   `CREATE INDEX IF NOT EXISTS "BeSale_userId_createdAt_idx" ON "BeSale"("userId", "createdAt")`,
   `CREATE INDEX IF NOT EXISTS "BeSale_phone_idx" ON "BeSale"("phone")`,
+  `ALTER TABLE "BeSale" ADD COLUMN IF NOT EXISTS "accountNumber" TEXT`,
   `ALTER TABLE "Setting" ADD COLUMN IF NOT EXISTS "dialer" TEXT NOT NULL DEFAULT '{}'`,
   `ALTER TABLE "Setting" ADD COLUMN IF NOT EXISTS "aiKnowledge" TEXT NOT NULL DEFAULT '{}'`,
   `ALTER TABLE "CallSession" ADD COLUMN IF NOT EXISTS "live" TEXT`,

@@ -9,7 +9,7 @@ const MAX_PCT = 35; // Budget Ease offers up to 35% off
 function shape(r, users, isAdmin) {
   const dob = dec(r.dob) || "";
   return { id: r.id, consumerId: r.consumerId, userId: r.userId, agent: users.find((u) => u.id === r.userId)?.name || "Former agent",
-    customer: r.customer, phone: r.phone, email: r.email, zip: r.zip, serviceAddress: r.serviceAddress, company: r.company, service: r.service,
+    customer: r.customer, phone: r.phone, email: r.email, zip: r.zip, serviceAddress: r.serviceAddress, company: r.company, service: r.service, accountNumber: r.accountNumber,
     billAmount: r.billAmount, payAmount: r.payAmount, discountPct: discountPct(r.billAmount, r.payAmount), savingsMonthly: Math.max(0, +(r.billAmount - r.payAmount).toFixed(2)),
     notes: r.notes, status: r.status, flags: r.flags ? r.flags.split("|") : [], createdAt: r.createdAt, updatedAt: r.updatedAt,
     ssn4: "••••", dobMasked: dob ? `••/••/${dob.slice(0, 4)}` : "—", age: dob ? ageOn(dob) : null, revealed: isAdmin ? JSON.parse(r.audit || "[]").length : undefined };
@@ -35,6 +35,7 @@ export async function POST(req) {
     customer: String(b.customer || "").trim().slice(0, 100), phone: digits(b.phone).slice(-10), email: String(b.email || "").trim().slice(0, 120) || null,
     ssn4: digits(b.ssn4), dob: String(b.dob || "").slice(0, 10), zip: digits(b.zip).slice(0, 5), serviceAddress: String(b.serviceAddress || "").trim().slice(0, 200),
     company: String(b.company || "").trim().slice(0, 100), service: SERVICES.includes(b.service) ? b.service : "other",
+    accountNumber: String(b.accountNumber || "").trim().slice(0, 60) || null,
     billAmount: Number(b.billAmount), payAmount: Number(b.payAmount), notes: String(b.notes || "").trim().slice(0, 3000) || null,
   };
   const bad = [];

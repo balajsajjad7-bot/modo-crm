@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import BeCard, { money } from "./BeCard";
 import { Sparkles, Send, Eye, EyeOff, Lock, CheckCircle2 } from "lucide-react";
 
-const EMPTY = { customer: "", phone: "", email: "", dob: "", ssn4: "", zip: "", serviceAddress: "", company: "", service: "electricity", billAmount: "", payAmount: "", notes: "" };
+const EMPTY = { customer: "", phone: "", email: "", dob: "", ssn4: "", zip: "", serviceAddress: "", company: "", service: "electricity", accountNumber: "", billAmount: "", payAmount: "", notes: "" };
 const COMPANIES = ["Duke Energy", "Florida Power & Light (FPL)", "Georgia Power", "Pacific Gas & Electric (PG&E)", "Southern California Edison (SCE)", "Con Edison", "ComEd", "Dominion Energy", "Xcel Energy", "Entergy", "AEP", "PSE&G", "National Grid", "Eversource", "Consumers Energy", "DTE Energy", "Ameren", "CenterPoint Energy", "Oncor", "TXU Energy", "Reliant", "SoCalGas", "Atmos Energy", "Spire", "Comcast Xfinity", "Spectrum", "AT&T", "Verizon", "Cox", "T-Mobile", "Frontier", "Optimum", "American Water"];
 const post = (u, b) => fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) });
 
@@ -62,6 +62,7 @@ export default function BeForm() {
             <label>Service<select value={f.service} onChange={set("service")}>{["electricity", "gas", "internet", "water", "phone", "cable/TV", "other"].map((x) => <option key={x}>{x}</option>)}</select></label>
             <label style={{ gridColumn: "1/-1" }}>Service address *<input value={f.serviceAddress} onChange={set("serviceAddress")} placeholder="Street, city, state" required /></label>
             <label>ZIP code *<input value={f.zip} onChange={(e) => setF({ ...f, zip: e.target.value.replace(/\D/g, "").slice(0, 5) })} inputMode="numeric" required />{zipInfo && <span className="small muted">{zipInfo}</span>}</label>
+            <label>Account number<input value={f.accountNumber} onChange={set("accountNumber")} placeholder="Customer's utility account no." autoComplete="off" /></label>
           </div></fieldset>
           <fieldset><legend>Bill</legend><div className="form">
             <label>Current monthly bill ($) *<input type="number" min="1" step="0.01" value={f.billAmount} onChange={set("billAmount")} required /></label>

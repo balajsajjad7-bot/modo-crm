@@ -27,6 +27,7 @@ export default function BeCard({ r, admin, onStatus, onDelete, onReveal, preview
         <div><span>Phone</span><b>{fmtPhone(r.phone)}</b></div>
         <div><span>ZIP</span><b>{r.zip || "—"}</b></div>
         <div className="wide"><span>Service address</span><b>{r.serviceAddress || "—"}</b></div>
+        {r.accountNumber && <div className="wide"><span>Account number</span><b className="num">{r.accountNumber}</b></div>}
         {r.email && <div className="wide"><span>Email</span><b>{r.email}</b></div>}
         <div><span>SSN (last 4)</span><b className="be-secret">{secret ? secret.ssn4 : preview ? (r.ssn4 ? "•••• " + (r.showSsn ? r.ssn4 : "") : "—") : "••••"}</b></div>
         <div><span>Date of birth</span><b className="be-secret">{secret ? new Date(secret.dob + "T00:00:00Z").toLocaleDateString("en-US", { timeZone: "UTC" }) : preview ? (r.dob ? "set" : "—") : r.dobMasked}{r.age ? <span className="muted small"> · {r.age} yrs</span> : ""}</b></div>
@@ -39,7 +40,7 @@ export default function BeCard({ r, admin, onStatus, onDelete, onReveal, preview
             <div className="seg be-seg" role="tablist" aria-label="Status">{Object.entries(STATUS).map(([k, l]) => <button key={k} role="tab" aria-selected={r.status === k} onClick={() => onStatus(r, k)}>{l}</button>)}</div>
           ) : <span className="small muted"><Lock size={12} /> SSN and date of birth are encrypted</span>}
           <div className="row" style={{ gap: 6 }}>
-            <button className="ghost sm icon-btn" title="Copy details (without SSN/DOB)" onClick={() => navigator.clipboard?.writeText(`${r.consumerId} · ${r.customer} · ${fmtPhone(r.phone)} · ${r.serviceAddress} ${r.zip} · ${r.company} ${r.service} · ${money(r.billAmount)} → ${money(r.payAmount)}`)}><Copy size={13} /></button>
+            <button className="ghost sm icon-btn" title="Copy details (without SSN/DOB)" onClick={() => navigator.clipboard?.writeText(`${r.consumerId} · ${r.customer} · ${fmtPhone(r.phone)} · ${r.serviceAddress} ${r.zip} · ${r.company} ${r.service}${r.accountNumber ? " · acct " + r.accountNumber : ""} · ${money(r.billAmount)} → ${money(r.payAmount)}`)}><Copy size={13} /></button>
             {admin && <AiButton task="check_be" payload={{ id: r.id }} label="AI check" />}
             {admin && <button className="ghost sm" onClick={reveal} title="Every reveal is recorded"><Eye size={13} /> {secret ? "Hide" : "Reveal SSN/DOB"}</button>}
             {admin && <button className="ghost sm icon-btn" aria-label="Delete" onClick={() => onDelete(r)}><Trash2 size={13} /></button>}

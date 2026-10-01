@@ -484,6 +484,7 @@ model BeSale {
   serviceAddress String
   company        String   // utility company
   service        String   @default("electricity")
+  accountNumber  String?   // customer's utility account number
   billAmount     Float
   payAmount      Float
   notes          String?
