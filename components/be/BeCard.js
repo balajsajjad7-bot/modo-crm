@@ -3,6 +3,7 @@ import AiButton from "@/components/AiButton";
 // One Budget Ease submission as a card (admin board + agent's own list)
 import { useState } from "react";
 import { Lock, Eye, Trash2, AlertTriangle, Copy } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 
 export const money = (n) => (n == null || isNaN(n) ? "—" : "$" + Number(n).toFixed(2));
 const STATUS = { NEW: "New", FOLLOWUP: "Follow-up", APPROVED: "Approved", REJECTED: "Rejected" };
@@ -18,7 +19,7 @@ export default function BeCard({ r, admin, onStatus, onDelete, onReveal, preview
         <div style={{ minWidth: 0 }}>
           <div className="row" style={{ gap: 8 }}><span className="be-id">{r.consumerId || "BES-·······"}</span><span className={"chip be-st " + (r.status || "NEW").toLowerCase()}>{STATUS[r.status || "NEW"]}</span>{r.flags?.length > 0 && <span className="chip late"><AlertTriangle size={11} /> {r.flags.length}</span>}</div>
           <h3>{r.customer || "Customer name"}</h3>
-          <div className="small muted">{r.company || "Utility company"} · {r.service}{r.agent ? ` · by ${r.agent}` : ""}{r.createdAt ? ` · ${new Date(r.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}</div>
+          <div className="small muted" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>{r.company && <BrandLogo name={r.company} size={15} />}<span>{r.company || "Utility company"} · {r.service}{r.agent ? ` · by ${r.agent}` : ""}{r.createdAt ? ` · ${new Date(r.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}</span></div>
         </div>
         <div className="be-save"><b>{pct == null ? "—" : pct + "%"}</b><span>off</span></div>
       </header>

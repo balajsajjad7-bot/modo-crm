@@ -70,7 +70,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
 
   useEffect(() => { fetch("/api/me").then((r) => r.json()).then(setMe); }, []);
   const loadChat = useCallback(() => fetch("/api/chat/conversations", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((d) => d && setChat(d)).catch(() => {}), []);
-  useEffect(() => { loadChat(); const t = setInterval(loadChat, 5000); return () => clearInterval(t); }, [loadChat]);
+  useEffect(() => { loadChat(); const t = setInterval(() => { if (!document.hidden) loadChat(); }, 5000); const onVis = () => { if (!document.hidden) loadChat(); }; document.addEventListener("visibilitychange", onVis); return () => { clearInterval(t); document.removeEventListener("visibilitychange", onVis); }; }, [loadChat]);
 
   // Heartbeat: keeps you "online", auto clock-in at the start of a shift, office detection (Wi-Fi or GPS).
   useEffect(() => {

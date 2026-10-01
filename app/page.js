@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { ShieldCheck, KeyRound } from "lucide-react";
 import AppearanceToggle from "@/components/Appearance";
+import BrandLogo from "@/components/BrandLogo";
+
+const PARTNERS = ["Verizon", "T-Mobile", "AT&T", "Comcast", "Spectrum", "Amazon", "eBay", "Walmart", "Reliant", "Duke Energy"];
 
 export default function Login() {
   const [agentId, setId] = useState(""); const [password, setPw] = useState("");
@@ -74,6 +77,10 @@ export default function Login() {
             <button disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Confirm and sign in"}</button>
           </form>
         )}
+      </div>
+      <div className="partners">
+        <span className="partners-label">Campaigns &amp; partners</span>
+        <div className="partners-row">{PARTNERS.map((p) => <span key={p} className="partner-chip" title={p}><BrandLogo name={p} size={20} /> {p}</span>)}</div>
       </div>
     </main>
   );

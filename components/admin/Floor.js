@@ -90,6 +90,9 @@ export default function Floor() {
       <div className="two-col">
         <section className="panel stack">
           <div className="row" style={{ justifyContent: "space-between" }}><h2><Radio size={17} /> Dialer</h2><button className="ghost sm icon-btn" aria-label="Refresh" onClick={reloadVici}><RefreshCw size={13} /></button></div>
+          {vici.data && (vici.data.monitorPhone
+            ? <p className="small muted" style={{ margin: 0 }}><Ear size={12} /> Listening rings your phone <b>{vici.data.monitorPhone}</b> — keep that softphone/extension logged in to hear calls.</p>
+            : <p className="small" style={{ margin: 0, color: "var(--amber)" }}><Ear size={12} /> No listen phone set. Add one in <Link href="/admin/connectors">Connectors → VICIdial → Monitor phone</Link> to listen to agents.</p>)}
           {vici.error ? <p className="muted small" style={{ margin: 0 }}>{vici.error} <Link href="/admin/connectors">Connect VICIdial</Link></p> : !vici.data ? <p className="muted">Checking…</p> : !vici.data.agents.length ? <p className="muted">No one is logged into the dialer.</p> : (
             <div className="dialer-list">{vici.data.agents.map((a, i) => (
               <div key={i}><span className={"dot " + String(a.status || "").toLowerCase()} /><b>{a.full_name || a.user || a.f0}</b><span className="chip">{a.status}</span><span className="muted small">{a.campaign_id || a.campaign || ""}</span><span className="muted small" style={{ marginLeft: "auto" }}>{a.calls_today ? a.calls_today + " calls" : ""}</span>

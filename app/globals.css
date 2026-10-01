@@ -1432,3 +1432,31 @@ a.se-toast{color:inherit;text-decoration:none;cursor:pointer}
 .bill-drop{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;padding:16px;border:1.5px dashed var(--border);border-radius:14px;background:rgba(255,255,255,.03);transition:border-color .2s,background .2s}
 .bill-drop:hover{border-color:var(--accent);background:var(--accent-soft)}
 .bill-drop svg{color:var(--accent)}
+
+/* ── Performance: backdrop blur is the biggest GPU cost. Keep it on desktops that can
+   afford it; drop it for a solid surface on touch / low-power / reduced-motion devices. ── */
+@media (hover: none), (pointer: coarse), (update: slow), (prefers-reduced-motion: reduce) {
+  :root, :root[data-theme="dark"], :root[data-theme="light"] { --glass: var(--card-solid); }
+  *, *::before, *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  /* Surfaces that set their own translucent background need an opaque one once blur is gone */
+  .panel, .slack, .ai, .sale-form, .kcol, .sales-kpis>div, .sl-modal, .be-card,
+  .floor-kpis>div, .lk-tool, .sale-card, .pillnav, .dock, .call-banner, .search-box,
+  .ai-modal, .conn-tile, .kpi { background: var(--card-solid) !important; }
+  /* Lighter shadows + shorter transitions = far less repaint work while scrolling */
+  .panel, .sale-card, .be-card, .conn-tile { box-shadow: 0 1px 3px rgba(0,0,0,.18) !important; }
+  * { transition-duration: .12s !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; scroll-behavior: auto !important; }
+}
+/* Long lists: let the browser skip rendering off-screen rows (cheap, big win on slow devices) */
+.live-grid > *, .be-list > *, .np-grid > *, .guide-grid > *, .sl-item, .dialer-list > * { content-visibility: auto; contain-intrinsic-size: auto 120px; }
+
+/* ── Brand logos ── */
+.brand-logo{object-fit:contain;background:#fff;padding:1px;flex-shrink:0;vertical-align:middle}
+.brand-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);font-weight:700;flex-shrink:0;vertical-align:middle}
+/* Login: campaigns & partners strip */
+.partners{margin:22px auto 0;max-width:440px;text-align:center}
+.partners-label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-fg);margin-bottom:10px}
+.partners-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.partner-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:12.5px;color:var(--foreground);font-weight:500}

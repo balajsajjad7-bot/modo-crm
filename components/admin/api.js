@@ -5,8 +5,17 @@ export const api = (url, method = "GET", body) => fetch(url, { method, headers: 
 
 export function usePoll(url, ms) {
   const [state, set] = useState({ data: null, error: null });
-  const load = useCallback(() => api(url).then(({ ok, data }) => set(ok ? { data, error: null } : { data: null, error: data.error })), [url]);
-  useEffect(() => { load(); if (!ms) return; const t = setInterval(load, ms); return () => clearInterval(t); }, [load, ms]);
+  const load = useCallback(() => url && api(url).then(({ ok, data }) => set(ok ? { data, error: null } : { data: null, error: data.error })).catch(() => {}), [url]);
+  useEffect(() => {
+    if (!url) return;
+    load();
+    if (!ms) return;
+    // Only poll while the tab is visible — a hidden tab shouldn't hammer the server or re-render.
+    const t = setInterval(() => { if (typeof document === "undefined" || !document.hidden) load(); }, ms);
+    const onVis = () => { if (!document.hidden) load(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", onVis); };
+  }, [load, ms, url]);
   return [state, load];
 }
 

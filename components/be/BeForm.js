@@ -2,6 +2,7 @@
 // Budget Ease agents: submit a utility-bill discount signup. Separate from telecom sales.
 import { useEffect, useState } from "react";
 import BeCard, { money } from "./BeCard";
+import BrandLogo from "@/components/BrandLogo";
 import { Sparkles, Send, Eye, EyeOff, Lock, CheckCircle2, Upload } from "lucide-react";
 
 const EMPTY = { customer: "", phone: "", email: "", dob: "", ssn4: "", zip: "", serviceAddress: "", company: "", service: "electricity", accountNumber: "", billAmount: "", payAmount: "", notes: "" };
@@ -82,7 +83,7 @@ export default function BeForm() {
               <button type="button" className="ghost sm icon-btn" onClick={() => setShowSsn(!showSsn)} aria-label={showSsn ? "Hide" : "Show"}>{showSsn ? <EyeOff size={13} /> : <Eye size={13} />}</button></span></label>
           </div><p className="small muted" style={{ margin: "6px 0 0" }}><Lock size={11} /> SSN last 4 and date of birth are encrypted. After you submit, only admin can see them.</p></fieldset>
           <fieldset><legend>Service</legend><div className="form">
-            <label>Utility company *<input value={f.company} onChange={set("company")} list="be-companies" required /><datalist id="be-companies">{COMPANIES.map((c) => <option key={c} value={c} />)}</datalist></label>
+            <label>Utility company * {f.company && <BrandLogo name={f.company} size={16} />}<input value={f.company} onChange={set("company")} list="be-companies" required /><datalist id="be-companies">{COMPANIES.map((c) => <option key={c} value={c} />)}</datalist></label>
             <label>Service<select value={f.service} onChange={set("service")}>{["electricity", "gas", "internet", "water", "phone", "cable/TV", "other"].map((x) => <option key={x}>{x}</option>)}</select></label>
             <label style={{ gridColumn: "1/-1" }}>Service address *<input value={f.serviceAddress} onChange={set("serviceAddress")} placeholder="Street, city, state" required /></label>
             <label>ZIP code *<input value={f.zip} onChange={(e) => setF({ ...f, zip: e.target.value.replace(/\D/g, "").slice(0, 5) })} inputMode="numeric" required />{zipInfo && <span className="small muted">{zipInfo}</span>}</label>
