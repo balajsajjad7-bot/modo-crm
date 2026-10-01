@@ -2,7 +2,7 @@
 // Budget Ease agents: submit a utility-bill discount signup. Separate from telecom sales.
 import { useEffect, useState } from "react";
 import BeCard, { money } from "./BeCard";
-import { Sparkles, Send, Eye, EyeOff, Lock, CheckCircle2 } from "lucide-react";
+import { Sparkles, Send, Eye, EyeOff, Lock, CheckCircle2, Upload } from "lucide-react";
 
 const EMPTY = { customer: "", phone: "", email: "", dob: "", ssn4: "", zip: "", serviceAddress: "", company: "", service: "electricity", accountNumber: "", billAmount: "", payAmount: "", notes: "" };
 const COMPANIES = ["Duke Energy", "Florida Power & Light (FPL)", "Georgia Power", "Pacific Gas & Electric (PG&E)", "Southern California Edison (SCE)", "Con Edison", "ComEd", "Dominion Energy", "Xcel Energy", "Entergy", "AEP", "PSE&G", "National Grid", "Eversource", "Consumers Energy", "DTE Energy", "Ameren", "CenterPoint Energy", "Oncor", "TXU Energy", "Reliant", "SoCalGas", "Atmos Energy", "Spire", "Comcast Xfinity", "Spectrum", "AT&T", "Verizon", "Cox", "T-Mobile", "Frontier", "Optimum", "American Water"];
@@ -11,6 +11,7 @@ const post = (u, b) => fetch(u, { method: "POST", headers: { "content-type": "ap
 export default function BeForm() {
   const [f, setF] = useState(EMPTY); const [err, setErr] = useState(""); const [done, setDone] = useState(null); const [busy, setBusy] = useState(false);
   const [showSsn, setShowSsn] = useState(false); const [notes, setNotes] = useState(""); const [ai, setAi] = useState(""); const [zipInfo, setZipInfo] = useState(""); const [mine, setMine] = useState([]);
+  const [scan, setScan] = useState(""); const [scanning, setScanning] = useState(false);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const loadMine = () => fetch("/api/budgetease").then((r) => r.json()).then((d) => Array.isArray(d) && setMine(d)).catch(() => {});
   useEffect(() => { loadMine(); try { const p = JSON.parse(sessionStorage.getItem("modo-be-prefill") || localStorage.getItem("modo-be-prefill") || "null"); if (p) { sessionStorage.removeItem("modo-be-prefill"); localStorage.removeItem("modo-be-prefill"); setF((f0) => { const n = { ...f0 }; for (const [k, v] of Object.entries(p)) if (v) n[k] = String(v).replace(/^\$/, ""); return n; }); } } catch {} }, []);
@@ -26,6 +27,24 @@ export default function BeForm() {
     if (!r.ok) return setAi(d.error || "AI couldn't read that.");
     const next = { ...f }; for (const k of Object.keys(EMPTY)) if (d[k] != null && d[k] !== "" && !["ssn4", "dob"].includes(k)) next[k] = String(d[k]);
     setF(next); setAi("Filled in what I found. Check everything, then add the SSN last 4 and date of birth yourself.");
+  }
+  async function scanBill(file) {
+    if (!file) return;
+    setAi(""); setScanning(true); setScan("Reading the bill…");
+    try {
+      let mime = file.type || "";
+      if (!mime) { const n = file.name.toLowerCase(); mime = n.endsWith(".pdf") ? "application/pdf" : n.endsWith(".png") ? "image/png" : /\.jpe?g$/.test(n) ? "image/jpeg" : ""; }
+      const dataUrl = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); });
+      const base64 = String(dataUrl).split(",")[1] || "";
+      const r = await post("/api/budgetease/scan", { name: file.name, mime, data: base64 });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setScan(d.error || "Couldn't read the bill."); return; }
+      const next = { ...f };
+      for (const k of Object.keys(EMPTY)) if (d[k] != null && d[k] !== "" && !["ssn4", "dob", "payAmount"].includes(k)) next[k] = String(d[k]).replace(/^\$/, "");
+      setF(next);
+      setScan("Filled in what the bill shows. Now add SSN last 4, date of birth, and what the customer wants to pay.");
+    } catch { setScan("Couldn't read that file. Try a clearer scan or type the details."); }
+    finally { setScanning(false); }
   }
   async function submit(e) {
     e.preventDefault(); setErr(""); setBusy(true);
@@ -45,9 +64,14 @@ export default function BeForm() {
       <div className="sale-layout">
         <form className="panel sale-form stack" onSubmit={submit}>
           <details className="ai-fill" open={!f.customer}>
-            <summary><Sparkles size={14} /> Paste call notes and let AI fill the form</summary>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Maria Lopez 512 555 0142, Duke Energy electric, bill 186 wants 125, 4410 Ridgeview Dr Austin TX 78731…" style={{ minHeight: 80 }} />
-            <div className="row"><button type="button" className="ghost sm" onClick={autofill} disabled={!notes.trim()}><Sparkles size={13} /> Fill with AI</button><span className="small muted">{ai || "SSN and date of birth are removed before anything goes to the AI."}</span></div>
+            <summary><Sparkles size={14} /> Upload the bill or paste call notes — AI fills the form</summary>
+            <label className="bill-drop" style={{ cursor: scanning ? "wait" : "pointer" }}>
+              <Upload size={16} /> <b>{scanning ? "Reading the bill…" : "Upload the customer's bill (PDF or photo)"}</b>
+              <span className="small muted">We read it and fill the form for you</span>
+              <input type="file" accept="application/pdf,image/*" capture="environment" hidden disabled={scanning} onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; scanBill(file); }} />
+            </label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="…or paste call notes: Maria Lopez 512 555 0142, Duke Energy electric, bill 186 wants 125, 4410 Ridgeview Dr Austin TX 78731…" style={{ minHeight: 70 }} />
+            <div className="row"><button type="button" className="ghost sm" onClick={autofill} disabled={!notes.trim()}><Sparkles size={13} /> Fill from notes</button><span className="small muted">{scan || ai || "SSN and date of birth are never read or stored from a bill."}</span></div>
           </details>
           <fieldset><legend>Customer</legend><div className="form">
             <label>Full name *<input value={f.customer} onChange={set("customer")} required autoComplete="off" /></label>
