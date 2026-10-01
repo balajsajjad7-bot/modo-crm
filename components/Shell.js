@@ -117,28 +117,38 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   }, []);
   const askNotif = async () => { unlockAudio(); if ("Notification" in window) { const p = await Notification.requestPermission(); setNotif(p); if (p === "granted") subscribePush(); } };
 
-  // Supervisor live mic listen (off-call): if an admin asks to listen to THIS agent's mic, send it
-  // through Modo's own relay. The agent always sees a banner while it's happening — never silent.
+  // Supervisor live mic listen (off-call): an admin can REQUEST to listen; nothing streams until the
+  // agent taps Allow. While live, the agent sees a banner. Never silent, never without consent.
   const [micWatched, setMicWatched] = useState(false);
+  const [listenAsk, setListenAsk] = useState(null); // { id } pending the agent's decision
   const micRef = useRef(null); const micSenders = useRef(new Map());
+  const micDecision = useRef({ accepted: new Set(), declined: new Set() });
+  const declineListen = async (id) => { micDecision.current.declined.add(id); setListenAsk(null); await fetch("/api/listen/stop", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) }).catch(() => {}); };
+  const allowListen = (id) => { micDecision.current.accepted.add(id); setListenAsk(null); };
   useEffect(() => {
     if (me?.role !== "AGENT") return;
     let stop = false;
-    const getMic = async () => { if (micRef.current) return micRef.current; micRef.current = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); return micRef.current; };
+    const getMic = async () => { if (micRef.current) return micRef.current; if (!navigator.mediaDevices?.getUserMedia) throw new Error("no mic"); micRef.current = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); return micRef.current; };
     const releaseMic = () => { if (micRef.current) { micRef.current.getTracks().forEach((t) => t.stop()); micRef.current = null; } };
     const tick = async () => {
       if (stop) return;
       const d = await fetch("/api/listen", { cache: "no-store" }).then((r) => r.json()).catch(() => null);
-      const reqs = (d?.requests || []).filter((r) => !r.callSessionId); // direct mic listens only (call listens are handled on the Call-assist screen)
-      setMicWatched(reqs.length > 0);
-      for (const r of reqs) if (!micSenders.current.has(r.id)) {
+      const reqs = (d?.requests || []).filter((r) => !r.callSessionId); // direct mic listens (call listens are handled on the Call-assist screen)
+      const dec = micDecision.current;
+      // Ask about the first request the agent hasn't answered yet
+      const undecided = reqs.find((r) => !dec.accepted.has(r.id) && !dec.declined.has(r.id));
+      setListenAsk((cur) => undecided ? (cur && cur.id === undecided.id ? cur : { id: undecided.id }) : (cur && reqs.find((r) => r.id === cur.id) ? cur : null));
+      // Only stream for requests the agent explicitly allowed
+      const allowed = reqs.filter((r) => dec.accepted.has(r.id));
+      setMicWatched(allowed.length > 0);
+      for (const r of allowed) if (!micSenders.current.has(r.id)) {
         micSenders.current.set(r.id, { close: () => {} });
         try { const mic = await getMic(); const sd = await startSending(r.id, { agent: mic }, () => micSenders.current.delete(r.id)); micSenders.current.set(r.id, sd); }
         catch { micSenders.current.delete(r.id); }
       }
       for (const [id, sd] of micSenders.current) if (!reqs.find((r) => r.id === id)) { sd.close?.(); micSenders.current.delete(id); }
-      if (!reqs.length) releaseMic();
-      if (!stop) setTimeout(tick, 3000);
+      if (!allowed.length) releaseMic();
+      if (!stop) setTimeout(tick, 2500);
     };
     tick();
     return () => { stop = true; for (const [, sd] of micSenders.current) sd.close?.(); micSenders.current.clear(); releaseMic(); };
@@ -189,6 +199,17 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
           ...(me?.role === "ADMIN" ? [{ label: lockOn ? "Turn CRM back on" : "Emergency stop (lock agents out)", icon: <Power size={16} />, danger: !lockOn, onClick: toggleLock }] : []),
           { label: signOutLabel, icon: <LogOut size={16} />, danger: true, onClick: () => onSignOut(huddle.leave) }]} />
       {micWatched && <div className="mic-banner" role="status"><Mic size={14} /> A supervisor is listening to your microphone.</div>}
+      {listenAsk && (
+        <div className="listen-ask-bg" role="alertdialog" aria-label="Listen request">
+          <div className="panel stack listen-ask">
+            <div className="row" style={{ gap: 10 }}><span className="la-ico"><Mic size={20} /></span><div><b>Your supervisor wants to listen in</b><div className="muted small">They're asking to hear your microphone live. Nothing is sent until you allow it.</div></div></div>
+            <div className="row" style={{ gap: 8 }}>
+              <button onClick={() => allowListen(listenAsk.id)}><Mic size={15} /> Allow</button>
+              <button className="ghost" onClick={() => declineListen(listenAsk.id)}>Decline</button>
+            </div>
+          </div>
+        </div>
+      )}
       {lockOn && <div className="lock-banner" role="status"><Power size={14} /> Emergency stop is ON: agents are locked out. <button className="sm" onClick={toggleLock}>Turn back on</button></div>}
       {locked && <div className="lock-screen" role="alertdialog" aria-label="CRM paused"><div className="panel"><Power size={34} /><h1>Paused by admin</h1><p>{locked}</p><p className="muted small">This page will come back by itself when admin turns the CRM on again.</p></div></div>}
       <main className="shell">

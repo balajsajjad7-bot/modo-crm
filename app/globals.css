@@ -1476,3 +1476,10 @@ a.se-toast{color:inherit;text-decoration:none;cursor:pointer}
 .bar>div:first-child{min-width:0}
 .bar h1{overflow:hidden;text-overflow:ellipsis}
 .bar .row{flex-wrap:wrap;justify-content:flex-end}
+
+/* Mic banner: pin above everything so it's never hidden behind the nav */
+.mic-banner{position:fixed;top:0;left:0;right:0;z-index:205;border-radius:0}
+/* Agent consent dialog for a supervisor listen request */
+.listen-ask-bg{position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.listen-ask{max-width:380px;width:100%;border:1px solid var(--accent)}
+.la-ico{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);flex-shrink:0}

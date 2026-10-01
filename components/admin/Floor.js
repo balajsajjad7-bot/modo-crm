@@ -29,8 +29,11 @@ export default function Floor() {
   const stopMic = async () => { try { await micCtl.current?.close(); } catch {} micCtl.current = null; setMicOn(null); if (micAudio.current) micAudio.current.srcObject = null; };
   const listenMic = async (a) => {
     await stopMic(); setMicMsg(""); setMicOn({ id: a.id, name: a.name, connecting: true });
+    let gotStream = false;
     try {
-      micCtl.current = await startListening({ agentId: a.id }, (who, st) => { if (micAudio.current) { micAudio.current.srcObject = st; micAudio.current.play?.().catch(() => {}); } setMicOn((m) => m && { ...m, connecting: false }); }, () => setMicOn(null));
+      micCtl.current = await startListening({ agentId: a.id },
+        (who, st) => { gotStream = true; if (micAudio.current) { micAudio.current.srcObject = st; micAudio.current.play?.().catch(() => {}); } setMicOn((m) => m && { ...m, connecting: false }); },
+        () => { setMicOn(null); if (!gotStream) setMicMsg(`${a.name} declined, or didn't accept the request.`); });
     } catch (e) { setMicMsg(e.message || "Couldn't start listening."); setMicOn(null); }
   };
   const viciConnected = vici.data && !vici.error && (vici.data.provider === "vicidial" || vici.data.agents);
@@ -128,9 +131,9 @@ export default function Floor() {
           <h2><Mic size={17} /> Listen to an agent's mic <span className="muted small">live, through Modo — works even off-call</span></h2>
           {micOn && <button className="danger sm" onClick={stopMic}><Square size={13} /> Stop listening to {micOn.name.split(" ")[0]}</button>}
         </div>
-        <p className="muted small" style={{ margin: 0 }}>Audio streams straight from the agent's browser to yours and is not recorded. The agent sees a “supervisor is listening” banner the whole time.</p>
+        <p className="muted small" style={{ margin: 0 }}>The agent is asked to <b>Allow</b> before anything is sent, then sees a “supervisor is listening” banner the whole time. Audio streams straight from their browser to yours and is not recorded.</p>
         {micMsg && <div className="err small">{micMsg}</div>}
-        {micOn && <div className="receipt"><Ear size={13} /> {micOn.connecting ? `Connecting to ${micOn.name}…` : `Listening to ${micOn.name}. Keep this tab open.`}</div>}
+        {micOn && <div className="receipt"><Ear size={13} /> {micOn.connecting ? `Waiting for ${micOn.name} to accept the request…` : `Listening to ${micOn.name}. Keep this tab open.`}</div>}
         {(() => {
           const off = (st) => ["not in", "clocked out"].includes(st);
           const agents = [...p].sort((a, b) => (off(a.status) ? 1 : 0) - (off(b.status) ? 1 : 0) || a.name.localeCompare(b.name));
