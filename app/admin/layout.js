@@ -17,9 +17,9 @@ export default function AdminLayout({ children }) {
     { label: "Sales", icon: i(Receipt), badge: fresh || null, children: [
       { href: "/admin/sales", label: "Sales", hint: "Sales submitted by agents", icon: i(Receipt), badge: fresh || null },
       { href: "/admin/budgetease", label: "Budget Ease", hint: "Utility-bill discount signups (separate from sales)", icon: i(PiggyBank) },
-      { href: "/admin/tracking", label: "Order tracking", hint: "Auto-tracked packages: delivered or not, by carrier", icon: i(PackageSearch) },
       { href: "/admin/reports", label: "Reports", hint: "Sales, pipeline, attendance trends", icon: i(BarChart3) },
     ] },
+    { href: "/admin/tracking", label: "Order tracking", hint: "Auto-tracked packages: delivered or not, by carrier", icon: i(PackageSearch) },
     { label: "CRM", icon: i(Briefcase), children: [
       { href: "/admin/pipeline", label: "Pipeline", hint: "Deals by stage, drag to move", icon: i(Kanban) },
       { href: "/admin/contacts", label: "Customers", hint: "Everyone you've talked to", icon: i(Contact) },

@@ -17,7 +17,7 @@ const CARRIER_URL = {
   usps: (t) => `https://tools.usps.com/go/TrackConfirmAction?tLabels=${t}`,
   dhl: (t) => `https://www.dhl.com/us-en/home/tracking.html?tracking-id=${t}`,
 };
-const trackUrl = (r) => (CARRIER_URL[(r.carrier || "").toLowerCase()] || ((t) => `https://www.google.com/search?q=${encodeURIComponent(t + " tracking")}`))(encodeURIComponent(r.trackingNo || ""));
+const trackUrl = (r) => (CARRIER_URL[(r.carrier || "").toLowerCase()] || ((t) => `https://www.google.com/search?q=${encodeURIComponent(t + " tracking")}`))(encodeURIComponent(r.trackingNo || r.orderNumber || ""));
 const badgeClass = (s) => s === "delivered" ? "ok" : s === "exception" || s === "returned" ? "red" : s === "out_for_delivery" ? "ok" : "late";
 const fmt = (d) => d ? new Date(d).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
@@ -92,7 +92,7 @@ export default function OrderTracking() {
             <thead><tr><th>Customer</th><th>Order #</th><th>Carrier</th><th>Status</th><th>Latest update</th><th>Delivered</th><th>Agent</th><th></th></tr></thead>
             <tbody>{list.map((r) => (
               <tr key={r.id}>
-                <td>{r.customer || "—"}<div className="muted small num">{r.trackingNo}</div></td>
+                <td>{r.customer || "—"}<div className="muted small num">{r.trackingNo || r.orderNumber}</div></td>
                 <td className="num">{r.orderNumber || "—"}</td>
                 <td className="small">{(r.carrier || "auto").toUpperCase()}</td>
                 <td><span className={"chip " + badgeClass(r.trackStatus)}>{STATUS_LABEL[r.trackStatus] || "Not checked"}</span></td>

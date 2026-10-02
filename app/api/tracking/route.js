@@ -8,9 +8,10 @@ export async function GET() {
   const { error } = await requireRole("ADMIN");
   if (error) return error;
   const cfg = await trackingConfig();
+  // Include old orders too: anything with a tracking number OR an order number (we track by whichever exists).
   const rows = await db.sale.findMany({
-    where: { trackingNo: { not: null }, status: { not: "REJECTED" } },
-    orderBy: { createdAt: "desc" }, take: 500,
+    where: { status: { not: "REJECTED" }, OR: [{ trackingNo: { not: null } }, { orderNumber: { not: null } }] },
+    orderBy: { createdAt: "desc" }, take: 800,
     select: { id: true, receipt: true, customer: true, phone: true, orderNumber: true, trackingNo: true, carrier: true, trackStatus: true, trackStage: true, trackUpdatedAt: true, deliveredAt: true, createdAt: true, device: true, office: true, user: { select: { name: true } } },
   });
   return NextResponse.json({ configured: !!cfg, rows });
@@ -23,12 +24,15 @@ export async function POST(req) {
   const cfg = await trackingConfig();
   if (!cfg) return NextResponse.json({ error: "Add your AfterShip API key in Connectors → Order tracking." }, { status: 400 });
   const b = await req.json().catch(() => ({}));
-  const where = b.id ? { id: b.id } : { trackingNo: { not: null }, status: { not: "REJECTED" }, OR: [{ trackStatus: null }, { trackStatus: { notIn: ["delivered", "returned"] } }] };
-  const sales = await db.sale.findMany({ where, take: b.id ? 1 : 80, select: { id: true, trackingNo: true, carrier: true } });
+  // Refresh ones not yet delivered — new and old. Track by tracking number, or fall back to the order number.
+  const where = b.id ? { id: b.id } : { status: { not: "REJECTED" }, OR: [{ trackingNo: { not: null } }, { orderNumber: { not: null } }], AND: [{ OR: [{ trackStatus: null }, { trackStatus: { notIn: ["delivered", "returned"] } }] }] };
+  const sales = await db.sale.findMany({ where, orderBy: { createdAt: "desc" }, take: b.id ? 1 : 120, select: { id: true, trackingNo: true, orderNumber: true, carrier: true } });
   let ok = 0, fail = 0;
   for (const s of sales) {
+    const number = s.trackingNo || s.orderNumber;
+    if (!number) continue;
     try {
-      const r = await track(cfg.apiKey, s.trackingNo, s.carrier);
+      const r = await track(cfg.apiKey, number, s.carrier);
       await db.sale.update({ where: { id: s.id }, data: { trackStatus: r.status, trackStage: r.stage?.slice(0, 300) || null, trackUpdatedAt: new Date(), deliveredAt: r.deliveredAt ? new Date(r.deliveredAt) : null } });
       ok++;
     } catch (e) {
