@@ -7,6 +7,16 @@ import { Send, Wand2, Eraser } from "lucide-react";
 
 const EMPTY = { saleType: "new", campaignId: "", customer: "", phone: "", email: "", address: "", zip: "", orderNumber: "", billBefore: "", discountPct: "", billAfter: "", nextBillDate: "", lines: "", overcharged: "", device: "", deviceColor: "", storage: "", specs: "", gift: "", office: "Texas", locationCode: "", closerId: "", trackingNo: "", carrier: "auto", notes: "" };
 const CARRIER_OPTS = ["auto", "ups", "fedex", "usps", "dhl"];
+const enc = (s) => encodeURIComponent(String(s || "").trim());
+// "Track this order" quick buttons: carrier order-status pages + shipment tracking by number.
+const CARRIER_TRACK = [
+  { name: "Verizon", url: () => "https://www.verizon.com/digital/nsa/nos/ui/orders/trackmyorder/" },
+  { name: "AT&T", url: () => "https://www.att.com/orderstatus/" },
+  { name: "T-Mobile", url: () => "https://www.t-mobile.com/order-status" },
+  { name: "UPS", url: (t) => `https://www.ups.com/track?tracknum=${enc(t)}` },
+  { name: "FedEx", url: (t) => `https://www.fedex.com/fedextrack/?trknbr=${enc(t)}` },
+  { name: "USPS", url: (t) => `https://tools.usps.com/go/TrackConfirmAction?tLabels=${enc(t)}` },
+];
 const GIFT_OPTS = ["Cover", "Screen protector", "Charger", "Earbuds", "Smartwatch", "Gift card", "Free line", "Accessory bundle", "Tablet"];
 const STORAGE_OPTS = ["128 GB", "256 GB", "512 GB", "1 TB"];
 const OFFICES = ["Texas", "Florida", "California", "New York", "Georgia", "Arizona", "Nevada", "Ohio", "Other"];
@@ -97,6 +107,13 @@ export default function SaleForm({ onDone }) {
           {I("locationCode", "Location code", { placeholder: "e.g. TX-02" })}
           {I("trackingNo", "Tracking number", { placeholder: "shipment tracking # (auto-tracked)" })}
           <label style={{ gridColumn: "1/-1" }}>Carrier{chips("carrier", CARRIER_OPTS, false)}<span className="muted small">“auto” lets Modo detect the carrier from the tracking number.</span></label>
+          <div style={{ gridColumn: "1/-1" }}>
+            <span className="sf-l">Track this order</span>
+            <div className="chip-pick" style={{ marginTop: 4 }}>
+              {CARRIER_TRACK.map((c) => <a key={c.name} className="chip-btn" href={c.url(f.trackingNo || f.orderNumber)} target="_blank" rel="noreferrer">{c.name}</a>)}
+            </div>
+            <span className="muted small">Opens the carrier's order/shipment page in a new tab (use a US VPN if it blocks non-US visitors).</span>
+          </div>
           <label>Closed by<select value={f.closerId} onChange={set("closerId")}><option value="">Me ({me?.name})</option>{people.filter((p) => p.role !== "ADMIN").map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
         </div></fieldset>
 
