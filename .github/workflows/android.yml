@@ -8,31 +8,45 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+      KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASS: ${{ secrets.KEY_PASS }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.7' }
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+      - name: Decode signing key
+        if: ${{ env.KEYSTORE_B64 != '' }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$PWD/android/upload.jks"
+          echo "KEYSTORE_FILE=$PWD/android/upload.jks" >> $GITHUB_ENV
 
-      - name: Accept Android licenses
-        run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+      - name: Build SIGNED release (AAB for Play + APK to install)
+        if: ${{ env.KEYSTORE_B64 != '' }}
+        working-directory: android
+        run: gradle bundleRelease assembleRelease --no-daemon --stacktrace
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.7'
-
-      - name: Build debug APK
+      - name: Build debug APK (no signing key set yet)
+        if: ${{ env.KEYSTORE_B64 == '' }}
         working-directory: android
         run: gradle assembleDebug --no-daemon --stacktrace
 
-      - name: Upload APK
+      - name: Upload Play bundle (.aab)
+        if: ${{ env.KEYSTORE_B64 != '' }}
         uses: actions/upload-artifact@v4
-        with:
-          name: modo-android-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+        with: { name: modo-playstore-aab, path: android/app/build/outputs/bundle/release/app-release.aab, if-no-files-found: warn }
+
+      - name: Upload installable release APK
+        if: ${{ env.KEYSTORE_B64 != '' }}
+        uses: actions/upload-artifact@v4
+        with: { name: modo-release-apk, path: android/app/build/outputs/apk/release/app-release.apk, if-no-files-found: warn }
+
+      - name: Upload debug APK
+        if: ${{ env.KEYSTORE_B64 == '' }}
+        uses: actions/upload-artifact@v4
+        with: { name: modo-android-apk, path: android/app/build/outputs/apk/debug/app-debug.apk, if-no-files-found: error }
