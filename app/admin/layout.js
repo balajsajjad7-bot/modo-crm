@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, PackageSearch } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 import { sectionForPath } from "@/lib/supaccess";
@@ -17,6 +17,7 @@ export default function AdminLayout({ children }) {
     { label: "Sales", icon: i(Receipt), badge: fresh || null, children: [
       { href: "/admin/sales", label: "Sales", hint: "Sales submitted by agents", icon: i(Receipt), badge: fresh || null },
       { href: "/admin/budgetease", label: "Budget Ease", hint: "Utility-bill discount signups (separate from sales)", icon: i(PiggyBank) },
+      { href: "/admin/tracking", label: "Order tracking", hint: "Auto-tracked packages: delivered or not, by carrier", icon: i(PackageSearch) },
       { href: "/admin/reports", label: "Reports", hint: "Sales, pipeline, attendance trends", icon: i(BarChart3) },
     ] },
     { label: "CRM", icon: i(Briefcase), children: [

@@ -37,6 +37,7 @@ export async function POST(req) {
     overcharged: num(b.overcharged), device: str(b.device, 120), deviceColor: str(b.deviceColor, 60), storage: str(b.storage, 40),
     specs: str(b.specs, 400), gift: str(b.gift, 200), office: str(b.office, 40), locationCode: str(b.locationCode, 40), notes: str(b.notes, 2000),
     saleType: b.saleType === "addon" ? "addon" : "new", campaignId: str(b.campaignId, 60),
+    trackingNo: str(b.trackingNo, 60), carrier: str(b.carrier, 20),
   };
   if (!f.customer || !f.phone || !f.orderNumber) return NextResponse.json({ error: "Customer name, contact number and order number are required." }, { status: 400 });
   if (f.nextBillDate && isNaN(f.nextBillDate)) f.nextBillDate = null;
@@ -66,7 +67,7 @@ export async function POST(req) {
     raw: asText(f, user.name, closer?.name || user.name), summary: null, customer: f.customer, product, amount: f.billAfter,
     phone, email: f.email, address: f.address, zip: f.zip, orderNumber: f.orderNumber, discountPct: f.discountPct, billBefore: f.billBefore, billAfter: f.billAfter,
     nextBillDate: f.nextBillDate, lines: f.lines, overcharged: f.overcharged, device: f.device, deviceColor: f.deviceColor, storage: f.storage, specs: f.specs,
-    gift: f.gift, office: f.office, locationCode: f.locationCode, notes: f.notes, saleType: f.saleType, campaignId: f.campaignId || user.campaignId || null, closerId: closer?.id || user.id, flags: flags.join(", ") || null, duplicateOf: dup?.receipt || null,
+    gift: f.gift, office: f.office, locationCode: f.locationCode, notes: f.notes, saleType: f.saleType, campaignId: f.campaignId || user.campaignId || null, trackingNo: f.trackingNo || null, carrier: f.carrier || null, closerId: closer?.id || user.id, flags: flags.join(", ") || null, duplicateOf: dup?.receipt || null,
   } });
   // Every sale puts the customer in the agent's Customers + Notepad (or updates the existing record)
   try {

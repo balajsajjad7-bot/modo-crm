@@ -108,6 +108,12 @@ model Sale {
   notes        String?
   saleType     String?
   campaignId   String?   // new | addon (another device for an existing customer)
+  trackingNo   String?   // shipment tracking number
+  carrier      String?   // ups | fedex | usps | dhl | auto
+  trackStatus  String?   // normalized: delivered | out_for_delivery | in_transit | dropped_off | picked_up | pending | exception | returned
+  trackStage   String?   // human text of the latest checkpoint
+  trackUpdatedAt DateTime?
+  deliveredAt    DateTime?
   duplicateOf String?
   shiftDate String   @default("")
   status    String   @default("NEW") // NEW | VERIFIED (= Active) | REJECTED (= Not active)

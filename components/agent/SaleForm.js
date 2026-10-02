@@ -5,7 +5,8 @@ import SaleCard from "@/components/SaleCard";
 import { useShell } from "@/components/Shell";
 import { Send, Wand2, Eraser } from "lucide-react";
 
-const EMPTY = { saleType: "new", campaignId: "", customer: "", phone: "", email: "", address: "", zip: "", orderNumber: "", billBefore: "", discountPct: "", billAfter: "", nextBillDate: "", lines: "", overcharged: "", device: "", deviceColor: "", storage: "", specs: "", gift: "", office: "Texas", locationCode: "", closerId: "", notes: "" };
+const EMPTY = { saleType: "new", campaignId: "", customer: "", phone: "", email: "", address: "", zip: "", orderNumber: "", billBefore: "", discountPct: "", billAfter: "", nextBillDate: "", lines: "", overcharged: "", device: "", deviceColor: "", storage: "", specs: "", gift: "", office: "Texas", locationCode: "", closerId: "", trackingNo: "", carrier: "auto", notes: "" };
+const CARRIER_OPTS = ["auto", "ups", "fedex", "usps", "dhl"];
 const GIFT_OPTS = ["Cover", "Screen protector", "Charger", "Earbuds", "Smartwatch", "Gift card", "Free line", "Accessory bundle", "Tablet"];
 const STORAGE_OPTS = ["128 GB", "256 GB", "512 GB", "1 TB"];
 const OFFICES = ["Texas", "Florida", "California", "New York", "Georgia", "Arizona", "Nevada", "Ohio", "Other"];
@@ -93,7 +94,9 @@ export default function SaleForm({ onDone }) {
           {I("orderNumber", "Order number *", { required: true, className: "order-input" })}
           <label>Campaign<select value={f.campaignId} onChange={set("campaignId")}><option value="">—</option>{camps.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           <label style={{ gridColumn: "1/-1" }}>Office{chips("office", OFFICES, false)}</label>
-          {I("locationCode", "Location code", { placeholder: "e.g. ISB-02" })}
+          {I("locationCode", "Location code", { placeholder: "e.g. TX-02" })}
+          {I("trackingNo", "Tracking number", { placeholder: "shipment tracking # (auto-tracked)" })}
+          <label style={{ gridColumn: "1/-1" }}>Carrier{chips("carrier", CARRIER_OPTS, false)}<span className="muted small">“auto” lets Modo detect the carrier from the tracking number.</span></label>
           <label>Closed by<select value={f.closerId} onChange={set("closerId")}><option value="">Me ({me?.name})</option>{people.filter((p) => p.role !== "ADMIN").map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
         </div></fieldset>
 
