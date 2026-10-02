@@ -1,7 +1,7 @@
 name: Build Modo Android app
 
 on:
-  workflow_dispatch: {}      # run manually from the Actions tab
+  workflow_dispatch: {}
   push:
     paths: [ "android/**", ".github/workflows/android.yml" ]
 
@@ -18,8 +18,8 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android licenses
+        run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
