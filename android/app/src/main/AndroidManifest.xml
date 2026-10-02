@@ -29,6 +29,20 @@
           android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
           android:resource="@color/backgroundColor" />
 
+      <!-- Native splash screen while the app opens -->
+      <meta-data
+          android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
+          android:resource="@drawable/splash" />
+      <meta-data
+          android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
+          android:resource="@color/backgroundColor" />
+      <meta-data
+          android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION"
+          android:value="300" />
+      <meta-data
+          android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY"
+          android:value="com.modo.crm.fileprovider" />
+
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
@@ -41,5 +55,15 @@
         <data android:scheme="https" android:host="modo-crm1.vercel.app" />
       </intent-filter>
     </activity>
+
+    <provider
+        android:name="androidx.core.content.FileProvider"
+        android:authorities="com.modo.crm.fileprovider"
+        android:exported="false"
+        android:grantUriPermissions="true">
+      <meta-data
+          android:name="android.support.FILE_PROVIDER_PATHS"
+          android:resource="@xml/filepaths" />
+    </provider>
   </application>
 </manifest>
