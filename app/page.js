@@ -44,7 +44,8 @@ export default function Login() {
     <main className="login">
       <div className="corner-toggle"><AppearanceToggle /></div>
       <div className="panel login-card">
-        <div className="pn-logo" style={{ padding: 0 }}><span className="diamond" /><b>MODO</b></div>
+        <div className="pn-logo" style={{ padding: 0, justifyContent: "center" }}><span className="diamond" /><b>MODO</b></div>
+        <p className="login-tag">Your call center, all in one place.</p>
         {lock && <div className="err small">{lock} Only admins can sign in right now.</div>}
         {step === "creds" && (
           <form className="stack" onSubmit={signIn}>
