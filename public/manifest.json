@@ -1,13 +1,22 @@
 {
+  "id": "/",
   "name": "CRM Modo",
   "short_name": "Modo",
+  "description": "Call-center CRM: attendance, sales, AI call assist, dialer, chat and order tracking for your team.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#0b0b0f",
-  "theme_color": "#7c5cff",
+  "theme_color": "#ff5a3c",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

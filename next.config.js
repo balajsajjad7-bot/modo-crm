@@ -12,4 +12,6 @@ module.exports = {
   transpilePackages: ["ogl"],
   experimental: { serverComponentsExternalPackages: ["ws", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/client", "nodemailer", "undici", "web-push"] },
   async headers() { return [{ source: "/:path*", headers: security }]; },
+  // Android app (TWA/Play Store) verification: serve Digital Asset Links at the well-known path.
+  async rewrites() { return [{ source: "/.well-known/assetlinks.json", destination: "/api/assetlinks" }]; },
 };
