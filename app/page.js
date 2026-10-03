@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { ShieldCheck, KeyRound } from "lucide-react";
 import AppearanceToggle from "@/components/Appearance";
 import Partners3D from "@/components/Partners3D";
+import LoginAura from "@/components/LoginAura";
 
 export default function Login() {
   const [agentId, setId] = useState(""); const [password, setPw] = useState("");
@@ -40,6 +41,7 @@ export default function Login() {
 
   return (
     <main className="login">
+      <LoginAura />
       <div className="corner-toggle"><AppearanceToggle /></div>
       <div className="panel login-card">
         <div className="pn-logo" style={{ padding: 0, justifyContent: "center" }}><span className="diamond" /><b>MODO</b></div>
