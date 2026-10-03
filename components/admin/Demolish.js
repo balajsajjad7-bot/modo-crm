@@ -2,13 +2,24 @@
 // Owner-only kill switch: wipes all operational data after the CEO enters the demolish key + types DEMOLISH.
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { Bomb, ShieldAlert, KeyRound, X } from "lucide-react";
+import { Bomb, ShieldAlert, KeyRound, X, Download } from "lucide-react";
+
+async function downloadBackup() {
+  const r = await fetch("/api/backup", { cache: "no-store" });
+  if (!r.ok) return false;
+  const blob = await r.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `modo-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  return true;
+}
 
 export default function Demolish() {
   const [me, setMe] = useState(null); const [keySet, setKeySet] = useState(false);
   const [open, setOpen] = useState(false); const [setup, setSetup] = useState(false);
   const [key, setKey] = useState(""); const [newKey, setNewKey] = useState(""); const [confirm, setConfirm] = useState("");
-  const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false); const [done, setDone] = useState(false);
+  const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false); const [done, setDone] = useState(false); const [backedUp, setBackedUp] = useState(false);
   useEffect(() => { fetch("/api/me").then((r) => r.json()).then(setMe).catch(() => {}); api("/api/demolish").then((r) => r.ok && setKeySet(!!r.data.keySet)); }, []);
   if (!me?.ceo) return null; // only the owner sees this
 
@@ -34,7 +45,8 @@ export default function Demolish() {
         <div><b>Demolish Modo</b><div className="muted small">Owner-only. Permanently erases all sales, customers, calls, chat, agents and data. Cannot be undone.</div></div>
       </div>
       <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-        <button className="danger" onClick={() => { setOpen(true); setMsg(""); setKey(""); setConfirm(""); }}><ShieldAlert size={15} /> Demolish Modo</button>
+        <button className="ghost sm" onClick={async () => { setMsg(""); const ok = await downloadBackup(); setMsg(ok ? "Backup downloaded." : "Backup failed."); }}><Download size={13} /> Download backup</button>
+        <button className="danger" onClick={() => { setOpen(true); setMsg(""); setKey(""); setConfirm(""); setBackedUp(false); }}><ShieldAlert size={15} /> Demolish Modo</button>
         <button className="ghost sm" onClick={() => { setSetup(true); setMsg(""); setNewKey(""); }}><KeyRound size={13} /> {keySet ? "Change demolish key" : "Set demolish key"}</button>
         {!keySet && <span className="small" style={{ color: "var(--amber)" }}>Set a demolish key first.</span>}
       </div>
@@ -65,10 +77,11 @@ export default function Demolish() {
               <>
                 <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ color: "#ff6b74" }}><ShieldAlert size={18} /> Demolish Modo</h2><button className="ghost sm icon-btn" onClick={() => setOpen(false)}><X size={14} /></button></div>
                 <div className="err" style={{ margin: 0 }}>This <b>permanently erases everything</b>: sales, customers, calls, chat, agents, connectors and all data. It cannot be undone.</div>
+                <button className="ghost sm" style={{ alignSelf: "flex-start" }} onClick={async () => { const ok = await downloadBackup(); setBackedUp(ok); setMsg(ok ? "Backup downloaded — safe to proceed." : "Backup failed — try again."); }}><Download size={13} /> {backedUp ? "Backup downloaded ✓" : "Download backup first"}</button>
                 <label>Demolish key<input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="Enter your demolish key" autoComplete="off" /></label>
                 <label>Type <b>DEMOLISH</b> to confirm<input value={confirm} onChange={(e) => setConfirm(e.target.value.toUpperCase())} placeholder="DEMOLISH" autoComplete="off" /></label>
                 {msg && <div className="err small">{msg}</div>}
-                <div className="row"><button className="danger" onClick={demolish} disabled={busy || !key || confirm !== "DEMOLISH"}>{busy ? "Demolishing…" : "Permanently demolish"}</button><button className="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancel</button></div>
+                <div className="row"><button className="danger" onClick={demolish} disabled={busy || !key || confirm !== "DEMOLISH" || !backedUp} title={!backedUp ? "Download a backup first" : ""}>{busy ? "Demolishing…" : "Permanently demolish"}</button><button className="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancel</button></div>
               </>
             )}
           </div>
