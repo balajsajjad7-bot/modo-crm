@@ -23,12 +23,14 @@ export default function Partners3D() {
     <div className="p3d-bar">
       <span className="p3d-label">Campaigns &amp; partners</span>
       <div className="p3d-viewport">
-        <div className="p3d-track">
-          {items.map((p, i) => (
-            <div className="p3d-tile" key={i}>
-              <span className="p3d-logo" style={{ background: p.bg, color: p.fg }}>{p.name}</span>
-            </div>
-          ))}
+        <div className="p3d-tilt">
+          <div className="p3d-track">
+            {items.map((p, i) => (
+              <div className="p3d-tile" key={i}>
+                <span className="p3d-logo" style={{ background: p.bg, color: p.fg }}>{p.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

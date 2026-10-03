@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import PillNav from "./PillNav";
 import { useHuddle } from "./useHuddle";
-import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare } from "lucide-react";
+import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee } from "lucide-react";
 import { guideForRole } from "@/lib/guide";
 import { startSending } from "@/components/listen";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -57,6 +57,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   const [presence, setPresence] = useState(null);
   const [due, setDue] = useState([]);
   const [notif, setNotif] = useState("granted");
+  const [dialOpen, setDialOpen] = useState(false);
   const isDesktop = typeof window !== "undefined" && !!window.modo?.isDesktop;
   const [locked, setLocked] = useState(null); const [myStatus, setMyStatus] = useState("available");
   useEffect(() => { if (me?.status) setMyStatus(me.status); }, [me]);
@@ -231,13 +232,33 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
         <ErrorBoundary resetKey={path}>{children}</ErrorBoundary>
       </main>
 
-      {/* Floating chat button on every page */}
-      {!path.endsWith("/chat") && (
-        <button className="chat-fab" aria-label="Open chat" onClick={() => router.push(home === "/agent" ? "/agent/chat" : "/admin/chat")}>
+      {/* Floating shortcuts: agents get a speed-dial of their most-used actions; everyone else a chat button */}
+      {me?.role === "AGENT" ? (
+        <div className={"agent-dial" + (dialOpen ? " open" : "")}>
+          {dialOpen && <div className="ad-backdrop" onClick={() => setDialOpen(false)} />}
+          <div className="ad-actions" role="menu">
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/dialer"); }}><span className="ad-ic"><PhoneCall size={18} /></span>Dialer</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/sale"); }}><span className="ad-ic"><Receipt size={18} /></span>Submit sale</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/lookups"); }}><span className="ad-ic"><SearchCheck size={18} /></span>Lookups</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent"); }}><span className="ad-ic"><Timer size={18} /></span>My shift</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/chat"); }}><span className="ad-ic"><MessageSquare size={18} /></span>Chat{unread > 0 && <em className="ad-badge">{unread > 99 ? "99+" : unread}</em>}</button>
+            <div className="ad-status">
+              {[["available", "🟢", "Available"], ["away", "⚪", "Away"], ["busy", "🟠", "Busy"]].map(([k, e, l]) => (
+                <button key={k} className={myStatus === k ? "on" : ""} title={l} onClick={() => { setStatus(k); setDialOpen(false); }}>{e}</button>
+              ))}
+            </div>
+          </div>
+          <button className="chat-fab ad-main" aria-label="Quick actions" aria-expanded={dialOpen} onClick={() => setDialOpen((o) => !o)}>
+            {dialOpen ? <X size={24} /> : <Plus size={26} />}
+            {!dialOpen && unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
+          </button>
+        </div>
+      ) : (!path.endsWith("/chat") && (
+        <button className="chat-fab" aria-label="Open chat" onClick={() => router.push("/admin/chat")}>
           <MessageSquare size={22} />
           {unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
         </button>
-      )}
+      ))}
 
       {invites.slice(0, 1).map((c) => (
         <div key={c.huddle.id} className="call-banner" role="alert">

@@ -21,7 +21,8 @@ export default function Demolish() {
   const [key, setKey] = useState(""); const [newKey, setNewKey] = useState(""); const [confirm, setConfirm] = useState("");
   const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false); const [done, setDone] = useState(false); const [backedUp, setBackedUp] = useState(false);
   useEffect(() => { fetch("/api/me").then((r) => r.json()).then(setMe).catch(() => {}); api("/api/demolish").then((r) => r.ok && setKeySet(!!r.data.keySet)); }, []);
-  if (!me?.ceo) return null; // only the owner sees this
+  if (!me || me.role !== "ADMIN") return null; // visible to admins; only the owner (CEO) can actually run it (enforced server-side)
+  const owner = !!me.ceo;
 
   async function saveKey() {
     setBusy(true); setMsg("");
@@ -46,9 +47,10 @@ export default function Demolish() {
       </div>
       <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
         <button className="ghost sm" onClick={async () => { setMsg(""); const ok = await downloadBackup(); setMsg(ok ? "Backup downloaded." : "Backup failed."); }}><Download size={13} /> Download backup</button>
-        <button className="danger" onClick={() => { setOpen(true); setMsg(""); setKey(""); setConfirm(""); setBackedUp(false); }}><ShieldAlert size={15} /> Demolish Modo</button>
-        <button className="ghost sm" onClick={() => { setSetup(true); setMsg(""); setNewKey(""); }}><KeyRound size={13} /> {keySet ? "Change demolish key" : "Set demolish key"}</button>
-        {!keySet && <span className="small" style={{ color: "var(--amber)" }}>Set a demolish key first.</span>}
+        <button className="danger" disabled={!owner} onClick={() => { setOpen(true); setMsg(""); setKey(""); setConfirm(""); setBackedUp(false); }}><ShieldAlert size={15} /> Demolish Modo</button>
+        <button className="ghost sm" disabled={!owner} onClick={() => { setSetup(true); setMsg(""); setNewKey(""); }}><KeyRound size={13} /> {keySet ? "Change demolish key" : "Set demolish key"}</button>
+        {!owner && <span className="small" style={{ color: "var(--amber)" }}>Owner (CEO) account only.</span>}
+        {owner && !keySet && <span className="small" style={{ color: "var(--amber)" }}>Set a demolish key first.</span>}
       </div>
       {msg && !open && !setup && <div className="small" style={{ color: /set|key set/i.test(msg) ? "var(--green)" : "var(--amber)" }}>{msg}</div>}
 
