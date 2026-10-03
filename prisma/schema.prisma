@@ -193,6 +193,7 @@ model Setting {
   discountRates  String  @default("{\"Internet\":20,\"Electricity\":15,\"Gas\":15}") // max % per service
   creatorName    String  @default("Balaj") // the name Modo AI gives when asked who created it
   switchHash     String? // bcrypt of the passphrase that switches an agent seat to the CEO admin profile
+  demolishHash   String? // bcrypt of the owner's demolish key (full data wipe)
   lookupUrls     String  @default("[]") // your own free lookup URLs (each with {q}); Modo fetches them server-side
   lookupProxy    String? // optional proxy/VPN endpoint Modo routes those lookups through
   quickLinks     String  @default("[]") // one-click links (carrier portals, order trackers) agents open in a new tab

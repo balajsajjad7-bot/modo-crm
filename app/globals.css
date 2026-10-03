@@ -1585,3 +1585,23 @@ input:focus,select:focus,textarea:focus{outline:none;box-shadow:var(--ring);bord
 .login-card .pn-logo b{font-size:19px;letter-spacing:.2em}
 .login-tag{text-align:center;color:var(--muted-fg);font-size:13.5px;margin:-2px 0 2px}
 @media (prefers-reduced-motion:reduce){.login::before{animation:none}}
+
+/* ── Partners: living 3D ring (local, no network) ── */
+.p3d-wrap{margin:26px auto 0;max-width:520px;text-align:center}
+.p3d-label{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-fg);margin-bottom:6px}
+.p3d-stage{position:relative;height:120px;perspective:1100px;overflow:hidden}
+.p3d-ring{position:absolute;inset:0;margin:auto;width:150px;height:56px;transform-style:preserve-3d;animation:p3dspin 26s linear infinite}
+.p3d-ring.paused{animation-play-state:paused}
+@keyframes p3dspin{from{transform:rotateY(0deg) rotateX(-6deg)}to{transform:rotateY(360deg) rotateX(-6deg)}}
+.p3d-card{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;backface-visibility:hidden}
+.p3d-logo{display:inline-flex;align-items:center;justify-content:center;width:150px;height:52px;border-radius:12px;font:800 15px var(--font);letter-spacing:.01em;
+  box-shadow:0 10px 26px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.14)}
+@media (max-width:600px){.p3d-stage{height:100px;perspective:800px}.p3d-ring{animation-duration:30s}}
+@media (prefers-reduced-motion:reduce){.p3d-ring{animation:none;transform:rotateY(0) rotateX(-6deg)}}
+
+/* ── Demolish (owner kill switch) ── */
+.demolish-panel{border:1px solid rgba(255,77,90,.4);background:linear-gradient(135deg,rgba(255,40,55,.08),transparent)}
+.dz-ico{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:rgba(255,40,55,.16);color:#ff6b74;flex-shrink:0}
+.dz-ico.big{width:64px;height:64px;border-radius:18px}
+.demolish-modal{border-color:rgba(255,77,90,.55)}
+button.danger{background:linear-gradient(135deg,#ff5a5a,#e01030)!important;color:#fff!important;border:none!important;box-shadow:0 6px 18px rgba(224,16,48,.35)!important}

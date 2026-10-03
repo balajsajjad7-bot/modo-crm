@@ -4,9 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { ShieldCheck, KeyRound } from "lucide-react";
 import AppearanceToggle from "@/components/Appearance";
-import BrandLogo from "@/components/BrandLogo";
-
-const PARTNERS = ["Verizon", "AT&T", "T-Mobile", "Amazon", "eBay", "Walmart", "Western Union", "MoneyGram", "Comcast", "Spectrum", "Reliant", "Duke Energy"];
+import Partners3D from "@/components/Partners3D";
 
 export default function Login() {
   const [agentId, setId] = useState(""); const [password, setPw] = useState("");
@@ -79,10 +77,7 @@ export default function Login() {
           </form>
         )}
       </div>
-      <div className="partners">
-        <span className="partners-label">Campaigns &amp; partners</span>
-        <div className="partners-row">{PARTNERS.map((p) => <span key={p} className="partner-chip" title={p}><BrandLogo name={p} size={20} /> {p}</span>)}</div>
-      </div>
+      <Partners3D />
     </main>
   );
 }
