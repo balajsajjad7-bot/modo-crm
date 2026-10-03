@@ -451,6 +451,18 @@ model ListenRequest {
   @@index([agentId, endedAt])
 }
 
+// Small audio chunks relayed through Modo's server for off-call live listen (works without TURN).
+model AudioChunk {
+  id       String   @id @default(cuid())
+  listenId String
+  seq      Int
+  data     String   // base64 webm/opus
+  createdAt DateTime @default(now())
+
+  @@index([listenId, seq])
+  @@index([createdAt])
+}
+
 // AI quality review of one call (the "QA department")
 model QaReview {
   id            String   @id @default(cuid())

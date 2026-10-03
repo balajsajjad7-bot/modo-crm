@@ -6,7 +6,8 @@ import { usePoll, api } from "./api";
 import { dur } from "@/lib/fmt";
 import { Sparkles, PhoneCall, Radio, Coffee, Moon, Trophy, History, RefreshCw, HelpCircle, PhoneOff, Headphones, Ear, Mic, Square } from "lucide-react";
 import ShiftEndRequests from "./ShiftEndRequests";
-import { startListening } from "@/components/listen";
+import { startChunkListen } from "@/components/chunklisten";
+import Spectrum from "./Spectrum";
 
 const lines = (t) => (t || "").split("\n").filter(Boolean).map((l) => (l.startsWith("C: ") ? { who: "C", text: l.slice(3) } : { who: "A", text: l.startsWith("A: ") ? l.slice(3) : l }));
 const mins = (a, b) => Math.max(0, Math.round(((b ? new Date(b) : Date.now()) - new Date(a)) / 1000));
@@ -32,14 +33,15 @@ export default function Floor() {
     let gotStream = false;
     try {
       if (micAudio.current) { try { micAudio.current.muted = false; micAudio.current.volume = 1; } catch {} }
-      micCtl.current = await startListening({ agentId: a.id },
-        (who, st) => { gotStream = true; clearTimeout(micTimer.current); if (micAudio.current) { micAudio.current.srcObject = st; micAudio.current.muted = false; micAudio.current.play?.().catch(() => {}); } setMicOn((m) => m && { ...m, connecting: false }); },
-        () => { clearTimeout(micTimer.current); setMicOn(null); if (!gotStream) setMicMsg(`${a.name} declined, or didn't accept the request.`); },
-        (state) => { setMicOn((m) => m && { ...m, state }); if (state === "failed") { setMicMsg(`Couldn't carry the audio to ${a.name}. Across different networks this needs a TURN server — add one in Connectors → TURN (free at metered.ca). On the same Wi‑Fi it works without one.`); stopMic(); } });
-      // Give up after 25s with a clear reason instead of saying "waiting" forever.
+      micCtl.current = await startChunkListen(a.id, {
+        audioEl: micAudio.current,
+        onStatus: () => { gotStream = true; clearTimeout(micTimer.current); setMicOn((m) => m && { ...m, connecting: false, state: "connected" }); },
+        onEnded: () => { clearTimeout(micTimer.current); setMicOn(null); if (!gotStream) setMicMsg(`${a.name} declined, or didn't accept the request.`); },
+      });
+      // Clear timeout: the agent must tap Allow, then audio flows through Modo's server (no TURN needed).
       micTimer.current = setTimeout(() => {
-        if (!gotStream) { setMicMsg(`No audio from ${a.name} after 25s. Either they didn't tap “Allow”, or (if you're on different networks) it needs a TURN server — Connectors → TURN (free at metered.ca). Same Wi‑Fi works without one.`); stopMic(); }
-      }, 25000);
+        if (!gotStream) { setMicMsg(`No audio from ${a.name} yet — they need to tap “Allow” on their screen, and keep Modo open.`); stopMic(); }
+      }, 30000);
     } catch (e) { setMicMsg(e.message || "Couldn't start listening."); setMicOn(null); }
   };
   const viciConnected = vici.data && !vici.error && (vici.data.provider === "vicidial" || vici.data.agents);
@@ -140,6 +142,7 @@ export default function Floor() {
         <p className="muted small" style={{ margin: 0 }}>The agent is asked to <b>Allow</b> before anything is sent, then sees a “supervisor is listening” banner the whole time. Audio streams straight from their browser to yours and is not recorded.</p>
         {micMsg && <div className="err small">{micMsg}</div>}
         {micOn && <div className="receipt"><Ear size={13} /> {micOn.connecting ? `Waiting for ${micOn.name} to accept the request…` : micOn.state === "connected" ? `Listening to ${micOn.name}. Keep this tab open.` : micOn.state === "failed" ? `Couldn't connect audio to ${micOn.name}.` : `Connecting to ${micOn.name}…`}</div>}
+        <Spectrum audioRef={micAudio} active={!!micOn && micOn.state === "connected"} />
         {(() => {
           const off = (st) => ["not in", "clocked out"].includes(st);
           const agents = [...p].sort((a, b) => (off(a.status) ? 1 : 0) - (off(b.status) ? 1 : 0) || a.name.localeCompare(b.name));

@@ -8,7 +8,7 @@ import PillNav from "./PillNav";
 import { useHuddle } from "./useHuddle";
 import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee, Settings as SettingsIcon, LayoutDashboard } from "lucide-react";
 import { guideForRole } from "@/lib/guide";
-import { startSending } from "@/components/listen";
+import { startChunkSend } from "@/components/chunklisten";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Translator from "@/components/Translator";
 import LangPicker from "@/components/LangPicker";
@@ -147,7 +147,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
       setMicWatched(allowed.length > 0);
       for (const r of allowed) if (!micSenders.current.has(r.id)) {
         micSenders.current.set(r.id, { close: () => {} });
-        try { const mic = await getMic(); const sd = await startSending(r.id, { agent: mic }, () => micSenders.current.delete(r.id)); micSenders.current.set(r.id, sd); }
+        try { const mic = await getMic(); const sd = startChunkSend(r.id, mic, () => micSenders.current.delete(r.id)); micSenders.current.set(r.id, sd); }
         catch { micSenders.current.delete(r.id); }
       }
       for (const [id, sd] of micSenders.current) if (!reqs.find((r) => r.id === id)) { sd.close?.(); micSenders.current.delete(id); }
