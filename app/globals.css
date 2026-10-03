@@ -1586,18 +1586,20 @@ input:focus,select:focus,textarea:focus{outline:none;box-shadow:var(--ring);bord
 .login-tag{text-align:center;color:var(--muted-fg);font-size:13.5px;margin:-2px 0 2px}
 @media (prefers-reduced-motion:reduce){.login::before{animation:none}}
 
-/* ── Partners: living 3D ring (local, no network) ── */
-.p3d-wrap{margin:26px auto 0;max-width:520px;text-align:center}
-.p3d-label{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-fg);margin-bottom:6px}
-.p3d-stage{position:relative;height:120px;perspective:1100px;overflow:hidden}
-.p3d-ring{position:absolute;inset:0;margin:auto;width:150px;height:56px;transform-style:preserve-3d;animation:p3dspin 26s linear infinite}
-.p3d-ring.paused{animation-play-state:paused}
-@keyframes p3dspin{from{transform:rotateY(0deg) rotateX(-6deg)}to{transform:rotateY(360deg) rotateX(-6deg)}}
-.p3d-card{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;backface-visibility:hidden}
-.p3d-logo{display:inline-flex;align-items:center;justify-content:center;width:150px;height:52px;border-radius:12px;font:800 15px var(--font);letter-spacing:.01em;
-  box-shadow:0 10px 26px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.14)}
-@media (max-width:600px){.p3d-stage{height:100px;perspective:800px}.p3d-ring{animation-duration:30s}}
-@media (prefers-reduced-motion:reduce){.p3d-ring{animation:none;transform:rotateY(0) rotateX(-6deg)}}
+/* ── Partners: full-width living 3D conveyor bar (local, no network) ── */
+.p3d-bar{position:relative;left:50%;transform:translateX(-50%);width:100vw;margin-top:28px;text-align:center}
+.p3d-label{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-fg);margin-bottom:10px}
+.p3d-viewport{perspective:1100px;overflow:hidden;padding:28px 0;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.p3d-track{display:flex;gap:20px;width:max-content;will-change:transform;transform:rotateX(14deg);animation:p3dmarq 34s linear infinite}
+.p3d-viewport:hover .p3d-track{animation-play-state:paused}
+@keyframes p3dmarq{from{transform:rotateX(14deg) translateX(0)}to{transform:rotateX(14deg) translateX(-50%)}}
+.p3d-tile{flex:0 0 auto;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.p3d-logo{display:flex;align-items:center;justify-content:center;width:188px;height:66px;border-radius:16px;font:800 17px var(--font);letter-spacing:.01em;
+  box-shadow:0 16px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.32);border:1px solid rgba(255,255,255,.14)}
+.p3d-tile:hover{transform:translateY(-6px) scale(1.06)}
+@media (max-width:600px){.p3d-viewport{padding:20px 0}.p3d-logo{width:150px;height:56px;font-size:15px}.p3d-track{gap:14px;animation-duration:26s}}
+@media (prefers-reduced-motion:reduce){.p3d-track{animation:none}}
 
 /* ── Demolish (owner kill switch) ── */
 .demolish-panel{border:1px solid rgba(255,77,90,.4);background:linear-gradient(135deg,rgba(255,40,55,.08),transparent)}

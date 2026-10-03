@@ -1,7 +1,6 @@
 "use client";
-// Living 3D ring of affiliated partners. Logos are drawn locally (brand-colored chips) so it
-// never waits on the internet. The ring slowly spins; drag or hover pauses it.
-import { useState } from "react";
+// Full-width living 3D partner bar — a tilted conveyor of brand chips that scrolls across the
+// whole screen. Drawn locally (no internet), pauses on hover, static for reduced-motion.
 
 const PARTNERS = [
   { name: "Verizon", bg: "#ee0000", fg: "#fff" },
@@ -19,16 +18,14 @@ const PARTNERS = [
 ];
 
 export default function Partners3D() {
-  const [paused, setPaused] = useState(false);
-  const n = PARTNERS.length;
-  const radius = 300; // px
+  const items = [...PARTNERS, ...PARTNERS]; // duplicated so the loop is seamless
   return (
-    <div className="p3d-wrap" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+    <div className="p3d-bar">
       <span className="p3d-label">Campaigns &amp; partners</span>
-      <div className="p3d-stage">
-        <div className={"p3d-ring" + (paused ? " paused" : "")}>
-          {PARTNERS.map((p, i) => (
-            <div key={p.name} className="p3d-card" style={{ transform: `rotateY(${(360 / n) * i}deg) translateZ(${radius}px)` }}>
+      <div className="p3d-viewport">
+        <div className="p3d-track">
+          {items.map((p, i) => (
+            <div className="p3d-tile" key={i}>
               <span className="p3d-logo" style={{ background: p.bg, color: p.fg }}>{p.name}</span>
             </div>
           ))}
