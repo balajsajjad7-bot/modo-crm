@@ -1630,3 +1630,36 @@ button.danger{background:linear-gradient(135deg,#ff5a5a,#e01030)!important;color
 /* Live-listen voice spectrum */
 .spectrum-wrap{margin-top:8px;border-radius:12px;padding:8px 10px;background:linear-gradient(180deg,rgba(255,138,61,.07),rgba(0,0,0,.25));border:1px solid rgba(255,138,61,.25);box-shadow:inset 0 0 24px rgba(255,77,46,.08)}
 .spectrum-canvas{display:block;width:100%;height:54px}
+
+/* ===== OVA — cool sign-in (scoped to the login page only) ===== */
+.ova-hero{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:6px;text-align:center}
+.ova-orb{width:48px;height:48px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff2dc,#ffac5e 38%,#ff5a3c 72%,#ff2f3a);
+  box-shadow:0 0 26px rgba(255,107,53,.65),0 0 64px rgba(255,47,58,.35),inset 0 2px 7px rgba(255,255,255,.55);
+  animation:ovaPulse 3.2s ease-in-out infinite}
+.ova-word{font-family:var(--display);font-weight:800;font-size:clamp(46px,14vw,70px);letter-spacing:.16em;line-height:1;margin:0;padding-left:.16em;
+  background:linear-gradient(100deg,#ffe6c2,#ff9a6b 35%,#ff5a3c 68%,#ff2f3a);background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  animation:ovaShine 6s linear infinite;filter:drop-shadow(0 6px 26px rgba(255,90,60,.4))}
+.ova-welcome{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.login-tag{text-align:center;color:var(--muted-fg);font-size:13.5px;margin:0}
+
+/* card: entrance + animated ember ring + glass depth */
+.login-card{animation:ovaRise .6s cubic-bezier(.22,1,.36,1) both}
+.login-card::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.4px;pointer-events:none;z-index:0;
+  background:linear-gradient(135deg,rgba(255,179,71,.75),rgba(255,47,58,.15) 50%,rgba(255,179,71,.75));background-size:220% 220%;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  animation:ovaBorder 7s linear infinite;opacity:.85}
+.login-card>*{position:relative;z-index:1}
+
+/* cool primary CTA on the login */
+.login-card button:not(.ghost){background:linear-gradient(135deg,#ffb347,#ff6b4a 55%,#ff3b45);border:0;color:#2a0f08;font-weight:700;
+  letter-spacing:.01em;box-shadow:0 12px 34px -12px rgba(255,90,60,.7);transition:transform .15s,box-shadow .15s,filter .15s}
+.login-card button:not(.ghost):hover{filter:brightness(1.06);transform:translateY(-1px);box-shadow:0 16px 40px -12px rgba(255,90,60,.8)}
+.login-card button:not(.ghost):active{transform:translateY(0)}
+
+@keyframes ovaShine{to{background-position:220% 0}}
+@keyframes ovaPulse{0%,100%{transform:scale(1);opacity:.95}50%{transform:scale(1.07);opacity:1}}
+@keyframes ovaRise{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes ovaBorder{to{background-position:220% 220%}}
+@media (prefers-reduced-motion:reduce){.ova-orb,.ova-word,.login-card,.login-card::after{animation:none}}

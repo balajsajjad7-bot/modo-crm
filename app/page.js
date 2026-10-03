@@ -12,7 +12,7 @@ export default function Login() {
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("creds"); const [ticket, setTicket] = useState(""); const [code, setCode] = useState(""); const [enroll, setEnroll] = useState(null);
   const [lock, setLock] = useState(null); const codeRef = useRef(null);
-  useEffect(() => { fetch("/api/status").then((r) => r.json()).then((d) => d.lockdown && setLock(d.message || "CRM Modo is paused by admin.")).catch(() => {}); }, []);
+  useEffect(() => { fetch("/api/status").then((r) => r.json()).then((d) => d.lockdown && setLock(d.message || "OVA is paused by admin.")).catch(() => {}); }, []);
   useEffect(() => { if (step !== "creds") setTimeout(() => codeRef.current?.focus(), 50); }, [step]);
   const go = (role) => { location.href = role === "ADMIN" ? "/admin" : "/agent"; };
 
@@ -44,12 +44,15 @@ export default function Login() {
       <LoginAura />
       <div className="corner-toggle"><AppearanceToggle /></div>
       <div className="panel login-card">
-        <div className="pn-logo" style={{ padding: 0, justifyContent: "center" }}><span className="diamond" /><b>MODO</b></div>
-        <p className="login-tag">Your call center, all in one place.</p>
+        <div className="ova-hero">
+          <span className="ova-orb" aria-hidden="true" />
+          <h1 className="ova-word" aria-label="OVA">OVA</h1>
+          <p className="login-tag">Your call center, all in one place.</p>
+        </div>
         {lock && <div className="err small">{lock} Only admins can sign in right now.</div>}
         {step === "creds" && (
           <form className="stack" onSubmit={signIn}>
-            <h1 style={{ fontSize: 24 }}>Welcome back</h1>
+            <h2 className="ova-welcome">Welcome back</h2>
             <p className="muted small" style={{ margin: 0 }}>Signing in starts your shift. Your time is recorded from this moment.</p>
             <label>Agent ID<input value={agentId} onChange={(e) => setId(e.target.value.toUpperCase())} autoComplete="username" required /></label>
             <label>Password<input type="password" value={password} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" required /></label>
@@ -60,7 +63,7 @@ export default function Login() {
         {step === "otp" && (
           <form className="stack" onSubmit={verify}>
             <h1 style={{ fontSize: 22 }}><ShieldCheck size={20} /> Enter your code</h1>
-            <p className="muted small" style={{ margin: 0 }}>Open your authenticator app and type the 6-digit code for CRM Modo.</p>
+            <p className="muted small" style={{ margin: 0 }}>Open your authenticator app and type the 6-digit code for OVA.</p>
             <input ref={codeRef} className="otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="000000" aria-label="6-digit code" />
             {err && <div className="err">{err}</div>}
             <button disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Verify and sign in"}</button>

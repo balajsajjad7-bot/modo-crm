@@ -85,7 +85,7 @@ export default function Chat() {
     <div className={"slack" + (conv ? " has-open" : "") + (thread ? " has-thread" : "")}>
       <aside className="sl-side">
         <div className="sl-ws">
-          <b>MODO</b>
+          <b>OVA</b>
           <button className="sl-icon" aria-label="New message" title="New message" onClick={() => setModal("dm")}><SquarePen size={17} /></button>
         </div>
         <label className="sl-search"><Search size={14} /><input placeholder="Search chats" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search chats" /></label>
