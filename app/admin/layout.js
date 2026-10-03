@@ -7,7 +7,7 @@ import { sectionForPath } from "@/lib/supaccess";
 
 export default function AdminLayout({ children }) {
   const [{ data: sales }] = usePoll("/api/sales", 30000);
-  const fresh = (sales || []).filter((s) => s.status === "NEW").length;
+  const fresh = (Array.isArray(sales) ? sales : []).filter((s) => s.status === "NEW").length;
   const [secure, setSecure] = useState(false);
   const [me, setMe] = useState(null);
   useEffect(() => { fetch("/api/me").then((r) => r.json()).then((m) => { setMe(m); setSecure(!!m?.ceo || !!m?.secureLine); }).catch(() => {}); }, []);

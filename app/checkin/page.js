@@ -15,7 +15,7 @@ export default function CheckIn() {
   return (
     <main className="login">
       <div className="panel">
-        <div className="pn-logo" style={{ padding: 0 }}><span className="diamond" /><b>OVA</b></div>
+        <div className="pn-logo" style={{ padding: 0 }}><span className="diamond" /><b>Modo</b></div>
         <h1 style={{ fontSize: 22 }}>Office check-in</h1>
         {state === "loading" && <p className="muted">Checking you in…</p>}
         {state === "done" && <div className="receipt" role="status">{msg}</div>}
@@ -28,7 +28,7 @@ export default function CheckIn() {
             <button>Check in</button>
           </form>
         )}
-        <a href="/" className="small">Open CRM Modo</a>
+        <a href="/" className="small">Open Modo</a>
       </div>
     </main>
   );

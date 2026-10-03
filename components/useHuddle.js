@@ -128,5 +128,10 @@ export function useHuddle(meId) {
     return () => { window.removeEventListener("pagehide", bye); };
   }, []);
 
-  return { call, muted, error, connected, start, join, leave, endForAll, toggleMute, audioRef, clearError: () => setError("") };
+  const getStreams = useCallback(() => {
+    const out = r.current.stream ? [r.current.stream] : [];
+    r.current.audio?.querySelectorAll("audio").forEach((a) => a.srcObject && out.push(a.srcObject));
+    return out;
+  }, []);
+  return { call, muted, error, connected, start, join, leave, endForAll, toggleMute, audioRef, getStreams, clearError: () => setError("") };
 }

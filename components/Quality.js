@@ -61,7 +61,7 @@ export default function Quality() {
         <section className="panel stack">
           <h2>Compliance checklist</h2>
           <div className="funnel">{d.complianceItems.map((c) => (
-            <div key={c.item} style={{ gridTemplateColumns: "1fr 110px 50px" }}><span className="small">{c.item}</span><div className="track"><div style={{ width: (c.passRate || 0) + "%", background: c.passRate >= 80 ? "#7fd6a0" : c.passRate >= 50 ? "#ffb070" : "#ff4d5a" }} /></div><span className="small r num">{c.passRate == null ? "—" : c.passRate + "%"}</span></div>
+            <div key={c.item} style={{ gridTemplateColumns: "1fr 110px 50px" }}><span className="small">{c.item}</span><div className="track"><div style={{ width: (c.passRate || 0) + "%", background: c.passRate >= 80 ? "#7fd6a0" : c.passRate >= 50 ? "#e0c27c" : "#ff4d5a" }} /></div><span className="small r num">{c.passRate == null ? "—" : c.passRate + "%"}</span></div>
           ))}</div>
         </section>
       </div>

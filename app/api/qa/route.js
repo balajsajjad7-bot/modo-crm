@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser } from "@/lib/auth";
+import { currentUser, supervisorHas } from "@/lib/auth";
 import { CRITERIA, CHECKS } from "@/lib/qa";
 
 const OFF = () => Number(process.env.TZ_OFFSET_MIN ?? 300) * 60000;

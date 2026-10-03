@@ -95,11 +95,11 @@ export default function Floor() {
                   {s.summary && <p className="live-sum"><Sparkles size={12} /> {s.summary}</p>}
                   {(s.agentNerv != null || s.custNerv != null) && (
                     <div className="mini-nerv">
-                      <span>Agent <i><em style={{ width: (s.agentNerv || 0) + "%", background: s.agentNerv >= 60 ? "#ff4d5a" : s.agentNerv >= 35 ? "#ffb070" : "#7fd6a0" }} /></i> {s.agentState || ""}</span>
-                      <span>Customer <i><em style={{ width: (s.custNerv || 0) + "%", background: s.custNerv >= 60 ? "#ff4d5a" : s.custNerv >= 35 ? "#ffb070" : "#7fd6a0" }} /></i> {s.customerState || ""}</span>
+                      <span>Agent <i><em style={{ width: (s.agentNerv || 0) + "%", background: s.agentNerv >= 60 ? "#ff4d5a" : s.agentNerv >= 35 ? "#e0c27c" : "#7fd6a0" }} /></i> {s.agentState || ""}</span>
+                      <span>Customer <i><em style={{ width: (s.custNerv || 0) + "%", background: s.custNerv >= 60 ? "#ff4d5a" : s.custNerv >= 35 ? "#e0c27c" : "#7fd6a0" }} /></i> {s.customerState || ""}</span>
                     </div>
                   )}
-                  {s.confusedNote && s.confused !== "none" && <p className="small" style={{ margin: 0, color: "#ffc79b" }}>{s.confusedNote}</p>}
+                  {s.confusedNote && s.confused !== "none" && <p className="small" style={{ margin: 0, color: "#e8d29d" }}>{s.confusedNote}</p>}
                   <footer className="small muted">{s.customerSide ? "Both sides captioned" : "Agent's side only"}{s.lastTip ? ` · AI suggested: "${s.lastTip}"` : ""}</footer>
                 </article>
               );

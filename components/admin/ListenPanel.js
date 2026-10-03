@@ -14,6 +14,7 @@ function VoiceWave({ stream, color, label, muted, onToggle, volume }) {
     if (!stream) return;
     const el = audio.current; el.srcObject = stream; el.play?.().catch(() => {});
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
     const src = ctx.createMediaStreamSource(stream); const an = ctx.createAnalyser(); an.fftSize = 128; an.smoothingTimeConstant = 0.75; src.connect(an);
     const data = new Uint8Array(an.frequencyBinCount); let raf;
     const draw = () => {
@@ -54,7 +55,7 @@ function Meter({ label, value, state }) {
   return (
     <div className="nerv">
       <div className="row" style={{ justifyContent: "space-between" }}><span className="sf-l">{label}</span><b>{state || "—"}</b></div>
-      <div className="nerv-track"><div style={{ width: (v ?? 0) + "%", background: v >= 60 ? "#ff4d5a" : v >= 35 ? "#ffb070" : "#7fd6a0" }} /></div>
+      <div className="nerv-track"><div style={{ width: (v ?? 0) + "%", background: v >= 60 ? "#ff4d5a" : v >= 35 ? "#e0c27c" : "#7fd6a0" }} /></div>
       <span className="small muted">{v == null ? "waiting for speech" : `${v}% nervous`}</span>
     </div>
   );
@@ -87,7 +88,7 @@ export default function ListenPanel({ call, onClose, muted, setMuted }) {
       {!streams.agent && !err && !slow && <p className="muted small" style={{ margin: 0 }}>Connecting to {call.user.name.split(" ")[0]}'s browser… Their Call assist page must be open.</p>}
       {!streams.agent && !err && slow && <p className="err small" style={{ margin: 0 }}>Couldn't connect to {call.user.name.split(" ")[0]}'s browser. This needs: (1) the agent has <b>Call assist</b> open with a live call, and (2) a working voice relay (TURN). For a real customer call, use the <b>Dialer → Listen</b> button instead — it rings your phone through VICIdial and doesn't need any of this.</p>}
       <div className="waves">
-        <VoiceWave stream={streams.agent} color="#ff8a4a" label="Agent" muted={muted || side.agent} volume={vol} onToggle={() => setSide({ ...side, agent: !side.agent })} />
+        <VoiceWave stream={streams.agent} color="#d12254" label="Agent" muted={muted || side.agent} volume={vol} onToggle={() => setSide({ ...side, agent: !side.agent })} />
         <VoiceWave stream={streams.customer} color="#6cc4ff" label="Customer" muted={muted || side.customer} volume={vol} onToggle={() => setSide({ ...side, customer: !side.customer })} />
       </div>
       <div className="nervs">

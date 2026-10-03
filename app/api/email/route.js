@@ -28,7 +28,7 @@ export async function POST(req) {
   if (!subject || !body) return NextResponse.json({ error: "Add a subject and a message." }, { status: 400 });
   const dept = b.departmentId ? await db.department.findUnique({ where: { id: b.departmentId } }) : null;
   let status = "sent", error = null;
-  try { await sendMail({ to, subject, body, fromName: dept ? `CRM Modo · ${dept.name}` : undefined, replyTo: dept?.email || undefined }); } catch (e) { status = "failed"; error = e.message; }
+  try { await sendMail({ to, subject, body, fromName: dept ? `Modo · ${dept.name}` : undefined, replyTo: dept?.email || undefined }); } catch (e) { status = "failed"; error = e.message; }
   await db.emailLog.create({ data: { to, subject, body, status, error, contactId: b.contactId || null, saleId: b.saleId || null, sentById: s.uid } });
   if (b.contactId && status === "sent") await log(s.uid, { contactId: b.contactId, kind: "note", text: `✉️ Emailed "${subject}" to ${to}` }).catch(() => {});
   if (status === "failed") return NextResponse.json({ error: "Email not sent: " + error }, { status: 502 });

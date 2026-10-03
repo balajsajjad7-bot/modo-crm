@@ -12,6 +12,8 @@ import { startChunkSend } from "@/components/chunklisten";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Translator from "@/components/Translator";
 import LangPicker from "@/components/LangPicker";
+import FloatDock from "@/components/FloatDock";
+import Spectrum from "@/components/Spectrum";
 
 const ShellCtx = createContext(null);
 export const useShell = () => useContext(ShellCtx);
@@ -67,7 +69,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   useEffect(() => { if (me?.role !== "ADMIN") return; const l = () => fetch("/api/shift-end").then((r) => r.json()).then((d) => setSeWaiting((d.requests || []).filter((x) => x.status === "pending").length)).catch(() => {}); l(); const i = setInterval(l, 20000); return () => clearInterval(i); }, [me]);
   useEffect(() => { if (me?.role === "ADMIN") fetch("/api/status").then((x) => x.json()).then((d) => setLockOn(!!d.lockdown)).catch(() => {}); }, [me]);
   const toggleLock = async () => {
-    if (!lockOn) { const msg = prompt("EMERGENCY STOP\n\nAll agents will be locked out of CRM Modo right away (calls end too). Only admins keep access.\n\nMessage for agents (optional):", "CRM Modo is paused by admin."); if (msg === null) return;
+    if (!lockOn) { const msg = prompt("EMERGENCY STOP\n\nAll agents will be locked out of Modo right away (calls end too). Only admins keep access.\n\nMessage for agents (optional):", "Modo is paused by admin."); if (msg === null) return;
       await fetch("/api/settings", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ lockdown: true, lockdownMsg: msg }) }); setLockOn(true); }
     else if (confirm("Turn the CRM back on for everyone?")) { await fetch("/api/settings", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ lockdown: false }) }); setLockOn(false); }
   };
@@ -85,7 +87,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
       const body = { idle: !!window.__modoIdle };
       if (geo.current.v) Object.assign(body, geo.current.v);
       const r = await fetch("/api/heartbeat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
-      if (r && r.status === 401) { const st = await fetch("/api/status").then((x) => x.json()).catch(() => ({})); if (st.lockdown) setLocked(st.message || "CRM Modo is paused by admin."); return; }
+      if (r && r.status === 401) { const st = await fetch("/api/status").then((x) => x.json()).catch(() => ({})); if (st.lockdown) setLocked(st.message || "Modo is paused by admin."); return; }
       const d = r && r.ok ? await r.json() : null; if (stop || !d) return;
       setPresence(d);
       if (d.needGeo && navigator.geolocation && Date.now() - geo.current.at > 10 * 60000) {
@@ -102,7 +104,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
     const check = async () => {
       const r = await fetch("/api/crm/tasks?view=today", { cache: "no-store" }).catch(() => null); if (!r || !r.ok) return;
       const d = await r.json(); const now = Date.now();
-      const hits = d.tasks.filter((t) => t.dueAt && new Date(t.dueAt) <= now + 60000 && now - new Date(t.dueAt) < 30 * 60000 && !seenDue.current.has(t.id));
+      const hits = (d.tasks || []).filter((t) => t.dueAt && new Date(t.dueAt) <= now + 60000 && now - new Date(t.dueAt) < 30 * 60000 && !seenDue.current.has(t.id));
       if (hits.length) {
         hits.forEach((t) => seenDue.current.add(t.id)); setDue((x) => [...x, ...hits]); ringOnce();
         try { if (Notification.permission === "granted") hits.forEach((t) => new Notification(`${t.type === "callback" ? "Callback" : "Task"} due: ${t.title}`, { body: t.contact ? `${t.contact.name}${t.contact.phone ? " · " + t.contact.phone : ""}` : "", tag: t.id })); } catch {}
@@ -289,6 +291,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
       {notif !== "granted" && <button className="notif-ask ghost" onClick={askNotif}><Phone size={14} /> Turn on phone alerts</button>}
       {huddle.error && <div className="call-banner warn" role="alert"><div>{huddle.error}</div><button className="ghost" onClick={huddle.clearError}><X size={16} /></button></div>}
       {huddle.call && <CallPanel huddle={huddle} me={me} conv={chat.conversations.find((c) => c.id === huddle.call.conversationId)} />}
+      <ErrorBoundary resetKey="float"><FloatDock /></ErrorBoundary>
       <div ref={huddle.audioRef} hidden />
     </ShellCtx.Provider>
   );
@@ -399,6 +402,7 @@ function CallPanel({ huddle, me, conv }) {
           </li>
         ))}
       </ul>
+      <Spectrum getStreams={huddle.getStreams} active label="Call audio" height={44} bars={36} />
       {people.length === 1 && <p className="muted small" style={{ margin: 0 }}><Users size={13} /> Waiting for others to join…</p>}
       <div className="row">
         <button className={muted ? "" : "ghost"} onClick={huddle.toggleMute}>{muted ? <><MicOff size={16} /> Unmute</> : <><Mic size={16} /> Mute</>}</button>

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { ShieldCheck, KeyRound } from "lucide-react";
 import AppearanceToggle from "@/components/Appearance";
-import Partners3D from "@/components/Partners3D";
+import UsClocks from "@/components/UsClocks";
 import LoginAura from "@/components/LoginAura";
 
 export default function Login() {
@@ -12,7 +12,7 @@ export default function Login() {
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("creds"); const [ticket, setTicket] = useState(""); const [code, setCode] = useState(""); const [enroll, setEnroll] = useState(null);
   const [lock, setLock] = useState(null); const codeRef = useRef(null);
-  useEffect(() => { fetch("/api/status").then((r) => r.json()).then((d) => d.lockdown && setLock(d.message || "OVA is paused by admin.")).catch(() => {}); }, []);
+  useEffect(() => { fetch("/api/status").then((r) => r.json()).then((d) => d.lockdown && setLock(d.message || "Modo is paused by admin.")).catch(() => {}); }, []);
   useEffect(() => { if (step !== "creds") setTimeout(() => codeRef.current?.focus(), 50); }, [step]);
   const go = (role) => { location.href = role === "ADMIN" ? "/admin" : "/agent"; };
 
@@ -46,8 +46,7 @@ export default function Login() {
       <div className="panel login-card">
         <div className="ova-hero">
           <span className="ova-orb" aria-hidden="true" />
-          <h1 className="ova-word" aria-label="OVA">OVA</h1>
-          <p className="login-tag">Your call center, all in one place.</p>
+          <h1 className="ova-word" aria-label="Modo">Modo</h1>
         </div>
         {lock && <div className="err small">{lock} Only admins can sign in right now.</div>}
         {step === "creds" && (
@@ -63,7 +62,7 @@ export default function Login() {
         {step === "otp" && (
           <form className="stack" onSubmit={verify}>
             <h1 style={{ fontSize: 22 }}><ShieldCheck size={20} /> Enter your code</h1>
-            <p className="muted small" style={{ margin: 0 }}>Open your authenticator app and type the 6-digit code for OVA.</p>
+            <p className="muted small" style={{ margin: 0 }}>Open your authenticator app and type the 6-digit code for Modo.</p>
             <input ref={codeRef} className="otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="000000" aria-label="6-digit code" />
             {err && <div className="err">{err}</div>}
             <button disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Verify and sign in"}</button>
@@ -82,7 +81,7 @@ export default function Login() {
           </form>
         )}
       </div>
-      <Partners3D />
+      <UsClocks />
     </main>
   );
 }

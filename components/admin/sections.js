@@ -272,7 +272,7 @@ function SystemCheck() {
   return (
     <section className="panel stack">
       <div className="row" style={{ justifyContent: "space-between" }}><h2>System check</h2><button className="ghost sm" onClick={run} disabled={busy}>{busy ? "Checking…" : "Run again"}</button></div>
-      {!d ? <p className="muted">Checking every part of CRM Modo…</p> : (
+      {!d ? <p className="muted">Checking every part of Modo…</p> : (
         <>
           <p className="small" style={{ margin: 0, color: bad ? "var(--amber)" : "var(--green)" }}>{bad ? `${bad} thing${bad > 1 ? "s" : ""} to fix` : "Everything is working."}</p>
           <div className="health">{d.checks.map((c) => (

@@ -1,6 +1,6 @@
 {
   "id": "/",
-  "name": "CRM Modo",
+  "name": "Modo",
   "short_name": "Modo",
   "description": "Call-center CRM: attendance, sales, AI call assist, dialer, chat and order tracking for your team.",
   "start_url": "/",
@@ -9,7 +9,7 @@
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#0b0b0f",
-  "theme_color": "#ff5a3c",
+  "theme_color": "#c82150",
   "lang": "en",
   "dir": "ltr",
   "categories": ["business", "productivity"],

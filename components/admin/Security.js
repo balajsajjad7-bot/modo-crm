@@ -20,7 +20,7 @@ export default function Security() {
         <div><div><b className="row" style={{ gap: 6 }}><Power size={15} /> Emergency stop</b>
           <div className="muted small">{s.lockdown ? "ON: agents are locked out right now. Only admins can use the CRM." : "Locks every agent out instantly (and ends calls). Admins keep full access. Also in your user menu at the top right."}</div></div>
           {s.lockdown ? <button onClick={() => confirm("Turn the CRM back on for everyone?") && save({ lockdown: false }, "CRM is back on.")}>Turn CRM back on</button>
-            : <button className="danger" onClick={() => { const m = prompt("Message agents will see:", "CRM Modo is paused by admin."); if (m !== null) save({ lockdown: true, lockdownMsg: m }, "Emergency stop is ON."); }}><Power size={15} /> Stop the CRM</button>}</div>
+            : <button className="danger" onClick={() => { const m = prompt("Message agents will see:", "Modo is paused by admin."); if (m !== null) save({ lockdown: true, lockdownMsg: m }, "Emergency stop is ON."); }}><Power size={15} /> Stop the CRM</button>}</div>
         <div><div><b className="row" style={{ gap: 6 }}>🎧 Tell agents when you listen</b>
           <div className="muted small">When on, an agent sees "Supervisor listening" while you listen to their call. When off, listening is silent (like VICIdial's monitor). Agents always see a notice that calls may be monitored.</div></div>
           <button role="switch" aria-checked={!!s.monitorNotice} className={"toggle" + (s.monitorNotice ? " on" : "")} onClick={() => save({ monitorNotice: !s.monitorNotice }, "Saved.")}><span /></button></div>

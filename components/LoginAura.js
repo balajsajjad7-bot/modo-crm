@@ -1,5 +1,5 @@
 "use client";
-// Original animated backdrop for the login — rising embers + soft glow, drawn on a canvas.
+// Original animated backdrop for the login — rising wine-red embers + soft glow, drawn on a canvas.
 // Lightweight (few particles), pauses when the tab is hidden, static if reduced-motion is on.
 import { useEffect, useRef } from "react";
 
@@ -15,20 +15,20 @@ export default function LoginAura() {
 
     const N = Math.max(18, Math.min(42, Math.round((w * h) / 26000)));
     const rnd = (a, b) => a + Math.random() * (b - a);
-    const make = (seed) => ({ x: rnd(0, w), y: seed ? rnd(0, h) : h + rnd(0, 40), r: rnd(1, 3.4), vy: rnd(0.15, 0.6), vx: rnd(-0.25, 0.25), hue: rnd(8, 38), a: rnd(0.25, 0.8), t: rnd(0, Math.PI * 2) });
+    const make = (seed) => ({ x: rnd(0, w), y: seed ? rnd(0, h) : h + rnd(0, 40), r: rnd(1, 3.4), vy: rnd(0.15, 0.6), vx: rnd(-0.25, 0.25), hue: rnd(336, 352), a: rnd(0.25, 0.8), t: rnd(0, Math.PI * 2) });
     let ps = Array.from({ length: N }, () => make(true));
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
       // soft ambient glow
       const g = ctx.createRadialGradient(w * 0.25, h * 0.2, 0, w * 0.25, h * 0.2, Math.max(w, h) * 0.7);
-      g.addColorStop(0, "rgba(255,90,60,0.10)"); g.addColorStop(1, "rgba(255,90,60,0)");
+      g.addColorStop(0, "rgba(200,33,80,0.10)"); g.addColorStop(1, "rgba(200,33,80,0)");
       ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
       for (const p of ps) {
         ctx.beginPath();
         const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4);
-        grd.addColorStop(0, `hsla(${p.hue},95%,60%,${p.a})`);
-        grd.addColorStop(1, `hsla(${p.hue},95%,55%,0)`);
+        grd.addColorStop(0, `hsla(${p.hue},72%,50%,${p.a})`);
+        grd.addColorStop(1, `hsla(${p.hue},72%,45%,0)`);
         ctx.fillStyle = grd; ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2); ctx.fill();
         if (!reduce) { p.y -= p.vy; p.x += p.vx + Math.sin((p.t += 0.01)) * 0.2; if (p.y < -10) Object.assign(p, make(false)); }
       }

@@ -32,7 +32,7 @@ export default function CallTest() {
     setTimeout(finish, 9000);
   }
   const Row = ({ ok, label, sub }) => (
-    <div className="row" style={{ gap: 8 }}>{ok ? <CheckCircle2 size={16} style={{ color: "var(--green,#34d399)" }} /> : <XCircle size={16} style={{ color: "var(--amber,#ffb070)" }} />}<span><b>{label}</b>{sub && <span className="muted small" style={{ display: "block" }}>{sub}</span>}</span></div>
+    <div className="row" style={{ gap: 8 }}>{ok ? <CheckCircle2 size={16} style={{ color: "var(--green,#34d399)" }} /> : <XCircle size={16} style={{ color: "var(--amber,#e0c27c)" }} />}<span><b>{label}</b>{sub && <span className="muted small" style={{ display: "block" }}>{sub}</span>}</span></div>
   );
   return (
     <section className="panel stack">

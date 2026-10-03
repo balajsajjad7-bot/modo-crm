@@ -1,7 +1,7 @@
 {
   "packageId": "com.modo.crm",
   "host": "modo-crm1.vercel.app",
-  "name": "CRM Modo",
+  "name": "Modo",
   "launcherName": "Modo",
   "display": "standalone",
   "orientation": "default",

@@ -25,7 +25,7 @@ export default function Install() {
   return (
     <main className="install-wrap">
       <div className="panel install-card stack">
-        <div className="row" style={{ gap: 10, alignItems: "center" }}><img src="/icon-192.png" alt="Modo" width={48} height={48} style={{ borderRadius: 12 }} /><div><h1 style={{ margin: 0 }}>Install CRM Modo</h1><p className="muted" style={{ margin: 0 }}>Add Modo to your phone so alerts reach you even when it's closed.</p></div></div>
+        <div className="row" style={{ gap: 10, alignItems: "center" }}><img src="/icon-192.png" alt="Modo" width={48} height={48} style={{ borderRadius: 12 }} /><div><h1 style={{ margin: 0 }}>Install Modo</h1><p className="muted" style={{ margin: 0 }}>Add Modo to your phone so alerts reach you even when it's closed.</p></div></div>
 
         {installed ? <div className="receipt">✓ Modo is installed on this device. Open it from your home screen.</div> : (
           <>

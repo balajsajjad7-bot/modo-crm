@@ -28,7 +28,7 @@ export default function PillNav({ nav, home, user, userMenu, action }) {
   return (
     <nav className="pillnav" ref={ref} aria-label="Main">
       <button className="pn-burger" aria-label="Menu" aria-expanded={sheet} onClick={() => setSheet(!sheet)}>{sheet ? <X size={20} /> : <Menu size={20} />}</button>
-      <Link href={home} className="pn-logo" aria-label="OVA home"><span className="diamond" /><b>OVA</b></Link>
+      <Link href={home} className="pn-logo" aria-label="Modo home"><span className="diamond" /><b>Modo</b></Link>
       <span className="pn-sep" />
       <div className="pn-scroll">
         {nav.map((it) => it.children ? (

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { pkr, dur } from "@/lib/fmt";
 import { startSending } from "@/components/listen";
 import AssistTools from "./AssistTools";
+import Spectrum from "@/components/Spectrum";
 
 export const post = (url, body, extra) => fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}), ...extra });
 export const markActive = () => window.dispatchEvent(new Event("modo-active"));
@@ -235,6 +236,7 @@ export function LiveAssist({ lastCall, onDone, onLive }) {
         <h2>Live call assist</h2>
         {live ? <span className="row small"><span className="live-dot" /> Listening{cust ? " to both sides" : " to you"}{watched && <span className="chip late">Supervisor listening</span>}</span> : null}
       </div>
+      <Spectrum active={live} getStreams={() => [mic.current, custStream.current]} label={cust ? "You + customer" : "Your voice"} />
       <div className="suggest" aria-live="polite">{tip?.next || (live ? "Start talking. Suggestions appear here." : "Start a call to get suggestions on what to say next.")}</div>
       {tip && <div className="row small">{tip.tone && <span className={"chip " + tip.tone}>{tip.tone}</span>}{tip.confused && tip.confused !== "none" && <span className="chip late">confused: {tip.confused}</span>}<span className="muted">{tip.tip}</span></div>}
       {tip?.warning && <div className="la-warn">⚠ {tip.warning}</div>}
@@ -250,8 +252,8 @@ export function LiveAssist({ lastCall, onDone, onLive }) {
           </div>
           {(tip?.agentNervous != null || tip?.customerNervous != null) && <div className="la-card"><span className="sf-l">How it sounds</span>
             <div className="mini-nerv" style={{ gridTemplateColumns: "1fr" }}>
-              <span>You <i><em style={{ width: (tip.agentNervous || 0) + "%", background: tip.agentNervous >= 60 ? "#ff4d5a" : tip.agentNervous >= 35 ? "#ffb070" : "#7fd6a0" }} /></i> {tip.agentState || ""}</span>
-              <span>Customer <i><em style={{ width: (tip.customerNervous || 0) + "%", background: tip.customerNervous >= 60 ? "#ff4d5a" : tip.customerNervous >= 35 ? "#ffb070" : "#7fd6a0" }} /></i> {tip.customerState || tip.mood || ""}</span>
+              <span>You <i><em style={{ width: (tip.agentNervous || 0) + "%", background: tip.agentNervous >= 60 ? "#ff4d5a" : tip.agentNervous >= 35 ? "#e0c27c" : "#7fd6a0" }} /></i> {tip.agentState || ""}</span>
+              <span>Customer <i><em style={{ width: (tip.customerNervous || 0) + "%", background: tip.customerNervous >= 60 ? "#ff4d5a" : tip.customerNervous >= 35 ? "#e0c27c" : "#7fd6a0" }} /></i> {tip.customerState || tip.mood || ""}</span>
             </div>
             {(() => { const w = (who) => lines.filter((l) => l.who === who).reduce((t, l) => t + l.text.split(/\s+/).length, 0); const a = w("A"), c = w("C"); return a + c > 0 && c > 0 ? <span className="small muted">You talk {Math.round((a / (a + c)) * 100)}% of the time{a / (a + c) > 0.7 ? " — let the customer talk more" : ""}</span> : null; })()}
           </div>}

@@ -21,14 +21,14 @@ const initials = (s) => (s || "?").split(" ").map((w) => w[0]).slice(0, 2).join(
 const WARM = [4, 14, 24, 32, 356, 10];
 const hue = (s) => WARM[[...(s || "")].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 997, 7) % WARM.length];
 
-function Avatar({ name, size = 36, online, square = true }) {
+export function Avatar({ name, size = 36, online, square = true }) {
   return (
     <span className="sl-avatar" style={{ width: size, height: size, borderRadius: square ? size * 0.22 : "50%", background: `hsl(${hue(name)} 55% 45%)`, fontSize: size * 0.38 }}>
       {initials(name)}{online != null && <i className={"presence" + (online ? " on" : "")} />}
     </span>
   );
 }
-const ConvIcon = ({ c, size = 16 }) => c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
+export const ConvIcon = ({ c, size = 16 }) => c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
 
 // Turns text into React nodes: links and @mentions highlighted.
 function RichText({ text, names, meName }) {
@@ -85,7 +85,7 @@ export default function Chat() {
     <div className={"slack" + (conv ? " has-open" : "") + (thread ? " has-thread" : "")}>
       <aside className="sl-side">
         <div className="sl-ws">
-          <b>OVA</b>
+          <b>Modo</b>
           <button className="sl-icon" aria-label="New message" title="New message" onClick={() => setModal("dm")}><SquarePen size={17} /></button>
         </div>
         <label className="sl-search"><Search size={14} /><input placeholder="Search chats" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search chats" /></label>
@@ -127,7 +127,7 @@ function useMessages(convId, threadId) {
   return [msgs, load, setMsgs];
 }
 
-function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, thread, onMembers }) {
+export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, thread, onMembers }) {
   const [msgs, reload] = useMessages(conv.id, null);
   const [editTopic, setEditTopic] = useState(false);
   const [topic, setTopic] = useState(conv.topic || "");

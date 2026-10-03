@@ -30,7 +30,7 @@ async function login(req) {
   const settings = await getSettings();
   if (user.role !== "ADMIN") {
     const lock = await lockState();
-    if (lock.on) return NextResponse.json({ error: lock.message || "CRM Modo is paused by admin. Try again later." }, { status: 423 });
+    if (lock.on) return NextResponse.json({ error: lock.message || "Modo is paused by admin. Try again later." }, { status: 423 });
     if (!ipAllowed(settings, clientIp())) return NextResponse.json({ error: "Sign in from the office network. This connection isn't on the allowed list." }, { status: 403 });
   }
   if (needs2fa(settings, user)) {

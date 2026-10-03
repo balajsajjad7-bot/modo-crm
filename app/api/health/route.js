@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { configFor } from "@/lib/connectors";
 
-// Admin → Settings → System check: is every part of CRM Modo ready?
+// Admin → Settings → System check: is every part of Modo ready?
 export async function GET() {
   const { error } = await requireRole("ADMIN");
   if (error) return error;

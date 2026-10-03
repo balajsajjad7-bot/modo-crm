@@ -1,5 +1,5 @@
 "use client";
-// Admin → Connectors: plug CRM Modo into other tools.
+// Admin → Connectors: plug Modo into other tools.
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { Plug, Plus, Trash2, Zap, X, Save } from "lucide-react";

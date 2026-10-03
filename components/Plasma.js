@@ -97,6 +97,12 @@ export default function Plasma({ color = "#ff6b35", speed = 1, direction = "forw
     };
     const ro = new ResizeObserver(setSize); ro.observe(el); setSize();
 
+    // If the graphics driver resets (sleep, low memory, too many tabs), stop and fall back to the CSS aurora
+    // instead of leaving a frozen/black page.
+    let lost = false, raf = 0;
+    const onLost = (e) => { e.preventDefault(); lost = true; cancelAnimationFrame(raf); onFail?.(); };
+    canvas.addEventListener("webglcontextlost", onLost, false);
+
     // Mouse anywhere on the page gently bends the plasma (the layer itself sits behind the UI).
     const onMove = (e) => {
       const r = el.getBoundingClientRect(); const k = gl.drawingBufferWidth / Math.max(1, r.width);
@@ -105,20 +111,22 @@ export default function Plasma({ color = "#ff6b35", speed = 1, direction = "forw
     if (mouseInteractive) window.addEventListener("pointermove", onMove, { passive: true });
 
     const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    let raf = 0, last = 0; const t0 = performance.now(), frame = 1000 / fps;
+    let last = 0; const t0 = performance.now(), frame = 1000 / fps;
     const loop = (t) => {
+      if (lost) return;
       raf = requestAnimationFrame(loop);
+      if (document.hidden) return; // don't burn the GPU in a background tab
       if (t - last < frame) return; last = t;
       let time = (t - t0) * 0.001;
       if (direction === "pingpong") { const seg = time % 20; time = seg > 10 ? 20 - seg : seg; }
       program.uniforms.iTime.value = time;
-      renderer.render({ scene: mesh });
+      try { renderer.render({ scene: mesh }); } catch { lost = true; cancelAnimationFrame(raf); onFail?.(); }
     };
     if (still) { program.uniforms.iTime.value = 6; renderer.render({ scene: mesh }); }
     else raf = requestAnimationFrame(loop);
 
     return () => {
-      cancelAnimationFrame(raf); ro.disconnect();
+      cancelAnimationFrame(raf); ro.disconnect(); canvas.removeEventListener("webglcontextlost", onLost);
       window.removeEventListener("pointermove", onMove);
       try { el.removeChild(canvas); } catch {}
       gl.getExtension("WEBGL_lose_context")?.loseContext();

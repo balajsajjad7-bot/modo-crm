@@ -6,7 +6,7 @@ import { useShell } from "@/components/Shell";
 import { ArrowLeft, Printer, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
 import { dur } from "@/lib/fmt";
 
-const col = (v) => (v >= 8 ? "#7fd6a0" : v >= 5 ? "#ffb070" : "#ff4d5a");
+const col = (v) => (v >= 8 ? "#7fd6a0" : v >= 5 ? "#e0c27c" : "#ff4d5a");
 export default function QualityReport({ id }) {
   const { me } = useShell(); const isAdmin = me?.role === "ADMIN"; const base = isAdmin ? "/admin/quality" : "/agent/quality";
   const [r, setR] = useState(null); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
