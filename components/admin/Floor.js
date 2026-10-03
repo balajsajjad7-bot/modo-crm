@@ -25,17 +25,21 @@ export default function Floor() {
   const viciListen = async (body) => { setPhoneMsg({ busy: true, text: "Asking VICIdial to ring your phone…" }); const r = await api("/api/vicidial/monitor", "POST", body); setPhoneMsg(r.ok ? { text: r.data.message } : { err: r.data.error }); };
   const all = sess.data || []; const live = all.filter((s) => !s.endedAt); const done = all.filter((s) => s.endedAt);
   // Live mic listen (off-call, through Modo's own relay — not VICIdial)
-  const [micOn, setMicOn] = useState(null); const [micMsg, setMicMsg] = useState(""); const micCtl = useRef(null); const micAudio = useRef(null);
-  const stopMic = async () => { try { await micCtl.current?.close(); } catch {} micCtl.current = null; setMicOn(null); if (micAudio.current) micAudio.current.srcObject = null; };
+  const [micOn, setMicOn] = useState(null); const [micMsg, setMicMsg] = useState(""); const micCtl = useRef(null); const micAudio = useRef(null); const micTimer = useRef(null);
+  const stopMic = async () => { clearTimeout(micTimer.current); try { await micCtl.current?.close(); } catch {} micCtl.current = null; setMicOn(null); if (micAudio.current) micAudio.current.srcObject = null; };
   const listenMic = async (a) => {
     await stopMic(); setMicMsg(""); setMicOn({ id: a.id, name: a.name, connecting: true });
     let gotStream = false;
     try {
       if (micAudio.current) { try { micAudio.current.muted = false; micAudio.current.volume = 1; } catch {} }
       micCtl.current = await startListening({ agentId: a.id },
-        (who, st) => { gotStream = true; if (micAudio.current) { micAudio.current.srcObject = st; micAudio.current.muted = false; micAudio.current.play?.().catch(() => {}); } setMicOn((m) => m && { ...m, connecting: false }); },
-        () => { setMicOn(null); if (!gotStream) setMicMsg(`${a.name} declined, or didn't accept the request.`); },
-        (state) => { setMicOn((m) => m && { ...m, state }); if (state === "failed") setMicMsg("Connected but the audio can't get through this network. Add a TURN server in Connectors → TURN (free at metered.ca) so voice works across networks."); });
+        (who, st) => { gotStream = true; clearTimeout(micTimer.current); if (micAudio.current) { micAudio.current.srcObject = st; micAudio.current.muted = false; micAudio.current.play?.().catch(() => {}); } setMicOn((m) => m && { ...m, connecting: false }); },
+        () => { clearTimeout(micTimer.current); setMicOn(null); if (!gotStream) setMicMsg(`${a.name} declined, or didn't accept the request.`); },
+        (state) => { setMicOn((m) => m && { ...m, state }); if (state === "failed") { setMicMsg(`Couldn't carry the audio to ${a.name}. Across different networks this needs a TURN server — add one in Connectors → TURN (free at metered.ca). On the same Wi‑Fi it works without one.`); stopMic(); } });
+      // Give up after 25s with a clear reason instead of saying "waiting" forever.
+      micTimer.current = setTimeout(() => {
+        if (!gotStream) { setMicMsg(`No audio from ${a.name} after 25s. Either they didn't tap “Allow”, or (if you're on different networks) it needs a TURN server — Connectors → TURN (free at metered.ca). Same Wi‑Fi works without one.`); stopMic(); }
+      }, 25000);
     } catch (e) { setMicMsg(e.message || "Couldn't start listening."); setMicOn(null); }
   };
   const viciConnected = vici.data && !vici.error && (vici.data.provider === "vicidial" || vici.data.agents);
