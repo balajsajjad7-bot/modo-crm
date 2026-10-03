@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import PillNav from "./PillNav";
 import { useHuddle } from "./useHuddle";
-import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee } from "lucide-react";
+import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee, Settings as SettingsIcon, LayoutDashboard } from "lucide-react";
 import { guideForRole } from "@/lib/guide";
 import { startSending } from "@/components/listen";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -253,12 +253,20 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
             {!dialOpen && unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
           </button>
         </div>
-      ) : (!path.endsWith("/chat") && (
-        <button className="chat-fab" aria-label="Open chat" onClick={() => router.push("/admin/chat")}>
-          <MessageSquare size={22} />
-          {unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
-        </button>
-      ))}
+      ) : (
+        <div className={"agent-dial" + (dialOpen ? " open" : "")}>
+          {dialOpen && <div className="ad-backdrop" onClick={() => setDialOpen(false)} />}
+          <div className="ad-actions" role="menu">
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin"); }}><span className="ad-ic"><LayoutDashboard size={18} /></span>Overview</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/settings"); }}><span className="ad-ic"><SettingsIcon size={18} /></span>Settings</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/chat"); }}><span className="ad-ic"><MessageSquare size={18} /></span>Chat{unread > 0 && <em className="ad-badge">{unread > 99 ? "99+" : unread}</em>}</button>
+          </div>
+          <button className="chat-fab ad-main" aria-label="Quick actions" aria-expanded={dialOpen} onClick={() => setDialOpen((o) => !o)}>
+            {dialOpen ? <X size={24} /> : <Plus size={26} />}
+            {!dialOpen && unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
+          </button>
+        </div>
+      )}
 
       {invites.slice(0, 1).map((c) => (
         <div key={c.huddle.id} className="call-banner" role="alert">
