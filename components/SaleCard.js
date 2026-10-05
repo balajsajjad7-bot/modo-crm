@@ -3,7 +3,7 @@ import AiButton from "@/components/AiButton";
 // One sale: compact summary first (no long scrolling), full details one click away.
 import { useEffect, useState } from "react";
 import OrderCheck, { OrderStatusChip } from "@/components/OrderCheck";
-import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer } from "lucide-react";
+import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
 const $ = (n) => (n == null || n === "" || isNaN(Number(n)) ? "—" : "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -58,12 +58,26 @@ function DeviceValue({ s, onPatch }) {
 // Prepaid return label (customer → your warehouse) through Shippo, plus a Pirate Ship fallback.
 function ReturnLabel({ s, labels, onPatch }) {
   const [busy, setBusy] = useState(false); const [msg, setMsg] = useState(""); const [copied, setCopied] = useState(false);
+  const [quote, setQuote] = useState(null); const [pick, setPick] = useState(null); const [again, setAgain] = useState(false);
+  // Checkout step 1: get prices (nothing is charged)
+  async function getQuote(remake = false) {
+    setBusy(true); setMsg(""); setQuote(null); setAgain(remake);
+    const { ok, d } = await post("/api/sales/return-label", { id: s.id, quote: true }); setBusy(false);
+    if (!ok) { onPatch({ returnError: d.error }); return setMsg(d.error || "Couldn't get prices."); }
+    setQuote(d); setPick(d.rates.find((r) => !r.overLimit)?.id || d.rates[0]?.id);
+  }
+  // Step 2: pay for the chosen label (Shippo charges the card saved in your Shippo account)
+  async function pay() {
+    const r = quote?.rates.find((x) => x.id === pick); if (!r) return;
+    await make({ rateId: r.id, again }); setQuote(null);
+  }
   async function make(body) {
     setBusy(true); setMsg("");
     const { ok, d } = await post("/api/sales/return-label", { id: s.id, ...body }); setBusy(false);
     if (d.sale) onPatch(d.sale);
     if (!ok) return setMsg(d.error || "Couldn't make the label.");
-    setMsg(d.emailError || (d.emailed ? `Emailed to ${s.email}.` : body.email ? "" : "Label ready."));
+    setMsg(d.emailError || (d.emailed ? `Label ready and emailed to ${s.email}.` : body.email ? "" : "Label ready."));
+    if (body.rateId && d.sale?.returnLabelUrl) window.open(d.sale.returnLabelUrl, "_blank", "noopener");
   }
   function pirate() {
     const to = labels?.to;
@@ -85,11 +99,28 @@ function ReturnLabel({ s, labels, onPatch }) {
       ) : <p className="muted small" style={{ margin: 0 }}>{labels?.ready ? `No label yet.${labels.auto ? " One is made automatically when this sale is marked Active." : ""}` : "Set up Shippo in Connectors → Return labels to make labels automatically."}</p>}
       {s.returnError && !s.returnLabelUrl && <p className="err small" style={{ margin: "6px 0 0" }}><AlertTriangle size={12} /> {s.returnError}</p>}
       <div className="row" style={{ gap: 6, marginTop: 8 }}>
-        {labels?.ready && !s.returnLabelUrl && <button className="sm" disabled={busy || !s.address} onClick={() => confirm(`Buy the cheapest ${labels.carrier} return label from ${s.customer || "the customer"} to your warehouse?${labels.test ? " (TEST key: free test label)" : " Shippo charges your account."}`) && make({})}><Printer size={13} /> {busy ? "Making label…" : "Make return label"}</button>}
+        {labels?.ready && !s.returnLabelUrl && !quote && <button className="sm" disabled={busy || !s.address} onClick={() => getQuote(false)}><Printer size={13} /> {busy ? "Getting prices…" : "Make return label"}</button>}
         {s.returnLabelUrl && s.email && <button className="ghost sm" disabled={busy} onClick={() => make({ email: true })}><Send size={13} /> Email to customer</button>}
-        {s.returnLabelUrl && <button className="ghost sm" disabled={busy} onClick={() => confirm("Buy a NEW label? The old one stays valid until you void it in Shippo.") && make({ again: true })}><RefreshCw size={13} /> New label</button>}
+        {s.returnLabelUrl && !quote && <button className="ghost sm" disabled={busy} onClick={() => getQuote(true)}><RefreshCw size={13} /> New label</button>}
         <button className="ghost sm" disabled={!s.address} onClick={pirate} title="Copies both addresses and opens Pirate Ship"><Copy size={13} /> {copied ? "Addresses copied" : "Pirate Ship (manual)"}</button>
       </div>
+      {quote && (
+        <div className="rl-checkout">
+          <div className="rl-head"><b>Choose a label</b><span className="muted small">From {quote.from.city}, {quote.from.state} to your warehouse{quote.test ? " · TEST mode: free" : ""}</span></div>
+          <div className="rl-rates">{quote.rates.map((r) => (
+            <label key={r.id} className={"rl-rate" + (pick === r.id ? " on" : "") + (r.overLimit ? " over" : "")}>
+              <input type="radio" name={"rate-" + s.id} checked={pick === r.id} onChange={() => setPick(r.id)} />
+              <span className="rl-svc"><b>{r.provider} {r.service}</b><small>{r.days ? `${r.days} day${r.days > 1 ? "s" : ""}` : "transit time varies"}{r.overLimit ? ` · above your $${quote.maxPrice} limit` : ""}</small></span>
+              <b className="num">${r.price.toFixed(2)}</b>
+            </label>))}</div>
+          <div className="row" style={{ gap: 6 }}>
+            <button disabled={busy || !pick} onClick={pay}><CreditCard size={14} /> {busy ? "Paying…" : `Pay $${(quote.rates.find((r) => r.id === pick)?.price || 0).toFixed(2)} & create label`}</button>
+            <button className="ghost sm" disabled={busy} onClick={() => setQuote(null)}>Cancel</button>
+            <a className="ghost sm btn-link" href="https://apps.goshippo.com/settings/billing" target="_blank" rel="noreferrer"><CreditCard size={13} /> Payment card</a>
+          </div>
+          <p className="muted small" style={{ margin: 0 }}>{quote.test ? "Test key: no charge, the label is a sample." : "Shippo charges the card saved in your Shippo account. Add or change it with “Payment card”."}</p>
+        </div>
+      )}
       {msg && <p className="muted small" style={{ margin: "6px 0 0" }}>{msg}</p>}
     </section>
   );

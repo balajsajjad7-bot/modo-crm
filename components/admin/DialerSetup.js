@@ -2,10 +2,30 @@
 // Admin → Tools → Dialer setup: pick the dialer, connect it, link agents, set results and pause codes. All in one place.
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search } from "lucide-react";
+import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle } from "lucide-react";
+
+// Connection check: every step Modo needs from VICIdial, with what's blocked and how to fix it.
+function Health() {
+  const [h, setH] = useState(null); const [busy, setBusy] = useState(false);
+  const run = async () => { setBusy(true); const r = await api("/api/vicidial/health"); setBusy(false); setH(r.ok ? r.data : { error: r.data.error || "Check failed." }); };
+  return (
+    <section className="panel stack">
+      <div className="row" style={{ justifyContent: "space-between" }}><h2><Stethoscope size={17} /> Connection check</h2>
+        <button className="sm" onClick={run} disabled={busy}><Zap size={13} /> {busy ? "Checking…" : h ? "Check again" : "Check connection"}</button></div>
+      <p className="muted small" style={{ margin: 0 }}>Tests the dialer from Modo's live server, step by step. Modo also protects your API user: after a wrong password it stops calling VICIdial for 5 minutes, so the account can't get locked.</p>
+      {h?.error && <p className="err small">{h.error}</p>}
+      {h?.held && <p className="small" style={{ color: "var(--amber)", margin: 0 }}><AlertTriangle size={13} /> Dialer requests are paused for {h.held.seconds}s: {h.held.msg}</p>}
+      {h?.steps && <div className="health-list">{h.steps.map((x) => (
+        <div key={x.name} className={"health-row " + (!x.ok ? "bad" : x.warn ? "warn" : "ok")}>
+          {!x.ok ? <XCircle size={16} /> : x.warn ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
+          <div><b>{x.name}</b> <span className="muted small">{x.ms}ms</span><div className="small">{x.detail}</div>{x.fix && (!x.ok || x.warn) && <div className="small muted">Fix: {x.fix}</div>}</div>
+        </div>))}</div>}
+    </section>
+  );
+}
 
 const PROVIDERS = [["vicidial", "VICIdial", "Built in. Modo drives VICIdial through its Agent API."], ["custom", "Other dialer", "Any dialer with a web API (future-proof): you type its URLs below."], ["off", "Off", "Hide the dialer from agents."]];
-const V_FIELDS = [["url", "VICIdial address", "https://dialer.yourcompany.com"], ["user", "API user", "a VICIdial user with API access"], ["pass", "API password", ""], ["agentUrl", "Agent screen URL (optional)", "defaults to …/agc/vicidial.php"], ["monitorPhone", "Your phone login (for Listen/Whisper/Barge)", "e.g. 350a"], ["serverIp", "Dialer server IP (only if needed)", ""]];
+const V_FIELDS = [["url", "VICIdial address", "https://dialer.yourcompany.com"], ["user", "API user", "a VICIdial user with API access"], ["pass", "API password", ""], ["agentUrl", "Agent screen URL (optional)", "defaults to …/agc/vicidial.php"], ["monitorPhone", "Your phone login (for Listen/Whisper/Barge)", "e.g. 350a"], ["serverIp", "Dialer server IP (only if needed)", ""], ["portal", "Firewall page (filled in automatically for dialerlab)", "https://your-dialer:446/login.php"], ["proxy", "Fixed-IP proxy (only if your dialer host blocks Modo)", "http://user:pass@host:port"]];
 const ACT_HELP = { status: "Returns JSON about the agent's current call", dial: "Call {number}", hangup: "Hang up", pause: "Pause the agent ({code} = reason)", resume: "Make the agent ready", dispo: "Save the result {code} / {label}, note {note}", park: "Put the customer on hold", grab: "Take the customer off hold", transfer: "Transfer to {number} ({type} = blind/warm)", dtmf: "Send keypad tones {digits}", record: "Recording on/off ({on} = 1/0)" };
 
 function CodeList({ items, onChange }) {
@@ -80,6 +100,8 @@ export default function DialerSetup() {
         </section>
       )}
 
+      {d.provider === "vicidial" && <Health />}
+
       {d.provider === "vicidial" && d.vicidial && (
         <section className="panel stack">
           <h2><Users size={17} /> Find your agents & campaign</h2>
@@ -146,7 +168,7 @@ export default function DialerSetup() {
                 <button className="sm" onClick={() => save({ links: Object.entries(links).map(([id, user]) => ({ id, user })) }, "Agent logins saved.")}><Save size={13} /> Save logins</button></div></div>
             <p className="muted small" style={{ margin: 0 }}>Type each agent's login on the dialer ({d.provider === "vicidial" ? "their VICIdial user" : "their dialer login"}).</p>
             <div className="link-grid">{d.agents.map((a) => (
-              <label key={a.id} style={a.active ? undefined : { opacity: .5 }}><span><b>{a.name}</b> <span className="muted small">{a.agentId}</span></span>
+              <label key={a.id} style={a.active ? undefined : { opacity: .5 }}><span><b>{a.name}</b> <span className="muted small">{a.agentId}</span>{a.role === "ADMIN" && <span className="chip" style={{ marginLeft: 6 }}>admin</span>}</span>
                 <input value={links[a.id] || ""} onChange={(e) => setLinks({ ...links, [a.id]: e.target.value })} placeholder="dialer login" /></label>
             ))}</div>
           </section>

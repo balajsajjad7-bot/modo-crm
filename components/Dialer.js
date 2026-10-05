@@ -5,14 +5,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Lookups from "@/components/Lookups";
 import AiButton from "@/components/AiButton";
-import { Phone, PhoneOff, Pause, Play, ParkingCircle, ArrowRightLeft, Circle, ExternalLink, Delete, User, MapPin, Mail, StickyNote, Mic, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import CallAI from "@/components/CallAI";
+import RecentCalls from "@/components/RecentCalls";
+import { Phone, PhoneOff, Pause, Play, ParkingCircle, ArrowRightLeft, Circle, ExternalLink, Delete, User, MapPin, Mail, StickyNote, Mic, CheckCircle2, AlertCircle, Loader2, Zap, SkipForward, Square } from "lucide-react";
 
 const post = (b) => fetch("/api/dialer", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }).then(async (r) => ({ ok: r.ok, d: await r.json().catch(() => ({})) }));
 const fmt = (p) => { const d = String(p || "").replace(/\D/g, "").slice(0, 10); return d.length < 4 ? d : d.length < 7 ? `(${d.slice(0, 3)}) ${d.slice(3)}` : `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`; };
 const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 const LOOK = { READY: ["Ready", "ready"], QUEUE: ["Ringing", "call"], INCALL: ["On a call", "call"], CLOSER: ["On a call", "call"], PAUSED: ["Paused", "paused"], DEAD: ["Call ended", "dead"], DISPO: ["Wrap-up", "dead"] };
 
-export default function Dialer() {
+export default function Dialer({ admin = false }) {
   const [st, setSt] = useState(null); const [num, setNum] = useState(""); const [busy, setBusy] = useState(""); const [toast, setToast] = useState(null);
   const [since, setSince] = useState(Date.now()); const [now, setNow] = useState(Date.now()); const lastStatus = useRef(null);
   const [pauseCode, setPauseCode] = useState(""); const [xfer, setXfer] = useState(false); const [xNum, setXNum] = useState(""); const [rec, setRec] = useState(false);
@@ -22,7 +24,22 @@ export default function Dialer() {
     if (d.status !== lastStatus.current) { lastStatus.current = d.status; setSince(Date.now()); }
     if (d.phone) { wrapPhone.current = d.phone; wrapName.current = d.lead?.name || d.contact?.name || ""; }
   }).catch(() => {}), []);
-  useEffect(() => { load(); const t = setInterval(load, 2000); const c = setInterval(() => setNow(Date.now()), 1000); return () => { clearInterval(t); clearInterval(c); }; }, [load]);
+  // Poll fast only while it matters: 2s when logged in, 8s when not logged in / erroring, 15s when the tab is hidden.
+  const stRef = useRef(null); stRef.current = st;
+  useEffect(() => {
+    let t; let alive = true;
+    const tick = async () => { await load(); if (!alive) return; const x = stRef.current; const ms = document.hidden ? 15000 : !x || x.error || !x.loggedIn ? 8000 : 2000; t = setTimeout(tick, ms); };
+    tick(); const c = setInterval(() => setNow(Date.now()), 1000);
+    const vis = () => { if (!document.hidden) { clearTimeout(t); tick(); } };
+    document.addEventListener("visibilitychange", vis);
+    return () => { alive = false; clearTimeout(t); clearInterval(c); document.removeEventListener("visibilitychange", vis); };
+  }, [load]);
+  // Auto mode: after you save a result, Modo dials the next lead by itself (after a short countdown you can stop).
+  const [auto, setAuto] = useState(false); const [count, setCount] = useState(0); const autoT = useRef(null);
+  useEffect(() => { try { setAuto(localStorage.getItem("modo-autodial") === "1"); } catch {} }, []);
+  const setAutoOn = (on) => { setAuto(on); try { localStorage.setItem("modo-autodial", on ? "1" : "0"); } catch {} if (!on) stopCount(); };
+  const stopCount = () => { clearInterval(autoT.current); setCount(0); };
+  const startCount = () => { stopCount(); let n = 3; setCount(n); autoT.current = setInterval(() => { n -= 1; setCount(n); if (n <= 0) { clearInterval(autoT.current); act("next", {}, "Dialing next lead…"); } }, 1000); };
   const say = (ok, text) => { setToast({ ok, text }); setTimeout(() => setToast(null), 3500); };
   async function act(action, extra = {}, label) {
     setBusy(action); const r = await post({ action, ...extra }); setBusy("");
@@ -37,8 +54,9 @@ export default function Dialer() {
     const d = st.dispositions.find((x) => x.code === dispo); if (!d) return say(false, "Pick a result first.");
     if (d.code === "CALLBK" && !cbAt) return say(false, "Pick the callback time.");
     const ok = await act("dispo", { code: d.code, label: d.label, note, callbackAt: d.code === "CALLBK" ? cbAt : undefined, phone: phone || wrapPhone.current, name: wrapName.current }, `Saved: ${d.label}`);
-    if (ok) { setNote(""); setDispo(""); setCbAt(""); }
+    if (ok) { setNote(""); setDispo(""); setCbAt(""); setCalls((k) => k + 1); if (auto) startCount(); }
   }
+  const [calls, setCalls] = useState(0);
 
   if (!st) return <p className="muted">Connecting to the dialer…</p>;
   if (st.setup) return <section className="panel"><AlertCircle size={18} /> {st.setup}</section>;
@@ -49,10 +67,14 @@ export default function Dialer() {
         <div className="dl-timer num">{clock(Math.max(0, Math.floor((now - since) / 1000)))}</div>
         <div className="dl-meta"><span>{st.campaign || "—"}</span><span>{st.callsToday || 0} calls today</span><span className="muted">VICIdial user {st.vu}</span></div>
         <div className="row" style={{ marginLeft: "auto" }}>
-          <Link href="/agent/call" className="btn-link"><Mic size={14} /> Call assist</Link>
+          <label className="auto-sw" title="After you save a result, Modo dials the next lead automatically">
+            <button role="switch" aria-checked={auto} className={"toggle" + (auto ? " on" : "")} onClick={() => setAutoOn(!auto)}><span /></button><span><Zap size={13} /> Auto-dial</span></label>
+          <button className="ghost" onClick={() => act("next", {}, "Dialing next lead…")} disabled={!!busy || !st.loggedIn || inCall}><SkipForward size={14} /> Next lead</button>
+          {!admin && <Link href="/agent/call" className="btn-link"><Mic size={14} /> Call assist</Link>}
           <button className="ghost" onClick={openVici} disabled={!st.agentUrl}><ExternalLink size={14} /> {st.loggedIn ? "Show VICIdial" : "Open VICIdial & log in"}</button>
         </div>
       </section>
+      {count > 0 && <section className="panel dl-hint auto-count"><Zap size={18} /><div><b>Next lead in {count}…</b> Auto-dial is on.</div><button className="ghost sm" onClick={stopCount}><Square size={12} /> Stop</button></section>}
       {!st.loggedIn && (
         <section className="panel dl-hint"><AlertCircle size={18} /><div><b>Log into VICIdial first.</b> Press “Open VICIdial & log in”, sign in with your phone and campaign, then leave that window open in the background. This screen takes over from there.{st.error && <div className="err small" style={{ marginTop: 6 }}>{st.error}</div>}</div></section>
       )}
@@ -121,6 +143,10 @@ export default function Dialer() {
           <button onClick={wrap} disabled={!dispo || !!busy || inCall}>{busy === "dispo" ? "Saving…" : inCall ? "Hang up to save" : "Save & next call"}</button>
           <span className="small muted">Saves the result in VICIdial and the note (and any callback) in Modo.</span>
         </section>
+      </div>
+      <div className="dl-grid2">
+        <CallAI context={{ name: st.lead?.name || st.contact?.name, phone, comments: st.lead?.comments, lastNote: st.contact?.lastNote?.text }} note={note} onNote={setNote} />
+        <RecentCalls mine limit={15} title="My recent calls" refreshKey={calls} onRedial={(r) => { if (!inCall) { setNum(r.phone); window.scrollTo({ top: 0, behavior: "smooth" }); } }} />
       </div>
       {toast && <div className={"dl-toast " + (toast.ok ? "ok" : "bad")} role="status">{toast.ok ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />} {toast.text}</div>}
     </div>

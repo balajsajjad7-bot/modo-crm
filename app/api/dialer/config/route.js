@@ -10,7 +10,7 @@ export async function GET() {
   if (error) return error;
   const [cfg, vici, agents] = await Promise.all([
     dialerConfig(), db.connector.findFirst({ where: { type: "vicidial" }, orderBy: { createdAt: "desc" } }),
-    db.user.findMany({ where: { role: "AGENT" }, orderBy: { name: "asc" }, select: { id: true, name: true, agentId: true, vicidialUser: true, active: true } }),
+    db.user.findMany({ where: { role: { in: ["AGENT", "ADMIN"] } }, orderBy: [{ role: "asc" }, { name: "asc" }], select: { id: true, name: true, agentId: true, role: true, vicidialUser: true, active: true } }),
   ]);
   return NextResponse.json({ ...cfg, custom: { ...cfg.custom, key: cfg.custom.key ? "••••" + cfg.custom.key.slice(-4) : "" },
     dispositions: cfg.dispositions || DEFAULT_DISPOS, pauseCodes: cfg.pauseCodes || DEFAULT_PAUSE, actions: ACTIONS, vicidial: vici ? publicView(vici) : null, agents });

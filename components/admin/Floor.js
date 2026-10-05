@@ -4,8 +4,10 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { usePoll, api } from "./api";
 import { dur } from "@/lib/fmt";
-import { Sparkles, PhoneCall, Radio, Coffee, Moon, Trophy, History, RefreshCw, HelpCircle, PhoneOff, Headphones, Ear, Mic, Square } from "lucide-react";
+import { Sparkles, PhoneCall, Radio, Coffee, Moon, Trophy, History, RefreshCw, HelpCircle, PhoneOff, Headphones, Ear, Mic, Square, Disc3 } from "lucide-react";
 import ShiftEndRequests from "./ShiftEndRequests";
+import RecentCalls from "@/components/RecentCalls";
+import Launcher from "@/components/Launcher";
 import { startChunkListen } from "@/components/chunklisten";
 import Spectrum from "./Spectrum";
 
@@ -51,6 +53,7 @@ export default function Floor() {
 
   return (
     <div className="floor">
+      <Launcher title="Go to" />
       <ShiftEndRequests compact />
       <div className="floor-kpis">
         <div><PhoneCall size={16} /><b>{live.length}</b><span>on calls now</span></div>
@@ -114,7 +117,7 @@ export default function Floor() {
           {vici.data && (vici.data.monitorPhone
             ? <p className="small muted" style={{ margin: 0 }}><Ear size={12} /> Listening rings your phone <b>{vici.data.monitorPhone}</b> — keep that softphone/extension logged in to hear calls.</p>
             : <p className="small" style={{ margin: 0, color: "var(--amber)" }}><Ear size={12} /> No listen phone set. Add one in <Link href="/admin/connectors">Connectors → VICIdial → Monitor phone</Link> to listen to agents.</p>)}
-          {vici.error ? <p className="muted small" style={{ margin: 0 }}>{vici.error} <Link href="/admin/connectors">Connect VICIdial</Link></p> : !vici.data ? <p className="muted">Checking…</p> : !vici.data.agents.length ? <p className="muted">No one is logged into the dialer.</p> : (
+          {vici.error ? <p className="muted small" style={{ margin: 0 }}>{vici.error} <Link href="/admin/connectors">Connect VICIdial</Link></p> : !vici.data ? <p className="muted">Checking…</p> : !(vici.data.agents || []).length ? <p className="muted">No one is logged into the dialer.</p> : (
             <div className="dialer-list">{vici.data.agents.map((a, i) => (
               <div key={i}><span className={"dot " + String(a.status || "").toLowerCase()} /><b>{a.full_name || a.user || a.f0}</b><span className="chip">{a.status}</span><span className="muted small">{a.campaign_id || a.campaign || ""}</span><span className="muted small" style={{ marginLeft: "auto" }}>{a.calls_today ? a.calls_today + " calls" : ""}</span>
                 {/INCALL|QUEUE|DIAL/i.test(a.status || "") && <span className="row" style={{ gap: 4 }}>
@@ -160,13 +163,12 @@ export default function Floor() {
         <audio ref={micAudio} autoPlay playsInline hidden />
       </section>
 
-      <section className="panel stack">
-        <div className="row" style={{ justifyContent: "space-between" }}>
-          <h2><History size={17} /> Recent calls</h2>
-          {viciConnected && <Link className="ghost sm" href="/admin/recordings">All recordings</Link>}
-        </div>
-        {done.length ? (
-          // Calls that ran through Modo's own dialer (with AI transcript/score)
+      {/* Recent calls = Modo's own call log (works even when the dialer blocks Modo's server) */}
+      <RecentCalls showAgent limit={30} title="Recent calls" />
+
+      {done.length > 0 && (
+        <section className="panel stack">
+          <h2><Sparkles size={17} /> AI-reviewed calls <span className="muted small">(Call assist, last 12 hours)</span></h2>
           <div className="tablewrap"><table>
             <thead><tr><th>Agent</th><th>When</th><th>Length</th><th>What happened</th><th>Confused</th><th>Ended by</th><th className="r">Score</th></tr></thead>
             <tbody>{done.slice(0, 30).map((s) => (
@@ -180,11 +182,18 @@ export default function Floor() {
               </tr>
             ))}</tbody>
           </table></div>
-        ) : viciCalls.length ? (
-          // No Modo-tracked calls, but the dialer has real recordings today — show those with playback
-          <>
-            <p className="muted small" style={{ margin: "0 0 6px" }}>Straight from the dialer — your agents dial in VICIdial, so these are their recorded calls.</p>
-            <div className="tablewrap"><table>
+        </section>
+      )}
+
+      <section className="panel stack">
+        <div className="row" style={{ justifyContent: "space-between" }}>
+          <h2><Disc3 size={17} /> Dialer recordings today</h2>
+          <Link className="ghost sm" href="/admin/recordings">All recordings</Link>
+        </div>
+        {recs.error ? (
+          <p className="small" style={{ margin: 0, color: "var(--amber)" }}>Couldn't read recordings from VICIdial: {recs.error} <Link href="/admin/dialer">Run the connection check</Link></p>
+        ) : !recs.data ? <p className="muted small" style={{ margin: 0 }}>Loading…</p> : viciCalls.length ? (
+          <div className="tablewrap"><table>
               <thead><tr><th>Agent</th><th>When</th><th>Length</th><th>Number</th><th>Play</th></tr></thead>
               <tbody>{viciCalls.slice(0, 30).map((r, i) => (
                 <tr key={r.id || r.url || i}>
@@ -196,14 +205,9 @@ export default function Floor() {
                 </tr>
               ))}</tbody>
             </table></div>
-          </>
-        ) : viciConnected ? (
-          <p className="muted small" style={{ margin: 0 }}>
-            No recorded calls came back from the dialer for today. Your agents are dialing inside VICIdial (see the counts above),
-            so calls only show here if <b>recording is on</b> for their campaign (VICIdial → Admin → Campaigns → <i>Recording = ALLCALLS</i>)
-            and the API user has <i>View Reports</i> access. Live listening works regardless.
-          </p>
-        ) : <p className="muted">No finished calls in the last 12 hours.</p>}
+        ) : (
+          <p className="muted small" style={{ margin: 0 }}>No recordings from the dialer today. They show here when recording is on for the campaign (VICIdial → Campaigns → Recording = ALLCALLS) and the API user has View Reports.</p>
+        )}
       </section>
     </div>
   );

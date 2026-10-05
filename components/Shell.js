@@ -233,7 +233,7 @@ me?.role === "AGENT" ? (
   );
 
   return (
-    <ShellCtx.Provider value={{ me, chat, reloadChat: loadChat, huddle, openDM, presence }}>
+    <ShellCtx.Provider value={{ me, chat, reloadChat: loadChat, huddle, openDM, presence, nav: withBadges, home }}>
       <Translator />
       <TopBar nav={withBadges} home={home} action={navAction} search={<ErrorBoundary resetKey={path}><SearchPalette nav={nav} home={home} role={me?.role} /></ErrorBoundary>}
         user={{ name: me?.name || "", sub: userSub || (me?.role === "ADMIN" ? "Admin" : me?.agentId), status: status || (myStatus === "away" ? "off" : myStatus === "busy" ? "warn" : "") }}

@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { TYPES, EVENTS, parse, publicView, test, seal } from "@/lib/connectors";
+import { clearHold } from "@/lib/vicidial";
 
 // Update: { name?, enabled?, events?, config? }  — blank secret fields keep the saved value
 export async function PATCH(req, { params }) {
   const { error } = await requireRole("ADMIN");
   if (error) return error;
+  clearHold();
   const c = await db.connector.findUnique({ where: { id: params.id } });
   if (!c) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const b = await req.json();
@@ -27,6 +29,7 @@ export async function PATCH(req, { params }) {
 export async function POST(req, { params }) {
   const { error } = await requireRole("ADMIN");
   if (error) return error;
+  clearHold();
   const c = await db.connector.findUnique({ where: { id: params.id } });
   if (!c) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const status = await test(c);

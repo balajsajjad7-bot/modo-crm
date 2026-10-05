@@ -51,6 +51,7 @@ model User {
   attendance   Attendance[]
   sales        Sale[]
   sessions     CallSession[]
+  callLogs     CallLog[]
   breaks       BreakLog[]
   activity     Activity[]
 }
@@ -128,6 +129,26 @@ model Sale {
   shiftDate String   @default("")
   status    String   @default("NEW") // NEW | VERIFIED (= Active) | REJECTED (= Not active)
   createdAt DateTime @default(now())
+}
+
+// Every call Modo places or wraps up (VICIdial through Modo, Google Voice, manual). Feeds "Recent calls".
+model CallLog {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  phone     String
+  name      String?
+  contactId String?
+  leadId    String?
+  source    String    @default("vicidial") // vicidial | gvoice | custom
+  result    String?   // disposition label, e.g. Sale / No answer
+  resultCode String?
+  note      String?
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  seconds   Int?
+  @@index([userId, startedAt])
+  @@index([startedAt])
 }
 
 model CallSession {

@@ -4,7 +4,7 @@ import Shell from "@/components/Shell";
 import { AgentProvider, useAgent } from "@/components/agent/AgentContext";
 import Onboarding from "@/components/agent/Onboarding";
 import GeoReporter from "@/components/agent/GeoReporter";
-import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText, GraduationCap, Wand2 } from "lucide-react";
+import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText, GraduationCap, Wand2, Phone } from "lucide-react";
 
 function BreakButton({ onBreak, since, onClick }) {
   const [now, setNow] = useState(Date.now());
@@ -42,6 +42,7 @@ function Frame({ children }) {
   ];
   const callKids = [
     ...(dialerOn ? [{ href: "/agent/dialer", label: "Dialer", hint: "Make and manage calls (your dialer runs in the background)", icon: i(PhoneCall) }] : []),
+    ...(P.googleVoice !== false ? [{ href: "/agent/phone", label: "Google Voice", hint: "Manual calls through Google Voice, logged with notes and AI help", icon: i(Phone) }] : []),
     ...(P.callAssist !== false ? [{ href: "/agent/call", label: "Call assist", hint: "Live suggestions while you talk", icon: i(Mic) }] : []),
   ];
   const aiKids = [

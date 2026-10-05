@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { TYPES, EVENTS, publicView, seal } from "@/lib/connectors";
+import { clearHold } from "@/lib/vicidial";
 
 export async function GET() {
   const { error } = await requireRole("ADMIN");
@@ -13,6 +14,7 @@ export async function GET() {
 export async function POST(req) {
   const { error } = await requireRole("ADMIN");
   if (error) return error;
+  clearHold();
   const b = await req.json();
   if (!TYPES[b.type]) return NextResponse.json({ error: "Unknown connector type." }, { status: 400 });
   const cfg = {}; for (const f of TYPES[b.type].fields) if (b.config?.[f]) cfg[f] = String(b.config[f]).trim();

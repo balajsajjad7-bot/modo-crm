@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, PackageSearch, Wand2 } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, PackageSearch, Wand2, Phone, HardDrive } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 import { sectionForPath } from "@/lib/supaccess";
@@ -28,6 +28,8 @@ export default function AdminLayout({ children }) {
       { href: "/admin/tasks", label: "Tasks & callbacks", hint: "Who needs to call whom, when", icon: i(ListChecks) },
     ] },
     { label: "Calls", icon: i(PhoneCall), children: [
+      { href: "/admin/autodial", label: "Auto dialer", hint: "Dial through VICIdial from Modo, auto next lead, AI assistant", icon: i(PhoneCall) },
+      { href: "/admin/phone", label: "Google Voice", hint: "Manual calls through Google Voice, logged with notes and AI help", icon: i(Phone) },
       { href: "/admin/quality", label: "Call quality (QA)", hint: "AI review of every call: grammar, nervousness, compliance", icon: i(BadgeCheck) },
       { href: "/admin/recordings", label: "Call recordings", hint: "Play & download your VICIdial recordings by day", icon: i(Disc3) },
       { href: "/admin/dialer", label: "Dialer setup", hint: "Connect VICIdial or another dialer, link agents, results & pause codes", icon: i(PhoneCall) },
@@ -60,6 +62,7 @@ export default function AdminLayout({ children }) {
     { label: "Setup", icon: i(Wrench), children: [
       { href: "/admin/lookups", label: "Lookups", hint: "USA phone, ZIP, address, email and your own lookup APIs", icon: i(SearchCheck) },
       { href: "/admin/calculator", label: "Discount calculator", hint: "Quotes and discount rules", icon: i(Calculator) },
+      { href: "/admin/drive", label: "Drive", hint: "Private files and daily backups in your Google Drive or Dropbox", icon: i(HardDrive) },
       { href: "/admin/connectors", label: "Connectors", hint: "Slack, Discord, Sheets, webhooks, AI, VICIdial", icon: i(Plug) },
       { href: "/admin/settings", label: "Settings", hint: "IP lock, breaks, idle and targets", icon: i(Settings) },
       { href: "/admin/app", label: "Windows app", hint: "Download the installer and lock down PCs", icon: i(MonitorDown) },
