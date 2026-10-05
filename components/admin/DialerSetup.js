@@ -6,24 +6,33 @@ import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Pl
 
 // Office relay: gets Modo past the dialer's IP firewall by sending requests through a PC in the office.
 function Relay() {
-  const [r, setR] = useState(null); const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false);
+  const [r, setR] = useState(null); const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false); const [copied, setCopied] = useState(false);
   const load = () => api("/api/relay").then((x) => setR(x.ok ? x.data : { error: x.data.error }));
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
-  const test = async () => { setBusy(true); setMsg(""); const x = await api("/api/relay", "POST", { action: "test" }); setBusy(false); setMsg(x.ok ? `Works: dialer answered through your office PC in ${x.data.ms}ms (${x.data.text || "HTTP " + x.data.status})` : x.data.error); };
-  const renew = async () => { if (!confirm("Make a new relay key? Relays already running will stop until you download and run the new file.")) return; await api("/api/relay", "POST", { action: "newkey" }); setMsg("New key made. Download the relay again."); load(); };
+  const test = async () => { setBusy(true); setMsg(""); const x = await api("/api/relay", "POST", { action: "test" }); setBusy(false); setMsg(x.ok ? `Works: the dialer answered through the relay in ${x.data.ms}ms (${x.data.text || "HTTP " + x.data.status})` : x.data.error); };
+  const renew = async () => { if (!confirm("Make a new relay key? Running relays stop until you give them the new key.")) return; await api("/api/relay", "POST", { action: "newkey" }); setMsg("New key made."); load(); };
   if (!r || r.setup) return null;
   return (
     <section className="panel stack">
-      <div className="row" style={{ justifyContent: "space-between" }}><h2><Router size={17} /> Office relay <span className={"chip " + (r.online ? "ok" : "late")}>{r.online ? "Online" : "Offline"}</span></h2>
-        <div className="row" style={{ gap: 6 }}><a className="btn-link" href="/api/relay/bat"><Download size={13} /> Download Modo Relay</a>
-          <button className="ghost sm" onClick={test} disabled={busy || !r.online}><Zap size={13} /> {busy ? "Testing…" : "Test"}</button></div></div>
-      <p className="muted small" style={{ margin: 0 }}>Your dialer only lets in IPs that signed in on its firewall page, and Modo's live server has no fixed IP, so requests time out. The relay fixes that: Modo sends dialer requests through a PC in your office, which the dialer already allows. Free, no account needed; passwords stay on Modo's server.</p>
-      <ol className="drive-steps">
-        <li>On a PC in the office that can open the dialer (the one you use daily), press <b>Download Modo Relay</b> and double-click <b>Modo Relay.bat</b>. If it asks for Node.js, install the LTS version once and run it again.</li>
-        <li>Leave its black window open (minimise it). This badge turns <b>Online</b> within a minute.</li>
-        <li>To start it automatically: press Win+R, type <code>shell:startup</code>, and put a shortcut to the .bat in that folder.</li>
-      </ol>
-      {r.lastSeen && <span className="small muted">Last check-in {new Date(r.lastSeen).toLocaleString()}</span>}
+      <div className="row" style={{ justifyContent: "space-between" }}><h2><Router size={17} /> Relay (gets Modo past the dialer's firewall) <span className={"chip " + (r.online ? "ok" : "late")}>{r.online ? (r.kind === "cloud" ? "Cloud relay online" : "Office relay online") : "Offline"}</span></h2>
+        <button className="ghost sm" onClick={test} disabled={busy || !r.online}><Zap size={13} /> {busy ? "Testing…" : "Test"}</button></div>
+      <p className="muted small" style={{ margin: 0 }}>Your dialer only lets in IPs that signed in on its firewall page, and Modo's server has no fixed IP. A relay has a fixed IP: Modo sends dialer requests through it and signs it in on the firewall page by itself. Passwords stay on Modo's server; the relay only talks to your dialer.</p>
+      <div className="relay-opts">
+        <div className="relay-opt">
+          <b>Cloud relay — free, works from your phone (recommended)</b>
+          <ol className="drive-steps">
+            <li>Copy your relay key: <span className="row" style={{ gap: 6, display: "inline-flex", flexWrap: "nowrap", verticalAlign: "middle" }}><code className="relay-key">{r.key ? r.key.slice(0, 10) + "…" : "…"}</code><button className="ghost sm" onClick={() => { navigator.clipboard?.writeText(r.key || ""); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? "Copied" : "Copy key"}</button></span></li>
+            <li>Tap <a className="btn-link" href="https://render.com/deploy?repo=https://github.com/balajsajjad7-bot/modo-crm" target="_blank" rel="noreferrer">Deploy free relay on Render</a> and sign in with GitHub (allow access to the modo-crm repo if asked).</li>
+            <li>Render asks for <b>RELAY_KEY</b>: paste the key, then press <b>Deploy Blueprint</b> (Free plan).</li>
+            <li>Wait about 2 minutes. This badge turns <b>Cloud relay online</b>, then press <b>Check connection</b> below.</li>
+          </ol>
+        </div>
+        <div className="relay-opt">
+          <b>Or: Office relay on a PC</b>
+          <p className="muted small" style={{ margin: 0 }}>On an office PC that opens the dialer, <a href="/api/relay/bat">download Modo Relay</a>, double-click it and leave the window open.</p>
+        </div>
+      </div>
+      {r.lastSeen && <span className="small muted">Last check-in {new Date(r.lastSeen).toLocaleString()}{r.url ? " · " + r.url.replace("https://", "") : ""}</span>}
       {msg && <p className="small" style={{ margin: 0 }}>{msg}</p>}
       <button className="ghost sm" style={{ justifySelf: "start" }} onClick={renew}>Make a new relay key</button>
     </section>

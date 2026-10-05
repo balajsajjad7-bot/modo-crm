@@ -1,0 +1,15 @@
+# "Deploy to Render" for Modo Cloud Relay (free). Modo → Dialer setup → Relay has the button and your key.
+services:
+  - type: web
+    name: modo-relay
+    runtime: node
+    plan: free
+    rootDir: relay
+    buildCommand: echo "no build needed"
+    startCommand: node server.js
+    healthCheckPath: /ping
+    envVars:
+      - key: MODO_URL
+        value: https://modo-crm1.vercel.app
+      - key: RELAY_KEY
+        sync: false

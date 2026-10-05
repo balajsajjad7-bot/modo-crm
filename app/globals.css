@@ -2184,3 +2184,6 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 .sp-keys button{height:42px;padding:0!important;border-radius:12px!important;background:rgba(var(--fg),.06)!important;border:1px solid var(--border)!important;color:rgb(var(--fg))!important;box-shadow:none!important;font-weight:700}
 [data-appearance="light"] .sp-bar,[data-appearance="light"] .sp-keys{background:#fff}
 @media (max-width:900px){.sp-bar{top:68px}}
+.relay-opts{display:grid;gap:10px}
+.relay-opt{display:grid;gap:8px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:rgba(var(--fg),.03)}
+.relay-key{font-size:12px;padding:3px 8px;border-radius:8px;background:rgba(var(--fg),.08)}

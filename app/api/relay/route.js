@@ -8,7 +8,8 @@ export async function GET() {
   if (error) return error;
   const conn = await viciConnector();
   if (!conn) return NextResponse.json({ setup: "Save the VICIdial connection first." });
-  return NextResponse.json({ online: relayOnline(conn.cfg), url: conn.cfg.relayUrl || "", lastSeen: conn.cfg.relayAt || null, hasKey: !!conn.cfg.relayKey });
+  const key = await ensureRelayKey(conn);
+  return NextResponse.json({ online: relayOnline(conn.cfg), url: conn.cfg.relayUrl || "", lastSeen: conn.cfg.relayAt || null, kind: conn.cfg.relayKind || "", key });
 }
 export async function POST(req) {
   const { error } = await requireRole("ADMIN");
