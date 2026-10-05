@@ -5,7 +5,7 @@ import { api } from "./api";
 import { Building2, Megaphone, Plus, Trash2, Save } from "lucide-react";
 
 function List({ kind, items, reload, email }) {
-  const [rows, setRows] = useState(items); const [add, setAdd] = useState({ name: "", email: "", color: kind === "department" ? "#d12254" : "#d9b45d" }); const [err, setErr] = useState("");
+  const [rows, setRows] = useState(items); const [add, setAdd] = useState({ name: "", email: "", color: kind === "department" ? "#8b5cf6" : "#22d3ee" }); const [err, setErr] = useState("");
   useEffect(() => setRows(items), [items]);
   const save = async (r) => { const res = await api("/api/org", "PATCH", { kind, id: r.id, name: r.name, email: r.email, color: r.color, active: r.active }); if (!res.ok) setErr(res.data.error); reload(); };
   const del = async (r) => { if (confirm(`Delete ${r.name}? People in it will be unassigned.`)) { await api(`/api/org?kind=${kind}&id=${r.id}`, "DELETE"); reload(); } };

@@ -12,7 +12,7 @@ const TABS = [["NEW", "New"], ["VERIFIED", "Active"], ["REJECTED", "Not active"]
 export default function SalesBoard() {
   const [{ data, error }, reload] = usePoll("/api/sales", 15000);
   const [tab, setTab] = useState("NEW"); const [q, setQ] = useState(""); const [office, setOffice] = useState(""); const [camp, setCamp] = useState(""); const [camps, setCamps] = useState([]);
-  useEffect(() => { api("/api/org").then((r) => r.ok && setCamps(r.data.campaigns)); }, []);
+  useEffect(() => { api("/api/org").then((r) => r.ok && setCamps(Array.isArray(r.data.campaigns) ? r.data.campaigns : [])); }, []);
   const { me } = useShell(); const [mail, setMail] = useState(null);
   const [local, setLocal] = useState({}); const [gone, setGone] = useState({}); const [expand, setExpand] = useState(false);
   const list = useMemo(() => (data || []).filter((s) => !gone[s.id]).map((s) => { const c = camps.find((x) => x.id === s.campaignId); return { ...s, status: local[s.id] || s.status, campaignName: c?.name, campaignColor: c?.color }; }), [data, local, gone, camps]);

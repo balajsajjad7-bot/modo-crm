@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePoll, api } from "./api";
 import { PackageSearch, RefreshCw, Search, Download, ExternalLink, Plug } from "lucide-react";
 import Link from "next/link";
+import OrderCheck from "@/components/OrderCheck";
 
 const STATUS_LABEL = {
   delivered: "Delivered", out_for_delivery: "Out for delivery", in_transit: "In transit",
@@ -99,7 +100,7 @@ export default function OrderTracking() {
                 <td className="small" style={{ maxWidth: 320 }}>{r.trackStage || "—"}<div className="muted small">{fmt(r.trackUpdatedAt)}</div></td>
                 <td className="small">{r.deliveredAt ? fmt(r.deliveredAt) : "—"}</td>
                 <td className="small muted">{r.user?.name || "—"}</td>
-                <td><a className="ghost sm" href={trackUrl(r)} target="_blank" rel="noreferrer" title="Open carrier tracking"><ExternalLink size={13} /></a></td>
+                <td><div className="row" style={{ gap: 4, flexWrap: "nowrap" }}>{r.orderNumber && <OrderCheck s={r} onSaved={() => reload()} />}{r.trackingNo && <a className="ghost sm" href={trackUrl(r)} target="_blank" rel="noreferrer" title="Open shipping tracking"><ExternalLink size={13} /></a>}</div></td>
               </tr>
             ))}</tbody>
           </table></div>

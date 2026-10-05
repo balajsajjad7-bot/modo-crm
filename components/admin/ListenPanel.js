@@ -88,7 +88,7 @@ export default function ListenPanel({ call, onClose, muted, setMuted }) {
       {!streams.agent && !err && !slow && <p className="muted small" style={{ margin: 0 }}>Connecting to {call.user.name.split(" ")[0]}'s browser… Their Call assist page must be open.</p>}
       {!streams.agent && !err && slow && <p className="err small" style={{ margin: 0 }}>Couldn't connect to {call.user.name.split(" ")[0]}'s browser. This needs: (1) the agent has <b>Call assist</b> open with a live call, and (2) a working voice relay (TURN). For a real customer call, use the <b>Dialer → Listen</b> button instead — it rings your phone through VICIdial and doesn't need any of this.</p>}
       <div className="waves">
-        <VoiceWave stream={streams.agent} color="#d12254" label="Agent" muted={muted || side.agent} volume={vol} onToggle={() => setSide({ ...side, agent: !side.agent })} />
+        <VoiceWave stream={streams.agent} color={typeof window !== "undefined" ? "rgb(" + (getComputedStyle(document.documentElement).getPropertyValue("--p").trim() || "139,92,246") + ")" : "#8b5cf6"} label="Agent" muted={muted || side.agent} volume={vol} onToggle={() => setSide({ ...side, agent: !side.agent })} />
         <VoiceWave stream={streams.customer} color="#6cc4ff" label="Customer" muted={muted || side.customer} volume={vol} onToggle={() => setSide({ ...side, customer: !side.customer })} />
       </div>
       <div className="nervs">

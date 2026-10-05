@@ -1,7 +1,8 @@
 "use client";
 import AiButton from "@/components/AiButton";
 // One sale: compact summary first (no long scrolling), full details one click away.
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import OrderCheck, { OrderStatusChip } from "@/components/OrderCheck";
 import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
@@ -25,8 +26,16 @@ export function StatusSwitch({ value, onChange }) {
   );
 }
 
-export default function SaleCard({ s, onStatus, onDelete, onEmail, preview, defaultOpen = false }) {
+export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
+  // Order status saved by "Check order" (from this tab, or from the Modo Fill return tab) shows up at once.
+  const [live, setLive] = useState(null);
+  useEffect(() => {
+    if (preview || !base.id) return;
+    const on = (e) => { if (e.key !== "modo-order-status" || !e.newValue) return; try { const d = JSON.parse(e.newValue); if (d.id === base.id) setLive(d); } catch {} };
+    window.addEventListener("storage", on); return () => window.removeEventListener("storage", on);
+  }, [base.id, preview]);
+  const s = live && (!base.trackUpdatedAt || new Date(live.trackUpdatedAt) > new Date(base.trackUpdatedAt)) ? { ...base, ...live } : base;
   const status = s.status || "NEW";
   const save = s.billBefore != null && s.billAfter != null && s.billBefore !== "" && s.billAfter !== "" ? s.billBefore - s.billAfter : null;
   const flags = (s.flags || "").split(",").map((x) => x.trim()).filter(Boolean);
@@ -43,6 +52,7 @@ export default function SaleCard({ s, onStatus, onDelete, onEmail, preview, defa
             {s.campaignName && <span className="seq-badge camp" style={s.campaignColor ? { color: s.campaignColor, borderColor: s.campaignColor + "66" } : undefined}>{s.campaignName}</span>}
           </div>
           <div className="order-no">#{v(s.orderNumber)}</div>
+          {!preview && <OrderStatusChip s={s} />}
         </div>
         {onStatus ? <StatusSwitch value={status} onChange={(k) => onStatus(s.id, k)} /> : <span className={"sale-status " + cls[status]}>{STATUS.find(([k]) => k === status)[1]}</span>}
       </header>
@@ -93,7 +103,8 @@ export default function SaleCard({ s, onStatus, onDelete, onEmail, preview, defa
         {!preview && <span className="muted small">{s.receipt}</span>}
         {!preview && (
           <div className="row" style={{ marginLeft: "auto", gap: 6 }}>
-            {onStatus && !preview && s.id && <AiButton task="check_sale" payload={{ id: s.id }} label="Check" />}
+            {onStatus && !preview && s.id && s.orderNumber && <OrderCheck s={s} onSaved={(d) => d && setLive(d)} />}
+            {onStatus && !preview && s.id && <AiButton task="check_sale" payload={{ id: s.id }} label="AI check" />}
             {onEmail && s.email && <button className="ghost sm" onClick={() => onEmail(s)}><Send size={13} /> Email</button>}
             <button className="ghost sm icon-btn" title="Copy sale" aria-label="Copy sale" onClick={() => navigator.clipboard?.writeText(s.raw || "")}><Copy size={14} /></button>
             {onDelete && <button className="ghost sm icon-btn del" title="Delete sale" aria-label="Delete sale" onClick={() => onDelete(s)}><Trash2 size={14} /></button>}

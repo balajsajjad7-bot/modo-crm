@@ -12,7 +12,7 @@ export async function GET() {
   const rows = await db.sale.findMany({
     where: { status: { not: "REJECTED" }, OR: [{ trackingNo: { not: null } }, { orderNumber: { not: null } }] },
     orderBy: { createdAt: "desc" }, take: 800,
-    select: { id: true, receipt: true, customer: true, phone: true, orderNumber: true, trackingNo: true, carrier: true, trackStatus: true, trackStage: true, trackUpdatedAt: true, deliveredAt: true, createdAt: true, device: true, office: true, user: { select: { name: true } } },
+    select: { id: true, receipt: true, customer: true, phone: true, zip: true, email: true, orderNumber: true, trackingNo: true, carrier: true, trackStatus: true, trackStage: true, trackUpdatedAt: true, deliveredAt: true, createdAt: true, device: true, office: true, user: { select: { name: true } } },
   });
   return NextResponse.json({ configured: !!cfg, rows });
 }
@@ -31,6 +31,8 @@ export async function POST(req) {
   for (const s of sales) {
     const number = s.trackingNo || s.orderNumber;
     if (!number) continue;
+    // Carrier order numbers checked with "Check order" (Verizon/AT&T/T-Mobile) aren't shipping numbers — don't overwrite them.
+    if (!s.trackingNo && ["verizon", "att", "tmobile"].includes(String(s.carrier || "").toLowerCase())) continue;
     try {
       const r = await track(cfg.apiKey, number, s.carrier);
       await db.sale.update({ where: { id: s.id }, data: { trackStatus: r.status, trackStage: r.stage?.slice(0, 300) || null, trackUpdatedAt: new Date(), deliveredAt: r.deliveredAt ? new Date(r.deliveredAt) : null } });

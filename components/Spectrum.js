@@ -41,7 +41,7 @@ export default function Spectrum({ audioRef, getStreams, active, label, height =
     const resize = () => { cv.width = (cv.clientWidth || 300) * dpr; cv.height = (cv.clientHeight || height) * dpr; };
     resize(); window.addEventListener("resize", resize);
     const css = getComputedStyle(document.documentElement);
-    const c1 = css.getPropertyValue("--accent").trim() || "#c82150", c2 = css.getPropertyValue("--gold").trim() || "#d9b45d";
+    const c1 = css.getPropertyValue("--accent").trim() || "#8b5cf6", c2 = css.getPropertyValue("--gold").trim() || "#22d3ee";
     let t = 0;
     const draw = () => {
       if (stop) return;
