@@ -2,10 +2,12 @@
 import AiButton from "@/components/AiButton";
 // One sale: compact summary first (no long scrolling), full details one click away.
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import OrderCheck, { OrderStatusChip } from "@/components/OrderCheck";
 import dynamic from "next/dynamic";
-const SaleMap = dynamic(() => import("@/components/SaleMap"), { ssr: false, loading: () => <div className="sm-map sm-loading muted small">Loading map…</div> });
-import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard } from "lucide-react";
+const SaleMap = dynamic(() => import("@/components/SaleMap"), { ssr: false, loading: () => <div className="sm-loading muted small">Loading map…</div> });
+import { nearestLine } from "@/lib/nearest";
+import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard, Maximize2, Minimize2, X, Store } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
 const $ = (n) => (n == null || n === "" || isNaN(Number(n)) ? "—" : "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -139,6 +141,13 @@ function ReturnLabel({ s, labels, onPatch }) {
 
 export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview, labels, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
+  const [max, setMax] = useState(false);
+  useEffect(() => {
+    if (!max) return;
+    const esc = (e) => e.key === "Escape" && setMax(false);
+    document.addEventListener("keydown", esc); document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", esc); document.body.style.overflow = ""; };
+  }, [max]);
   // Order status saved by "Check order" (from this tab, or from the Modo Fill return tab) shows up at once.
   const [live, setLive] = useState(null);
   useEffect(() => {
@@ -156,7 +165,15 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
   const deviceLine = [s.device, s.storage, s.deviceColor].filter(Boolean).join(" · ") || "—";
   const sibs = s.siblings || [];
   return (
-    <article className={"sale-card " + cls[status]}>
+    <Portal on={max}>
+    {max && <div className="sale-max-bg" onClick={() => setMax(false)} />}
+    <article className={"sale-card " + cls[status] + (max ? " max" : "")}>
+      {!preview && (
+        <div className="sale-winbtns">
+          {(open || max) && <button className="ghost sm icon-btn" title="Minimise" aria-label="Minimise" onClick={() => { setMax(false); setOpen(false); }}><Minimize2 size={14} /></button>}
+          <button className="ghost sm icon-btn" title={max ? "Exit full screen" : "Maximise"} aria-label={max ? "Exit full screen" : "Maximise"} onClick={() => { setOpen(true); setMax(!max); }}>{max ? <X size={14} /> : <Maximize2 size={14} />}</button>
+        </div>
+      )}
       <header className="sale-head">
         <div style={{ minWidth: 0 }}>
           <div className="row" style={{ gap: 6 }}>
@@ -191,6 +208,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
         <span><Receipt size={12} /> <b>{$(s.billAfter)}</b>/mo <span className="muted">was {$(s.billBefore)}{s.discountPct != null && s.discountPct !== "" ? ` · ${s.discountPct}% off` : ""}</span></span>
         <span><Building2 size={12} /> {v(s.closer)}</span>
         <span className="muted"><Clock size={12} /> {preview ? pkTime(new Date()) : pkTime(s.createdAt)}</span>
+        {!preview && nearestLine(s) && <span className="sale-ups"><Store size={12} /> Nearest UPS: {nearestLine(s)}</span>}
       </div>
 
       {sibs.length > 0 && (
@@ -215,7 +233,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
             </div>
           )}
           {s.notes ? <section className="sale-sec sale-notes"><h4><StickyNote size={13} /> Notes</h4><div className="sf-v" style={{ fontWeight: 600, whiteSpace: "pre-wrap" }}>{s.notes}</div></section> : null}
-          {!preview && s.id && <section className="sale-sec"><h4><MapPin size={13} /> Where the customer is · nearest UPS</h4><SaleMap sale={s} /></section>}
+          {!preview && s.id && <section className="sale-sec"><h4><MapPin size={13} /> Where the customer is · nearest UPS</h4><SaleMap sale={s} big={max} /></section>}
           {!preview && s.id && <ReturnLabel s={s} labels={labels} onPatch={onPatch} />}
           <section className="sale-sec"><h4><Smartphone size={13} /> Device</h4><div className="sf-grid">
             <F label="Device" value={v(s.device)} /><F label="Color" value={v(s.deviceColor)} /><F label="Storage" value={v(s.storage)} />
@@ -238,7 +256,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
       )}
 
       <footer className="sale-foot">
-        <button className="ghost sm more" onClick={() => setOpen(!open)} aria-expanded={open}><ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} /> {open ? "Close" : "Open sale · map"}{!open && s.notes ? " · has notes" : ""}</button>
+        <button className="ghost sm more" onClick={() => setOpen(!open)} aria-expanded={open}><ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} /> {open ? "Minimise" : "Open sale · map"}{!open && s.notes ? " · has notes" : ""}</button>
         {!preview && <span className="muted small">{s.receipt}</span>}
         {!preview && s.returnLabelUrl && <a className="chip" href={s.returnLabelUrl} target="_blank" rel="noreferrer" title="Prepaid return label"><Package size={11} /> Return label</a>}
         {!preview && !s.returnLabelUrl && s.returnError && <span className="chip warn-chip" title={s.returnError}><AlertTriangle size={11} /> Label failed</span>}
@@ -251,5 +269,8 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
         )}
       </footer>
     </article>
+    </Portal>
   );
 }
+// Full screen: move the card to the page level (its list wrapper is animated, which traps fixed elements)
+function Portal({ on, children }) { return on && typeof document !== "undefined" ? createPortal(children, document.body) : <>{children}</>; }
