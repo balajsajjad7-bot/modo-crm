@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const maxDuration = 60;
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { agentStatus, agentApi, leadInfo, dialerSettings } from "@/lib/vicidial";
@@ -38,7 +40,7 @@ export async function GET() {
   }
   let row;
   try { row = (await agentStatus(vu)).row; }
-  catch (e) { return NextResponse.json({ ...settings, vu, loggedIn: false, error: /isn't logged/i.test(e.message) ? null : e.message }); }
+  catch (e) { return NextResponse.json({ ...settings, vu, loggedIn: false, warming: !!e.warming || /Connecting to your dialer|paused dialer requests/i.test(e.message), error: /isn't logged/i.test(e.message) ? null : e.message }); }
   const phone = d10(row.phone_number);
   let lead = null, contact = null;
   if (row.lead_id && row.lead_id !== "0") {

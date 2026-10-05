@@ -77,7 +77,8 @@ export default function Dialer({ admin = false }) {
       </section>
       <PhoneStatus />
       {count > 0 && <section className="panel dl-hint auto-count"><Zap size={18} /><div><b>Next lead in {count}…</b> Auto-dial is on.</div><button className="ghost sm" onClick={stopCount}><Square size={12} /> Stop</button></section>}
-      {!st.loggedIn && (
+      {!st.loggedIn && st.warming && <section className="panel dl-hint"><Loader2 size={18} className="spin" /><div><b>Connecting to your dialer…</b> It's letting Modo's server through its firewall; this can take up to a minute after Modo updates. No need to do anything.</div></section>}
+      {!st.loggedIn && !st.warming && (
         <section className="panel dl-hint"><AlertCircle size={18} /><div><b>Log into VICIdial first.</b> Press “Open VICIdial & log in”, sign in with your phone and campaign, then leave that window open in the background. This screen takes over from there.{st.error && <div className="err small" style={{ marginTop: 6 }}>{st.error}</div>}</div></section>
       )}
 

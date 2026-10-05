@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const maxDuration = 60;
 import { db } from "@/lib/db";
 import { requireRole, requireManager } from "@/lib/auth";
 import { recordingLookup } from "@/lib/vicidial";

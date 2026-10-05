@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const maxDuration = 60;
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { TYPES, EVENTS, parse, publicView, test, seal } from "@/lib/connectors";

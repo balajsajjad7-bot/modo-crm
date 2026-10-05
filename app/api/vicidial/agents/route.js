@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const maxDuration = 60;
 import { requireRole } from "@/lib/auth";
 import { loggedInAgents } from "@/lib/vicidial";
 import { configFor } from "@/lib/connectors";
