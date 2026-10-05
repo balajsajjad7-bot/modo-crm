@@ -3,11 +3,22 @@ import AiButton from "@/components/AiButton";
 // One sale: compact summary first (no long scrolling), full details one click away.
 import { useEffect, useState } from "react";
 import OrderCheck, { OrderStatusChip } from "@/components/OrderCheck";
+import dynamic from "next/dynamic";
+const SaleMap = dynamic(() => import("@/components/SaleMap"), { ssr: false, loading: () => <div className="sm-map sm-loading muted small">Loading map…</div> });
 import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
 const $ = (n) => (n == null || n === "" || isNaN(Number(n)) ? "—" : "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const v = (x) => (x == null || x === "" ? "—" : x);
+const fmtPhone = (p) => { const d = String(p || "").replace(/\D/g, "").slice(-10); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p; };
+// "123 Main St, Apt 4, Dallas, TX 75201" or "… Miami FL 33101" → "Dallas, TX" / "Miami, FL"
+const cityOf = (addr) => {
+  const t = String(addr || "").replace(/\s+/g, " ").trim();
+  const m = t.match(/(?:,\s*|\s)([A-Za-z .'-]+?),?\s+([A-Z]{2})\.?\s*(\d{5}(-\d{4})?)?\s*(?:,?\s*(?:US|USA))?$/);
+  if (!m) return "";
+  const city = m[1].split(",").pop().trim().replace(/^(apt|unit|suite|ste|#)\b.*$/i, "");
+  return city ? `${city}, ${m[2]}` : m[2];
+};
 const ORD = (n) => n + (["th", "st", "nd", "rd"][((n % 100) - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
 export const STATUS = [["NEW", "New"], ["VERIFIED", "Active"], ["REJECTED", "Not active"]];
 const cls = { NEW: "new", VERIFIED: "active", REJECTED: "inactive" };
@@ -160,13 +171,26 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
         {onStatus ? <StatusSwitch value={status} onChange={(k) => onStatus(s.id, k)} /> : <span className={"sale-status " + cls[status]}>{STATUS.find(([k]) => k === status)[1]}</span>}
       </header>
 
-      <div className="sale-summary">
-        <F label={<><User size={11} /> Customer</>} value={<>{v(s.customer)}<span className="sub-v"><Phone size={11} /> {v(s.phone)}</span></>} big />
-        <F label={<><Smartphone size={11} /> Device</>} value={<>{v(s.device)}<span className="sub-v">{[s.storage, s.deviceColor].filter(Boolean).join(" · ") || "—"}</span></>} big />
-        <F label={<><Receipt size={11} /> Bill</>} value={<>{$(s.billAfter)}<span className="sub-v">was {$(s.billBefore)}</span></>} big accent />
-        <F label={<><Tag size={11} /> Device value</>} value={<>{s.deviceValue != null ? $(s.deviceValue) : s.device && !preview ? <span className="muted">Checking…</span> : "—"}<span className="sub-v">{s.deviceValueUsed != null ? `used ${$(s.deviceValueUsed)}` : s.deviceValueSrc || (s.discountPct != null && s.discountPct !== "" ? `${s.discountPct}% off bill` : "")}</span></>} big accent />
-        <F label={<><Building2 size={11} /> Closed by</>} value={<>{v(s.closer)}<span className="sub-v">sent by {v(s.user?.name || s.sentBy)}</span></>} />
-        <F label={<><Clock size={11} /> Date & time</>} value={preview ? pkTime(new Date()) : pkTime(s.createdAt)} />
+      {/* Most important first: who, how to reach them, what they bought and what it's worth */}
+      <div className="sale-key">
+        <div className="sk-who">
+          <span className="sf-l"><User size={11} /> Customer</span>
+          <b className="sk-name">{v(s.customer)}</b>
+          <div className="sk-line">
+            {s.phone ? <a href={`tel:+1${String(s.phone).replace(/\D/g, "").slice(-10)}`} className="sk-phone"><Phone size={12} /> {fmtPhone(s.phone)}</a> : <span className="muted">no phone</span>}
+            {(cityOf(s.address) || s.zip) && <span className="muted"><MapPin size={12} /> {[cityOf(s.address), s.zip].filter(Boolean).join(" ")}</span>}
+          </div>
+        </div>
+        <div className="sk-dev">
+          <span className="sf-l"><Smartphone size={11} /> {v(s.device)}{s.storage ? " · " + s.storage : ""}</span>
+          <b className="sk-val">{s.deviceValue != null ? $(s.deviceValue) : s.device && !preview ? <span className="muted" style={{ fontSize: 15 }}>Checking value…</span> : "—"}</b>
+          <span className="small muted">{s.deviceValueUsed != null ? `used ${$(s.deviceValueUsed)}` : "device value"}{s.deviceColor ? " · " + s.deviceColor : ""}</span>
+        </div>
+      </div>
+      <div className="sale-meta">
+        <span><Receipt size={12} /> <b>{$(s.billAfter)}</b>/mo <span className="muted">was {$(s.billBefore)}{s.discountPct != null && s.discountPct !== "" ? ` · ${s.discountPct}% off` : ""}</span></span>
+        <span><Building2 size={12} /> {v(s.closer)}</span>
+        <span className="muted"><Clock size={12} /> {preview ? pkTime(new Date()) : pkTime(s.createdAt)}</span>
       </div>
 
       {sibs.length > 0 && (
@@ -181,38 +205,46 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
 
       {open && (
         <div className="sale-details">
-          <section className="sale-sec"><h4><User size={13} /> Customer</h4><div className="sf-grid">
-            <F label="Name" value={v(s.customer)} /><F label="Contact" value={v(s.phone)} /><F label={<><Mail size={11} /> Email</>} value={v(s.email)} />
-            <F label={<><MapPin size={11} /> Address</>} value={v(s.address)} /><F label="Zip code" value={v(s.zip)} />
-          </div></section>
-          <section className="sale-sec"><h4><Receipt size={13} /> Bill</h4><div className="sf-grid">
-            <F label="Paying now" value={$(s.billBefore)} /><F label="Discount" value={s.discountPct != null && s.discountPct !== "" ? s.discountPct + "%" : "—"} accent /><F label="After discount" value={$(s.billAfter)} accent />
-            <F label="Saves / month" value={$(save)} /><F label="Next bill" value={s.nextBillDate ? new Date(s.nextBillDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "—"} />
-            <F label="Lines" value={v(s.lines)} /><F label="Overcharged" value={$(s.overcharged)} />
-          </div></section>
+          {!preview && (
+            <div className="sale-actions">
+              {s.phone && <a className="btn-link" href={`tel:+1${String(s.phone).replace(/\D/g, "").slice(-10)}`}><Phone size={13} /> Call</a>}
+              {onEmail && s.email && <button className="ghost sm" onClick={() => onEmail(s)}><Send size={13} /> Email</button>}
+              {s.address && <button className="ghost sm" onClick={() => navigator.clipboard?.writeText([s.customer, s.address, s.zip].filter(Boolean).join("\n"))}><Copy size={13} /> Copy address</button>}
+              {onStatus && s.id && s.orderNumber && <OrderCheck s={s} onSaved={(d) => d && setLive(d)} />}
+              {onStatus && s.id && <AiButton task="check_sale" payload={{ id: s.id }} label="AI check" />}
+            </div>
+          )}
+          {s.notes ? <section className="sale-sec sale-notes"><h4><StickyNote size={13} /> Notes</h4><div className="sf-v" style={{ fontWeight: 600, whiteSpace: "pre-wrap" }}>{s.notes}</div></section> : null}
+          {!preview && s.id && <section className="sale-sec"><h4><MapPin size={13} /> Where the customer is · nearest UPS</h4><SaleMap sale={s} /></section>}
+          {!preview && s.id && <ReturnLabel s={s} labels={labels} onPatch={onPatch} />}
           <section className="sale-sec"><h4><Smartphone size={13} /> Device</h4><div className="sf-grid">
             <F label="Device" value={v(s.device)} /><F label="Color" value={v(s.deviceColor)} /><F label="Storage" value={v(s.storage)} />
             <F label="Specifications" value={v(s.specs)} /><F label={<><Gift size={11} /> Gift</>} value={v(s.gift)} />
           </div></section>
           {!preview && s.id && <DeviceValue s={s} onPatch={onPatch} />}
-          {!preview && s.id && <ReturnLabel s={s} labels={labels} onPatch={onPatch} />}
+          <section className="sale-sec"><h4><Receipt size={13} /> Bill</h4><div className="sf-grid">
+            <F label="Paying now" value={$(s.billBefore)} /><F label="Discount" value={s.discountPct != null && s.discountPct !== "" ? s.discountPct + "%" : "—"} accent /><F label="After discount" value={$(s.billAfter)} accent />
+            <F label="Saves / month" value={$(save)} /><F label="Next bill" value={s.nextBillDate ? new Date(s.nextBillDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "—"} />
+            <F label="Lines" value={v(s.lines)} /><F label="Overcharged" value={$(s.overcharged)} />
+          </div></section>
+          <section className="sale-sec"><h4><User size={13} /> Contact</h4><div className="sf-grid">
+            <F label="Name" value={v(s.customer)} /><F label="Phone" value={v(s.phone)} /><F label={<><Mail size={11} /> Email</>} value={v(s.email)} />
+            <F label={<><MapPin size={11} /> Address</>} value={v(s.address)} /><F label="Zip code" value={v(s.zip)} />
+          </div></section>
           <section className="sale-sec"><h4><Building2 size={13} /> Team</h4><div className="sf-grid">
             <F label="Office" value={v(s.office)} /><F label="Location code" value={v(s.locationCode)} /><F label="Sent by" value={v(s.user?.name || s.sentBy)} /><F label="Closed by" value={v(s.closer)} />
           </div></section>
-          {s.notes ? <section className="sale-sec"><h4><StickyNote size={13} /> Notes</h4><div className="sf-v" style={{ fontWeight: 600, whiteSpace: "pre-wrap" }}>{s.notes}</div></section> : null}
         </div>
       )}
 
       <footer className="sale-foot">
-        <button className="ghost sm more" onClick={() => setOpen(!open)} aria-expanded={open}><ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} /> {open ? "Hide details" : "All details"}{!open && s.notes ? " · has notes" : ""}</button>
+        <button className="ghost sm more" onClick={() => setOpen(!open)} aria-expanded={open}><ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} /> {open ? "Close" : "Open sale · map"}{!open && s.notes ? " · has notes" : ""}</button>
         {!preview && <span className="muted small">{s.receipt}</span>}
         {!preview && s.returnLabelUrl && <a className="chip" href={s.returnLabelUrl} target="_blank" rel="noreferrer" title="Prepaid return label"><Package size={11} /> Return label</a>}
         {!preview && !s.returnLabelUrl && s.returnError && <span className="chip warn-chip" title={s.returnError}><AlertTriangle size={11} /> Label failed</span>}
         {!preview && (
           <div className="row" style={{ marginLeft: "auto", gap: 6 }}>
-            {onStatus && !preview && s.id && s.orderNumber && <OrderCheck s={s} onSaved={(d) => d && setLive(d)} />}
-            {onStatus && !preview && s.id && <AiButton task="check_sale" payload={{ id: s.id }} label="AI check" />}
-            {onEmail && s.email && <button className="ghost sm" onClick={() => onEmail(s)}><Send size={13} /> Email</button>}
+            {!open && onStatus && s.id && s.orderNumber && <OrderCheck s={s} onSaved={(d) => d && setLive(d)} />}
             <button className="ghost sm icon-btn" title="Copy sale" aria-label="Copy sale" onClick={() => navigator.clipboard?.writeText(s.raw || "")}><Copy size={14} /></button>
             {onDelete && <button className="ghost sm icon-btn del" title="Delete sale" aria-label="Delete sale" onClick={() => onDelete(s)}><Trash2 size={14} /></button>}
           </div>
