@@ -4,7 +4,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import PillNav from "./PillNav";
+import TopBar from "./TopBar";
 import { useHuddle } from "./useHuddle";
 import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee, Settings as SettingsIcon, LayoutDashboard } from "lucide-react";
 import { guideForRole } from "@/lib/guide";
@@ -236,7 +236,7 @@ me?.role === "AGENT" ? (
   return (
     <ShellCtx.Provider value={{ me, chat, reloadChat: loadChat, huddle, openDM, presence }}>
       <Translator />
-      <PillNav nav={withBadges} home={home} action={navAction}
+      <TopBar nav={withBadges} home={home} action={navAction}
         user={{ name: me?.name || "", sub: userSub || (me?.role === "ADMIN" ? "Admin" : me?.agentId), status: status || (myStatus === "away" ? "off" : myStatus === "busy" ? "warn" : "") }}
         userMenu={[
           ...(me?.role === "AGENT" ? [["available", "Available", "🟢"], ["away", "Away", "⚪"], ["busy", "Busy", "🟠"]].map(([k, l, e]) => ({ label: `${e} ${l}${myStatus === k ? "  ✓" : ""}`, onClick: () => setStatus(k) })) : []),

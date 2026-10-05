@@ -16,10 +16,10 @@ export default function AdminLayout({ children }) {
     { href: "/admin", exact: true, label: "Overview", hint: "Live floor, leaderboard and calls", icon: i(LayoutDashboard) },
     { label: "Sales", icon: i(Receipt), badge: fresh || null, children: [
       { href: "/admin/sales", label: "Sales", hint: "Sales submitted by agents", icon: i(Receipt), badge: fresh || null },
+      { href: "/admin/tracking", label: "Order tracking", hint: "Order status by carrier — Check order, location codes", icon: i(PackageSearch) },
       { href: "/admin/budgetease", label: "Budget Ease", hint: "Utility-bill discount signups (separate from sales)", icon: i(PiggyBank) },
       { href: "/admin/reports", label: "Reports", hint: "Sales, pipeline, attendance trends", icon: i(BarChart3) },
     ] },
-    { href: "/admin/tracking", label: "Order tracking", hint: "Auto-tracked packages: delivered or not, by carrier", icon: i(PackageSearch) },
     { label: "CRM", icon: i(Briefcase), children: [
       { href: "/admin/pipeline", label: "Pipeline", hint: "Deals by stage, drag to move", icon: i(Kanban) },
       { href: "/admin/contacts", label: "Customers", hint: "Everyone you've talked to", icon: i(Contact) },
@@ -45,15 +45,21 @@ export default function AdminLayout({ children }) {
       { href: "/admin/access", label: "Agent access", hint: "Choose what agents can see and change", icon: i(ShieldCheck) },
       { href: "/kiosk", label: "Office kiosk", hint: "Check-in screen for the office entrance", icon: i(MonitorSmartphone) },
     ] },
-    { href: "/admin/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
-    ...(secure ? [{ href: "/admin/vault", label: "Secure line", hint: "Encrypted room", icon: i(Lock) }] : []),
-    { href: "/admin/ai", label: "Modo AI", hint: "Ask anything about your team, sales and pay", icon: i(Sparkles) },
-    { href: "/admin/builder", label: "AI Builder", hint: "Describe any app, tool or page and it builds it live", icon: i(Wand2) },
-    { href: "/admin/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },
+    secure
+      ? { label: "Chat", icon: i(MessageSquare), chat: true, children: [
+          { href: "/admin/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
+          { href: "/admin/vault", label: "Secure line", hint: "Encrypted room", icon: i(Lock) },
+        ] }
+      : { href: "/admin/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
+    { label: "AI", icon: i(Sparkles), children: [
+      { href: "/admin/ai", label: "Modo AI", hint: "Ask anything about your team, sales and pay", icon: i(Sparkles) },
+      { href: "/admin/builder", label: "AI Builder", hint: "Describe any app, tool or page and it builds it live", icon: i(Wand2) },
+      { href: "/admin/train", label: "Train Modo AI", hint: "Teach the AI your prices, script, rules and objections", icon: i(Brain) },
+      { href: "/admin/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },
+    ] },
     { label: "Setup", icon: i(Wrench), children: [
       { href: "/admin/lookups", label: "Lookups", hint: "USA phone, ZIP, address, email and your own lookup APIs", icon: i(SearchCheck) },
       { href: "/admin/calculator", label: "Discount calculator", hint: "Quotes and discount rules", icon: i(Calculator) },
-      { href: "/admin/train", label: "Train Modo AI", hint: "Teach the AI your prices, script, rules and objections", icon: i(Brain) },
       { href: "/admin/connectors", label: "Connectors", hint: "Slack, Discord, Sheets, webhooks, AI, VICIdial", icon: i(Plug) },
       { href: "/admin/settings", label: "Settings", hint: "IP lock, breaks, idle and targets", icon: i(Settings) },
       { href: "/admin/app", label: "Windows app", hint: "Download the installer and lock down PCs", icon: i(MonitorDown) },

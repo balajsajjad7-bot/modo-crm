@@ -40,19 +40,26 @@ function Frame({ children }) {
     ...(P.calculator !== false ? [{ href: "/agent/calculator", label: "Calculator", hint: "Quote a customer's discount", icon: i(Calculator) }] : []),
     { href: "/agent/contract", label: "My contract", hint: "Your welcome and confidential contract", icon: i(FileText) },
   ];
-  const nav = [
-    { href: "/agent", exact: true, label: "My shift", hint: "Time, breaks and deductions", icon: i(Timer) },
+  const callKids = [
     ...(dialerOn ? [{ href: "/agent/dialer", label: "Dialer", hint: "Make and manage calls (your dialer runs in the background)", icon: i(PhoneCall) }] : []),
     ...(P.callAssist !== false ? [{ href: "/agent/call", label: "Call assist", hint: "Live suggestions while you talk", icon: i(Mic) }] : []),
+  ];
+  const aiKids = [
+    ...(P.modoAI !== false ? [{ href: "/agent/ai", label: "Modo AI", hint: "Scripts, objections and quick help", icon: i(Sparkles) }] : []),
+    ...(P.aiBuilder !== false ? [{ href: "/agent/builder", label: "AI Builder", hint: "Describe any app, tool or page and it builds it live", icon: i(Wand2) }] : []),
+    { href: "/agent/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },
+  ];
+  const chatItem = { href: "/agent/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true };
+  const nav = [
+    { href: "/agent", exact: true, label: "My shift", hint: "Time, breaks and deductions", icon: i(Timer) },
+    ...(callKids.length === 1 ? callKids : callKids.length ? [{ label: "Calls", icon: i(PhoneCall), children: callKids }] : []),
     ...(P.submitSale !== false ? [be ? { href: "/agent/budgetease", label: "Budget Ease", hint: "Submit a utility-bill discount signup", icon: i(PiggyBank) }
        : { href: "/agent/sale", label: "Submit sale", hint: "Goes straight to admin", icon: i(ClipboardPaste) }] : []),
     ...(crmKids.length ? [{ label: "CRM", icon: i(Briefcase), children: crmKids }] : []),
     { label: "My progress", icon: i(Trophy), children: progressKids },
-    ...(P.chat !== false ? [{ href: "/agent/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true }] : []),
-    ...(secure ? [{ href: "/agent/vault", label: "Secure line", hint: "Encrypted room — invited by the CEO", icon: i(Lock) }] : []),
-    ...(P.modoAI !== false ? [{ href: "/agent/ai", label: "Modo AI", hint: "Scripts, objections and quick help", icon: i(Sparkles) }] : []),
-    ...(P.aiBuilder !== false ? [{ href: "/agent/builder", label: "AI Builder", hint: "Describe any app, tool or page and it builds it live", icon: i(Wand2) }] : []),
-    { href: "/agent/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },
+    ...(P.chat !== false ? [secure ? { label: "Chat", icon: i(MessageSquare), chat: true, children: [chatItem, { href: "/agent/vault", label: "Secure line", hint: "Encrypted room — invited by the CEO", icon: i(Lock) }] } : chatItem]
+       : secure ? [{ href: "/agent/vault", label: "Secure line", hint: "Encrypted room — invited by the CEO", icon: i(Lock) }] : []),
+    { label: "AI", icon: i(Sparkles), children: aiKids },
   ];
   return (
     <Shell nav={nav} home="/agent" navAction={<BreakButton onBreak={onBreak} since={me?.breaks?.open?.start} onClick={toggleBreak} />} header={onBreak ? "On break" : ""} status={onBreak ? "warn" : ""} userSub={me ? `${me.agentId} · shift ${me.shiftStart}` : ""}
