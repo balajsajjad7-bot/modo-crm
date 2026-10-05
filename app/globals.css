@@ -1895,3 +1895,28 @@ svg.lucide{flex-shrink:0}
 .copy-cell{display:inline-flex!important;align-items:center;gap:6px;padding:3px 8px!important;border-radius:8px!important;background:transparent!important;border:1px dashed var(--border)!important;
   color:var(--foreground)!important;box-shadow:none!important;font:600 13px var(--font)!important;font-variant-numeric:tabular-nums;cursor:copy}
 .copy-cell svg{opacity:.55}.copy-cell:hover{border-color:rgba(var(--p),.6)!important}.copy-cell:hover svg{opacity:1}
+
+/* AI Builder: chat on the left, live preview on the right (tabs on phones) */
+.bld{display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:14px;height:calc(100vh - 205px);min-height:480px}
+.bld-tabs{display:none}
+.bld-chat,.bld-stage{display:flex;flex-direction:column;padding:0;overflow:hidden;min-height:0}
+.bld-top{display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.bld-top b{display:flex;align-items:center;gap:6px}
+.bld-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.bld-body .ai-hello h2{margin:4px 0 0}
+.bld-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);align-items:flex-end}
+.bld-input textarea{flex:1;resize:none;min-height:46px;max-height:140px}
+.bld-input button{padding:12px 14px}
+.bld-seg{display:flex;gap:4px}
+.bld-menu{position:relative}
+.bld-list{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:280px;max-height:320px;overflow-y:auto;background:var(--background);border:1px solid var(--border);border-radius:14px;padding:6px;box-shadow:var(--shadow)}
+.bld-item{display:flex;gap:4px}.bld-item>button:first-child{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-color:transparent}
+.bld-item.cur>button:first-child{border-color:var(--accent)}
+.bld-frame{flex:1;width:100%;border:0;background:#fff}
+.bld-code{flex:1;margin:0;overflow:auto;padding:14px;font-size:12.5px;line-height:1.5;background:var(--background);white-space:pre}
+.bld-empty{flex:1;display:grid;place-items:center}
+@media (max-width:860px){
+  .bld{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:calc(100vh - 170px)}
+  .bld-tabs{display:flex;gap:6px}.bld-tabs button{flex:1}
+  .bld-chat,.bld-stage{display:none}.bld-chat.on,.bld-stage.on{display:flex}
+}

@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, PackageSearch } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, PackageSearch, Wand2 } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 import { sectionForPath } from "@/lib/supaccess";
@@ -48,6 +48,7 @@ export default function AdminLayout({ children }) {
     { href: "/admin/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
     ...(secure ? [{ href: "/admin/vault", label: "Secure line", hint: "Encrypted room", icon: i(Lock) }] : []),
     { href: "/admin/ai", label: "Modo AI", hint: "Ask anything about your team, sales and pay", icon: i(Sparkles) },
+    { href: "/admin/builder", label: "AI Builder", hint: "Describe any app, tool or page and it builds it live", icon: i(Wand2) },
     { href: "/admin/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },
     { label: "Setup", icon: i(Wrench), children: [
       { href: "/admin/lookups", label: "Lookups", hint: "USA phone, ZIP, address, email and your own lookup APIs", icon: i(SearchCheck) },
