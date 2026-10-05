@@ -2262,3 +2262,26 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
   .sale-card.wide .sm-map-wrap{height:420px}
 }
 @media (max-width:600px){.sale-pager button{padding:8px 12px}.sale-pager.bottom .sale-dots{display:none}}
+
+/* Compact sale card (less scrolling) */
+.sale-card.wide{padding:14px 16px;gap:10px}
+.sale-card.wide .order-no{font-size:22px!important}
+.sale-card.wide .sale-key{padding:10px 14px}
+.sale-card.wide .sk-name{font-size:18px}
+.sale-card.wide .sk-val{font-size:20px}
+.sale-card.wide .sale-sec{padding-top:8px;gap:6px}
+.sale-card.wide .sale-sec h4{font-size:10.5px}
+.sale-card.wide .sf-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px 12px}
+.sale-card.wide .sf-v{font-size:13.5px}
+.sale-card.wide .sf-l{font-size:9.5px}
+.sale-card.wide .sale-details{gap:10px}
+.sale-card.wide .sm-best{padding:8px 10px}
+.sale-card.wide .sm-best-t b{font-size:14px}
+.sale-card.wide .sm-store{padding:6px 8px}
+.sale-more{justify-self:start;align-self:flex-start;order:5}
+.sd-a>.sale-more~.sale-sec{order:6}
+@media (min-width:901px){
+  .sale-card.wide .sm-map-wrap{height:300px;min-height:0}
+  .sale-card.wide .sd-a,.sale-card.wide .sd-b{gap:10px}
+  .sale-card.wide .sd-b{top:76px}
+}

@@ -141,7 +141,7 @@ function ReturnLabel({ s, labels, onPatch }) {
 
 export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview, labels, defaultOpen = false, wide = false }) {
   const [open, setOpen] = useState(defaultOpen);
-  const [max, setMax] = useState(false);
+  const [max, setMax] = useState(false); const [more, setMore] = useState(false);
   useEffect(() => {
     if (!max) return;
     const esc = (e) => e.key === "Escape" && setMax(false);
@@ -244,6 +244,8 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
             <F label="Saves / month" value={$(save)} /><F label="Next bill" value={s.nextBillDate ? new Date(s.nextBillDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "—"} />
             <F label="Lines" value={v(s.lines)} /><F label="Overcharged" value={$(s.overcharged)} />
           </div></section>
+          <button className="ghost sm sale-more" onClick={() => setMore(!more)} aria-expanded={more}><ChevronDown size={13} style={{ transform: more ? "rotate(180deg)" : "none", transition: "transform .2s" }} /> {more ? "Less" : "More details"} <span className="muted">· contact, team</span></button>
+          {more && <>
           <section className="sale-sec"><h4><User size={13} /> Contact</h4><div className="sf-grid">
             <F label="Name" value={v(s.customer)} /><F label="Phone" value={v(s.phone)} /><F label={<><Mail size={11} /> Email</>} value={v(s.email)} />
             <F label={<><MapPin size={11} /> Address</>} value={v(s.address)} /><F label="Zip code" value={v(s.zip)} />
@@ -251,6 +253,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
           <section className="sale-sec"><h4><Building2 size={13} /> Team</h4><div className="sf-grid">
             <F label="Office" value={v(s.office)} /><F label="Location code" value={v(s.locationCode)} /><F label="Sent by" value={v(s.user?.name || s.sentBy)} /><F label="Closed by" value={v(s.closer)} />
           </div></section>
+          </>}
           </div>
           <div className="sd-b">
           {!preview && s.id && <section className="sale-sec"><h4><MapPin size={13} /> Where the customer is · nearest UPS</h4><SaleMap sale={s} big={max} /></section>}
