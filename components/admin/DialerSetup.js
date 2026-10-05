@@ -2,7 +2,33 @@
 // Admin → Tools → Dialer setup: pick the dialer, connect it, link agents, set results and pause codes. All in one place.
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle } from "lucide-react";
+import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download } from "lucide-react";
+
+// Office relay: gets Modo past the dialer's IP firewall by sending requests through a PC in the office.
+function Relay() {
+  const [r, setR] = useState(null); const [msg, setMsg] = useState(""); const [busy, setBusy] = useState(false);
+  const load = () => api("/api/relay").then((x) => setR(x.ok ? x.data : { error: x.data.error }));
+  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
+  const test = async () => { setBusy(true); setMsg(""); const x = await api("/api/relay", "POST", { action: "test" }); setBusy(false); setMsg(x.ok ? `Works: dialer answered through your office PC in ${x.data.ms}ms (${x.data.text || "HTTP " + x.data.status})` : x.data.error); };
+  const renew = async () => { if (!confirm("Make a new relay key? Relays already running will stop until you download and run the new file.")) return; await api("/api/relay", "POST", { action: "newkey" }); setMsg("New key made. Download the relay again."); load(); };
+  if (!r || r.setup) return null;
+  return (
+    <section className="panel stack">
+      <div className="row" style={{ justifyContent: "space-between" }}><h2><Router size={17} /> Office relay <span className={"chip " + (r.online ? "ok" : "late")}>{r.online ? "Online" : "Offline"}</span></h2>
+        <div className="row" style={{ gap: 6 }}><a className="btn-link" href="/api/relay/bat"><Download size={13} /> Download Modo Relay</a>
+          <button className="ghost sm" onClick={test} disabled={busy || !r.online}><Zap size={13} /> {busy ? "Testing…" : "Test"}</button></div></div>
+      <p className="muted small" style={{ margin: 0 }}>Your dialer only lets in IPs that signed in on its firewall page, and Modo's live server has no fixed IP, so requests time out. The relay fixes that: Modo sends dialer requests through a PC in your office, which the dialer already allows. Free, no account needed; passwords stay on Modo's server.</p>
+      <ol className="drive-steps">
+        <li>On a PC in the office that can open the dialer (the one you use daily), press <b>Download Modo Relay</b> and double-click <b>Modo Relay.bat</b>. If it asks for Node.js, install the LTS version once and run it again.</li>
+        <li>Leave its black window open (minimise it). This badge turns <b>Online</b> within a minute.</li>
+        <li>To start it automatically: press Win+R, type <code>shell:startup</code>, and put a shortcut to the .bat in that folder.</li>
+      </ol>
+      {r.lastSeen && <span className="small muted">Last check-in {new Date(r.lastSeen).toLocaleString()}</span>}
+      {msg && <p className="small" style={{ margin: 0 }}>{msg}</p>}
+      <button className="ghost sm" style={{ justifySelf: "start" }} onClick={renew}>Make a new relay key</button>
+    </section>
+  );
+}
 
 // Connection check: every step Modo needs from VICIdial, with what's blocked and how to fix it.
 function Health() {
@@ -100,6 +126,7 @@ export default function DialerSetup() {
         </section>
       )}
 
+      {d.provider === "vicidial" && d.vicidial && <Relay />}
       {d.provider === "vicidial" && <Health />}
 
       {d.provider === "vicidial" && d.vicidial && (
