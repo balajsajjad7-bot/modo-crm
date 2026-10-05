@@ -1,6 +1,6 @@
 "use client";
 // Admin → Sales: every sale as a frosted card on its own violet-pink-cyan aurora. Mark each one Active or Not active.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePoll, api } from "./api";
 import SaleCard from "@/components/SaleCard";
 import EmailComposer from "@/components/EmailComposer";
@@ -21,6 +21,21 @@ export default function SalesBoard() {
     (!q || [s.orderNumber, s.customer, s.phone, s.email, s.device, s.user?.name, s.closer, s.zip, s.locationCode].join(" ").toLowerCase().includes(q.toLowerCase())));
   const offices = [...new Set(list.map((s) => s.office).filter(Boolean))];
   const active = list.filter((s) => s.status === "VERIFIED");
+  const activeValue = active.reduce((t, s) => t + (s.deviceValue || 0), 0);
+  const unpriced = active.filter((s) => s.device && s.deviceValue == null).length;
+  // Return labels (Shippo) set up?
+  const [labels, setLabels] = useState(null);
+  useEffect(() => { api("/api/sales/return-label").then((r) => r.ok && setLabels(r.data)); }, []);
+  // Price devices automatically: a few at a time, Active sales first, each sale tried once per visit.
+  const tried = useRef(new Set()); const pricing = useRef(false); const [priceErr, setPriceErr] = useState("");
+  useEffect(() => {
+    if (!data || pricing.current) return;
+    const todo = [...list].sort((a, b) => (b.status === "VERIFIED") - (a.status === "VERIFIED"))
+      .filter((s) => s.device && s.deviceValue == null && s.status !== "REJECTED" && !tried.current.has(s.id)).slice(0, 4);
+    if (!todo.length) return;
+    todo.forEach((s) => tried.current.add(s.id)); pricing.current = true;
+    api("/api/sales/value", "POST", { ids: todo.map((s) => s.id) }).then((r) => { pricing.current = false; if (!r.ok) setPriceErr(r.data.error || ""); else { setPriceErr(""); reload(); } });
+  }, [data, list]); // eslint-disable-line
   async function setStatus(id, status) { setLocal((l) => ({ ...l, [id]: status })); const r = await api("/api/sales", "PATCH", { id, status }); if (!r.ok) alert(r.data.error || "Couldn't update the sale."); reload(); }
   async function remove(s) {
     if (!confirm(`Delete sale #${s.orderNumber || s.receipt} for ${s.customer || "this customer"}? This can't be undone.`)) return;
@@ -34,7 +49,8 @@ export default function SalesBoard() {
         <div><span>New</span><b>{count("NEW")}</b></div>
         <div><span>Active</span><b>{count("VERIFIED")}</b></div>
         <div><span>Not active</span><b>{count("REJECTED")}</b></div>
-        <div><span>Active monthly value</span><b>${active.reduce((t, s) => t + (s.billAfter || s.amount || 0), 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}</b></div>
+        <div title="What the devices on Active sales are worth today, looked up online"><span>Active device value</span><b>${activeValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}</b>
+          {unpriced > 0 && <small className="kpi-sub">{priceErr ? "Price check failed: " + priceErr : `Checking ${unpriced} device price${unpriced > 1 ? "s" : ""}…`}</small>}</div>
       </div>
       <div className="toolbar">
         <nav className="seg" role="tablist">{TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{l} <span className="muted">({count(k)})</span></button>)}</nav>
@@ -44,7 +60,7 @@ export default function SalesBoard() {
         {offices.length > 0 && <select value={office} onChange={(e) => setOffice(e.target.value)} style={{ maxWidth: 170 }}><option value="">All offices</option>{offices.map((o) => <option key={o}>{o}</option>)}</select>}
       </div>
       {!data ? <p className="muted">Loading sales…</p> : !shown.length ? <p className="muted">No {tab === "ALL" ? "" : TABS.find((t) => t[0] === tab)[1].toLowerCase() + " "}sales{q ? " match your search" : " yet"}.</p> : (
-        <div className="sale-grid">{shown.map((s, i) => <div key={s.id} className="rise" style={{ animationDelay: Math.min(i, 12) * 45 + "ms" }}><SaleCard key={s.id + (expand ? "o" : "c")} s={s} onStatus={setStatus} onDelete={remove} onEmail={setMail} defaultOpen={expand} /></div>)}</div>
+        <div className="sale-grid">{shown.map((s, i) => <div key={s.id} className="rise" style={{ animationDelay: Math.min(i, 12) * 45 + "ms" }}><SaleCard key={s.id + (expand ? "o" : "c")} s={s} labels={labels} onStatus={setStatus} onDelete={remove} onEmail={setMail} defaultOpen={expand} /></div>)}</div>
       )}
       {mail && <EmailComposer to={mail.email} sender={me?.name} saleId={mail.id}
         data={{ customer: (mail.customer || "").split(" ")[0], orderNumber: mail.orderNumber, device: mail.device, storage: mail.storage, deviceColor: mail.deviceColor, gift: mail.gift, billBefore: mail.billBefore, billAfter: mail.billAfter, discountPct: mail.discountPct, nextBillDate: mail.nextBillDate }}

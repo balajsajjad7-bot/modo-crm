@@ -5,6 +5,7 @@ import { requireRole, clientIp } from "@/lib/auth";
 import { resolveShift } from "@/lib/payroll";
 import { emit } from "@/lib/connectors";
 import { log } from "@/lib/crm";
+import { returnConfig, makeLabel } from "@/lib/returnLabel";
 
 const num = (v) => (v === "" || v == null || isNaN(Number(v)) ? null : Number(v));
 const str = (v, n = 200) => (v == null || String(v).trim() === "" ? null : String(v).trim().slice(0, n));
@@ -113,7 +114,14 @@ export async function PATCH(req) {
   if (error) return error;
   const { id, status } = await req.json();
   if (!["NEW", "VERIFIED", "REJECTED"].includes(status)) return NextResponse.json({ error: "Unknown status." }, { status: 400 });
-  const s = await db.sale.update({ where: { id }, data: { status }, include: { user: { select: { name: true } } } });
+  let s = await db.sale.update({ where: { id }, data: { status }, include: { user: { select: { name: true } } } });
+  // Automatic return label: when a sale turns Active and "Make a label automatically" is on in Connectors.
+  if (status === "VERIFIED" && !s.returnLabelUrl) {
+    try {
+      const cfg = await returnConfig();
+      if (cfg?.auto) { const r = await makeLabel(s, { cfg }); if (r.sale) s = { ...s, ...r.sale }; }
+    } catch {}
+  }
   await emit("sale.status", { order: s.orderNumber, receipt: s.receipt, status: status === "VERIFIED" ? "Active" : status === "REJECTED" ? "Not active" : "New", agent: s.user.name, customer: s.customer });
   return NextResponse.json(s);
 }

@@ -115,6 +115,16 @@ model Sale {
   trackUpdatedAt DateTime?
   deliveredAt    DateTime?
   duplicateOf String?
+  deviceValue    Float?    // current new retail price of the device, looked up online (USD)
+  deviceValueUsed Float?   // typical used/resale value (USD)
+  deviceValueSrc String?   // where the price came from
+  deviceValueAt  DateTime?
+  returnLabelUrl String?   // prepaid return label (customer → warehouse), made through Shippo
+  returnTracking String?
+  returnCost     Float?
+  returnService  String?
+  returnLabelAt  DateTime?
+  returnError    String?
   shiftDate String   @default("")
   status    String   @default("NEW") // NEW | VERIFIED (= Active) | REJECTED (= Not active)
   createdAt DateTime @default(now())

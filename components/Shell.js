@@ -11,7 +11,6 @@ import { guideForRole } from "@/lib/guide";
 import { startChunkSend } from "@/components/chunklisten";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Translator from "@/components/Translator";
-import LangPicker from "@/components/LangPicker";
 import FloatDock from "@/components/FloatDock";
 import Spectrum from "@/components/Spectrum";
 
@@ -236,7 +235,7 @@ me?.role === "AGENT" ? (
   return (
     <ShellCtx.Provider value={{ me, chat, reloadChat: loadChat, huddle, openDM, presence }}>
       <Translator />
-      <TopBar nav={withBadges} home={home} action={navAction}
+      <TopBar nav={withBadges} home={home} action={navAction} search={<ErrorBoundary resetKey={path}><SearchPalette nav={nav} home={home} role={me?.role} /></ErrorBoundary>}
         user={{ name: me?.name || "", sub: userSub || (me?.role === "ADMIN" ? "Admin" : me?.agentId), status: status || (myStatus === "away" ? "off" : myStatus === "busy" ? "warn" : "") }}
         userMenu={[
           ...(me?.role === "AGENT" ? [["available", "Available", "🟢"], ["away", "Away", "⚪"], ["busy", "Busy", "🟠"]].map(([k, l, e]) => ({ label: `${e} ${l}${myStatus === k ? "  ✓" : ""}`, onClick: () => setStatus(k) })) : []),
@@ -261,8 +260,6 @@ me?.role === "AGENT" ? (
         <div className="bar">
           <div>{current && <><h1>{current.label}</h1>{current.hint && <div className="page-title">{current.hint}</div>}</>}</div>
           <div className="row small muted" style={{ gap: 8 }}>
-            <ErrorBoundary resetKey={path}><SearchPalette nav={nav} home={home} role={me?.role} /></ErrorBoundary>
-            <LangPicker compact />
             {header && <span>{header}</span>}
             {me?.role === "AGENT" && presence?.attendance && (
               <span className={"chip " + (loc === "office" ? "ok" : loc === "remote" ? "late" : "")}><MapPin size={12} /> {loc === "office" ? "In office" : loc === "remote" ? "Remote" : "Clocked in"}{presence.how ? ` · ${presence.how}` : ""}</span>
@@ -372,7 +369,7 @@ function SearchPalette({ nav, home, role }) {
 
   return (
     <>
-      <button className="search-trigger" onClick={() => setOpen(true)} aria-label="Search Modo">
+      <button className="ghost search-trigger" onClick={() => setOpen(true)} aria-label="Search Modo" title="Search (Ctrl+K)">
         <Search size={14} /> <span className="search-trigger-t">Search</span> <kbd>⌘K</kbd>
       </button>
       {typeof document !== "undefined" && overlay ? createPortal(overlay, document.body) : null}

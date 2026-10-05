@@ -5,6 +5,7 @@
 // full-screen menu.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X, MoreHorizontal, Palette } from "lucide-react";
 import AppearanceToggle from "./Appearance";
@@ -48,7 +49,7 @@ function Item({ it, measuring, path, open, toggle }) {
   );
 }
 
-export default function TopBar({ nav, home, user, userMenu, action }) {
+export default function TopBar({ nav, home, user, userMenu, action, search }) {
   const path = usePathname() || "";
   const [open, setOpen] = useState(null);     // which menu is open: group label | "__more" | "__user" | "__look"
   const [sheet, setSheet] = useState(false);  // phone menu
@@ -117,7 +118,8 @@ export default function TopBar({ nav, home, user, userMenu, action }) {
       </nav>
 
       <div className="tb-right">
-        <div className="tb-group">
+        {search && <div className="tb-search">{search}</div>}
+        <div className="tb-group tb-look-g">
           <button type="button" className="tb-icon" aria-label="Appearance and language" title="Day / Night, colours, language" aria-expanded={open === "__look"} onClick={() => toggle("__look")}><Palette size={18} /></button>
           {open === "__look" && (
             <div className="tb-menu right tb-look" role="dialog" aria-label="Appearance">
@@ -146,15 +148,19 @@ export default function TopBar({ nav, home, user, userMenu, action }) {
       </div>
 
       {/* Phone: full menu */}
-      {sheet && (
+      {sheet && typeof document !== "undefined" && createPortal(
         <>
           <div className="pn-sheet-bg" onClick={() => setSheet(false)} />
           <div className="pn-sheet tb-sheet" role="menu" aria-label="All options">
+            <div className="tb-sheet-top">
+              <Link href={home} className="tb-logo" onClick={() => setSheet(false)} aria-label="Modo home"><ModoMark size={30} glow={false} /><ModoWord height={13} /></Link>
+              <button type="button" className="tb-icon" aria-label="Close menu" onClick={() => setSheet(false)}><X size={20} /></button>
+            </div>
             <div className="pn-sheet-user"><span className="tb-avatar big">{initials(user.name)}</span>
               <div style={{ flex: 1 }}><b>{user.name}</b><span className="sub" style={{ display: "block", color: "var(--muted-fg)", fontSize: 13 }}>{user.sub}</span></div></div>
-            <div className="pn-sheet-appear"><AppearanceToggle /></div>
-            <div className="pn-sheet-appear" data-no-translate><LangPicker /></div>
             <div className="pn-sheet-scroll">
+              <div className="pn-sheet-appear"><AppearanceToggle /></div>
+              <div className="pn-sheet-appear" data-no-translate><LangPicker /></div>
               {nav.map((it) => it.children ? (
                 <div key={it.label} className="pn-sheet-group">
                   <div className="pn-sheet-h">{it.icon}<span>{it.label}</span></div>
@@ -175,7 +181,7 @@ export default function TopBar({ nav, home, user, userMenu, action }) {
               </div>
             </div>
           </div>
-        </>
+        </>, document.body
       )}
     </header>
   );

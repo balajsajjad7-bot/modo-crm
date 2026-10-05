@@ -2022,3 +2022,54 @@ html[data-look="minimal"] .tb::after{display:none}
 @media print{.tb{display:none!important}.shell{padding-top:0!important}}
 .tb-look .appear2 .lbl{display:inline!important}
 .tb-look .appear2 button{padding:0 11px!important}
+
+/* ═══════════ Top bar v2: search in the bar, solid phone drawer, no sideways scroll ═══════════ */
+.tb-search{display:flex}
+.tb .search-trigger{display:inline-flex!important;align-items:center;gap:8px;height:42px;min-height:0;min-width:168px;padding:0 10px 0 14px!important;border-radius:12px!important;
+  background:rgba(var(--fg),.06)!important;border:1px solid rgba(var(--p-hi),.14)!important;color:var(--muted-fg)!important;box-shadow:none!important;
+  font:500 14px var(--font)!important;transform:none!important;cursor:pointer}
+.tb .search-trigger:hover{background:rgba(var(--p),.14)!important;color:rgb(var(--fg))!important}
+.tb .search-trigger .search-trigger-t{flex:1;text-align:left}
+.tb .search-trigger kbd{font:600 11px var(--font);padding:2px 6px;border-radius:6px;background:rgba(var(--fg),.08);border:1px solid rgba(var(--fg),.1);color:var(--muted-fg)}
+[data-appearance="light"] .tb .search-trigger{background:rgba(18,19,26,.04)!important;border-color:rgba(18,19,26,.08)!important;color:rgba(18,19,26,.6)!important}
+html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
+/* the old search/language row under the bar is gone; keep the page title row tidy */
+.bar>.row:empty{display:none}
+/* Drawer header (phones) */
+.tb-sheet-top{display:none}
+@media (max-width:1440px){.tb .search-trigger{min-width:0;width:42px;padding:0!important;justify-content:center}.tb .search-trigger .search-trigger-t,.tb .search-trigger kbd{display:none}}
+@media (max-width:900px){
+  .tb{height:60px;padding:0 10px;padding-top:env(safe-area-inset-top,0);gap:6px}
+  .tb .search-trigger{width:40px;height:40px}
+  .tb-icon{width:40px;height:40px}
+  .tb-user{height:42px;padding:0 4px!important}
+  .tb-user .tb-chev{display:none}
+  .tb-status{left:30px;top:28px}
+  .tb-right{gap:6px}
+  .tb-right>.tb-look-g{display:none}
+  /* full-height slide-in drawer, solid so nothing shows through */
+  .pn-sheet-bg{z-index:120;background:rgba(0,0,0,.62)}
+  .pn-sheet.tb-sheet{z-index:121;top:0;left:0;bottom:0;right:auto;width:min(88vw,380px);max-height:none;border-radius:0 24px 24px 0;
+    background:rgb(var(--bg2))!important;border:none;border-right:1px solid rgba(var(--p-hi),.14);box-shadow:24px 0 70px rgba(0,0,0,.5);
+    padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0);animation:tbDrawer .2s ease-out}
+  .tb-sheet .tb-sheet-top{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 10px 16px;border-bottom:1px solid var(--border)}
+  .tb-sheet .tb-sheet-top .tb-logo{flex:0;justify-content:flex-start}
+  .tb-sheet .pn-sheet-scroll{flex:1}
+  .tb-sheet .pn-sheet-appear{padding:6px 6px 4px}
+  .tb-sheet .pn-sheet-appear .appear2{width:100%}
+  [data-appearance="light"] .pn-sheet.tb-sheet{background:#fff!important;border-right-color:rgba(18,19,26,.08)}
+  /* page never scrolls sideways on phones */
+  .shell{overflow-x:clip}
+  .shell .stack>*,.shell .sales-page>*{min-width:0}
+  .toolbar>*{max-width:100%}
+  .toolbar .seg{flex:1 1 100%;min-width:0}
+  .toolbar .sl-search{flex:1 1 100%!important;max-width:none!important}
+  .bar{margin-bottom:14px}
+  .bar h1{font-size:24px}
+}
+@keyframes tbDrawer{from{transform:translateX(-100%)}to{transform:none}}
+
+/* Sales: device value + return labels */
+.sales-kpis .kpi-sub{display:block;margin-top:2px;font-size:11.5px;color:var(--muted-fg);font-weight:500}
+.sale-foot .chip{display:inline-flex;align-items:center;gap:4px;text-decoration:none}
+.warn-chip{background:rgba(245,181,68,.16)!important;color:#f5b544!important}
