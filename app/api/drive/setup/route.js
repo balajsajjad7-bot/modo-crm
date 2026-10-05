@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
-import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { seal } from "@/lib/connectors";
 import { driveConnector, saveDriveCfg, authorizeUrl, PROVIDERS } from "@/lib/drive";
+import { makeState } from "@/lib/oauthState";
 
 const redirectFor = (req) => new URL("/api/drive/oauth", req.url).toString();
 
 // Save the app keys and get the "sign in to Google/Dropbox" link: { provider, clientId, clientSecret }
 // With no keys, reconnects using the saved ones.
 export async function POST(req) {
-  const { error } = await requireRole("ADMIN");
+  const { error, session } = await requireRole("ADMIN");
   if (error) return error;
   const b = await req.json().catch(() => ({}));
   let conn = await driveConnector();
@@ -27,8 +26,7 @@ export async function POST(req) {
   } else if (clientId && clientSecret && !clientSecret.startsWith("••••")) {
     conn.cfg = await saveDriveCfg(conn.id, { clientId, clientSecret });
   }
-  const state = crypto.randomBytes(16).toString("hex");
-  cookies().set("modo_drive_state", state, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 900 });
+  const state = makeState(session?.uid || "admin", type);
   return NextResponse.json({ url: authorizeUrl(type, conn.cfg, redirectFor(req), state), redirectUri: redirectFor(req) });
 }
 
