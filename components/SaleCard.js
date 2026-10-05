@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import OrderCheck, { OrderStatusChip } from "@/components/OrderCheck";
 import dynamic from "next/dynamic";
 const SaleMap = dynamic(() => import("@/components/SaleMap"), { ssr: false, loading: () => <div className="sm-loading muted small">Loading map…</div> });
-import { nearestLine } from "@/lib/nearest";
+import { nearestLine, dropLine } from "@/lib/nearest";
 import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard, Maximize2, Minimize2, X, Store } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
@@ -208,7 +208,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
         <span><Receipt size={12} /> <b>{$(s.billAfter)}</b>/mo <span className="muted">was {$(s.billBefore)}{s.discountPct != null && s.discountPct !== "" ? ` · ${s.discountPct}% off` : ""}</span></span>
         <span><Building2 size={12} /> {v(s.closer)}</span>
         <span className="muted"><Clock size={12} /> {preview ? pkTime(new Date()) : pkTime(s.createdAt)}</span>
-        {!preview && nearestLine(s) && <span className="sale-ups"><Store size={12} /> Nearest UPS: {nearestLine(s)}</span>}
+        {!preview && dropLine(s) ? <span className="sale-ups dropped"><Store size={12} /> Dropped at {dropLine(s)}</span> : !preview && nearestLine(s) ? <span className="sale-ups"><Store size={12} /> Nearest UPS: {nearestLine(s)}</span> : null}
       </div>
 
       {sibs.length > 0 && (
@@ -256,7 +256,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
           </>}
           </div>
           <div className="sd-b">
-          {!preview && s.id && <section className="sale-sec"><h4><MapPin size={13} /> Where the customer is · nearest UPS</h4><SaleMap sale={s} big={max} /></section>}
+          {!preview && s.id && <section className="sale-sec"><h4><MapPin size={13} /> Where the customer is · nearest UPS</h4><SaleMap sale={s} big={max} onDrop={(d) => onPatch({ dropStore: d ? JSON.stringify(d) : null })} /></section>}
           {!preview && s.id && <ReturnLabel s={s} labels={labels} onPatch={onPatch} />}
           </div>
         </div>

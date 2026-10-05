@@ -9,11 +9,25 @@ const mi = (m) => (m == null ? "" : m < 160 ? `${Math.round(m * 3.28)} ft` : `${
 const drive = (m) => { const min = Math.max(2, Math.round(((m * 1.35) / 1609.34 / 28) * 60)); return min < 60 ? `about ${min} min drive` : `about ${(min / 60).toFixed(1)} h drive`; };
 const STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
-export default function SaleMap({ sale, big }) {
+const dropKey = (x) => (x ? `${x.name}|${x.addr || ""}` : "");
+const when = (d) => (d ? new Date(d).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "");
+
+export default function SaleMap({ sale, big, onDrop }) {
   const box = useRef(null); const map = useRef(null); const lib = useRef(null); const marks = useRef([]);
   const [geo, setGeo] = useState(null); const [stores, setStores] = useState(null); const [err, setErr] = useState(""); const [sErr, setSErr] = useState("");
   const [busy, setBusy] = useState(false); const [three, setThree] = useState(true); const [mapErr, setMapErr] = useState(""); const [copied, setCopied] = useState(false);
   const addr = [sale.address, sale.zip].filter(Boolean).join(" ");
+  const [drop, setDrop] = useState(() => { try { return JSON.parse(sale.dropStore || "null"); } catch { return null; } });
+  const [dBusy, setDBusy] = useState(false); const [dMsg, setDMsg] = useState("");
+  async function saveDrop(body) {
+    setDBusy(true); setDMsg("");
+    const r = await fetch("/api/sales/drop", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: sale.id, ...body }) });
+    const d = await r.json().catch(() => ({})); setDBusy(false);
+    if (!r.ok) return setDMsg(d.error || "Couldn't save.");
+    setDrop(d.drop); onDrop?.(d.drop); if (d.note) setDMsg(d.note);
+  }
+  // Has the customer dropped it off? Check UPS tracking by itself when there's a return label
+  useEffect(() => { if (sale.id && sale.returnTracking && !drop) saveDrop({ check: true }).then(() => setDMsg("")); }, [sale.id]); // eslint-disable-line
 
   async function load(refresh) {
     setBusy(true); setErr(""); setSErr("");
@@ -40,7 +54,7 @@ export default function SaleMap({ sale, big }) {
         map.current.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
         map.current.scrollZoom.disable(); map.current.on("click", () => map.current.scrollZoom.enable());
         map.current.on("error", (e) => { if (/WebGL|context/i.test(e?.error?.message || "")) setMapErr("This device couldn't draw the 3D map."); });
-        const el = document.createElement("div"); el.className = "sm-pin cust"; el.innerHTML = "<span>🏠</span>";
+        const el = document.createElement("div"); el.className = "sm-pin-wrap"; el.innerHTML = '<div class="sm-pin cust"><span>🏠</span></div>';
         new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([geo.lng, geo.lat]).setPopup(new maplibregl.Popup({ offset: 24 }).setText(`${sale.customer || "Customer"} — ${addr}`)).addTo(map.current);
         const ro = new ResizeObserver(() => map.current?.resize()); ro.observe(box.current); map.current._modoRo = ro;
         drawStores();
@@ -48,14 +62,14 @@ export default function SaleMap({ sale, big }) {
     })();
     return () => { alive = false; };
   }, [geo]); // eslint-disable-line
-  useEffect(() => { drawStores(); }, [stores]); // eslint-disable-line
+  useEffect(() => { drawStores(); }, [stores, drop]); // eslint-disable-line
   useEffect(() => () => { try { map.current?._modoRo?.disconnect(); map.current?.remove(); } catch {} map.current = null; }, []);
 
   function drawStores() {
     const m = map.current, L = lib.current; if (!m || !L || !stores) return;
     marks.current.forEach((x) => x.remove()); marks.current = [];
     stores.forEach((s, i) => {
-      const el = document.createElement("div"); el.className = "sm-pin ups" + (i === 0 ? " best" : ""); el.innerHTML = `<span>${i + 1}</span>`;
+      const el = document.createElement("div"); el.className = "sm-pin-wrap"; el.innerHTML = `<div class="sm-pin ups${i === 0 ? " best" : ""}${dropKey(drop) === dropKey(s) ? " dropped" : ""}"><span>${dropKey(drop) === dropKey(s) ? "✓" : i + 1}</span></div>`;
       marks.current.push(new L.Marker({ element: el, anchor: "bottom" }).setLngLat([s.lng, s.lat]).setPopup(new L.Popup({ offset: 24 }).setText(`${s.name}${s.addr ? " — " + s.addr : ""} (${mi(s.m)})`)).addTo(m));
     });
     if (stores[0]) { const b = new L.LngLatBounds([geo.lng, geo.lat], [geo.lng, geo.lat]); b.extend([stores[0].lng, stores[0].lat]); m.fitBounds(b, { padding: 70, pitch: 60, bearing: -25, maxZoom: 16.5, duration: 1200 }); }
@@ -68,7 +82,17 @@ export default function SaleMap({ sale, big }) {
   if (!addr) return <p className="muted small" style={{ margin: 0 }}>No address on this sale, so there's no map.</p>;
   return (
     <div className={"smap" + (big ? " big" : "")}>
-      {best && (
+      {drop ? (
+        <div className="sm-drop">
+          <span className="sm-drop-ic">✓</span>
+          <div className="sm-best-t"><span className="sf-l">Customer dropped the package at</span><b>{drop.name}</b><span className="small">{[drop.addr, when(drop.at), drop.how === "tracking" ? "from UPS tracking" : "marked by hand"].filter(Boolean).join(" · ")}</span></div>
+          <button className="ghost sm" onClick={() => saveDrop({ clear: true })} disabled={dBusy}>Undo</button>
+        </div>
+      ) : (sale.returnTracking || sale.trackingNo) ? (
+        <div className="row" style={{ gap: 6 }}><button className="ghost sm" onClick={() => saveDrop({ check: true })} disabled={dBusy}><RefreshCw size={12} className={dBusy ? "spin" : ""} /> Has he dropped it off? Check UPS tracking</button></div>
+      ) : null}
+      {dMsg && <p className="small muted" style={{ margin: 0 }}>{dMsg}</p>}
+      {best && !drop && (
         <div className="sm-best">
           <Star size={16} className="sm-star" />
           <div className="sm-best-t"><span className="sf-l">Suggested drop-off · nearest to the customer</span><b>{best.name}</b><span className="small">{best.addr || "address not listed"} · <b>{mi(best.m)}</b> · {drive(best.m)}{best.hours ? ` · ${best.hours}` : ""}</span></div>
@@ -97,7 +121,8 @@ export default function SaleMap({ sale, big }) {
             <div key={i} className={"sm-store" + (i === 0 ? " best" : "")}>
               <button className="ghost sm-num" onClick={() => focus(s)} aria-label={`Show ${s.name} on the map`}>{i + 1}</button>
               <div className="sm-st"><b>{s.name}</b><span className="small muted">{s.addr || "address not listed"}{s.hours ? ` · ${s.hours}` : ""}</span></div>
-              <div className="sm-st-r"><b className="num">{mi(s.m)}</b><a className="small" href={route(s)} target="_blank" rel="noreferrer"><Navigation size={11} /> Route</a></div>
+              <div className="sm-st-r"><b className="num">{mi(s.m)}</b><span className="row" style={{ gap: 8 }}><a className="small" href={route(s)} target="_blank" rel="noreferrer"><Navigation size={11} /> Route</a>
+                {dropKey(drop) === dropKey(s) ? <span className="small sm-dropped">✓ dropped here</span> : <button className="ghost sm-mark small" disabled={dBusy} onClick={() => saveDrop({ store: s })}>Dropped here</button>}</span></div>
             </div>
           ))}
           <a className="small" href={`https://www.google.com/maps/search/${encodeURIComponent("UPS near " + addr)}`} target="_blank" rel="noreferrer"><ExternalLink size={11} /> More UPS drop-offs near the customer</a>

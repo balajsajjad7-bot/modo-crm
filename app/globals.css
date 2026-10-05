@@ -1581,7 +1581,7 @@ body:has(.mic-banner) .chat-fab{bottom:calc(60px + env(safe-area-inset-bottom,0p
 /* Primary buttons: ember gradient, subtle shine, tactile press */
 button:not(.ghost):not(.toggle):not(.pn-item):not(.pn-user):not(.chip-btn):not(.seg button):not(.appear2 button):not(.search-item):not(.lk-tool):not(.conn-tile):not(.dock-item):not(.danger):not(.icon-btn):not(.np-item):not(.sl-item):not(:is(
   .sl-tools button,.sl-actions button,.sl-picker button,.sl-mentions button,.sl-icon,.sl-fold,.sl-add,.sl-members,.sl-topic,.sl-react,.sl-replies,.sl-huddle,
-  .fl-btn,.fl-fab,.fl-grip,.fl-conv,.ft-tabs button,.ft-keys button,.oc-f,.copy-cell,.pal-btn,.pal-menu button,.tb-item,.tb-icon,.tb-user,.tb-act,.ad-item,.ad-status button,.pn-burger,.pn-menu button,.days button,.status-switch button,.appear button,[role="tab"],[role="menuitem"])){
+  .fl-btn,.fl-fab,.fl-grip,.fl-conv,.ft-tabs button,.ft-keys button,.oc-f,.copy-cell,.pal-btn,.pal-menu button,.tb-item,.tb-icon,.tb-user,.tb-act,.ad-item,.ad-status button,.pn-burger,.pn-menu button,.days button,.status-switch button,.appear button,.maplibregl-ctrl button,.sm-mark,[role="tab"],[role="menuitem"])){
   background:var(--grad-ember)!important;border:none!important;color:#fff!important;
   box-shadow:0 6px 18px rgba(var(--p),.30),inset 0 1px 0 rgba(255,255,255,.28)!important;letter-spacing:.005em;
 }
@@ -2285,3 +2285,17 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
   .sale-card.wide .sd-a,.sale-card.wide .sd-b{gap:10px}
   .sale-card.wide .sd-b{top:76px}
 }
+/* MapLibre sets position:relative on its container, which collapsed it to 0px tall: keep it filling the box */
+.sm-map.maplibregl-map,.sm-map{position:absolute!important;inset:0;width:100%;height:100%}
+/* map pins: MapLibre moves the outer box; the inner box keeps the teardrop shape */
+.sm-pin-wrap{width:30px;height:38px;display:flex;align-items:flex-start;justify-content:center;cursor:pointer}
+.sm-pin.dropped{background:#16a34a!important}
+.sm-drop{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;border:1px solid rgba(74,222,128,.5);background:rgba(74,222,128,.08)}
+.sm-drop-ic{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#16a34a;color:#fff;font-weight:800}
+.sm-mark{padding:2px 8px!important;border-radius:8px!important;font-size:12px!important}
+.sm-dropped{color:#4ade80;font-weight:700}
+.sale-ups.dropped{color:#4ade80}
+/* MapLibre's own buttons: keep them plain */
+.maplibregl-ctrl-group button{background:#fff!important;border:none!important;box-shadow:none!important;padding:0!important;border-radius:0!important;width:29px!important;height:29px!important;min-height:0!important;transform:none!important}
+.maplibregl-ctrl-group button+button{border-top:1px solid #ddd!important}
+.maplibregl-ctrl-group{border-radius:8px!important;overflow:hidden}

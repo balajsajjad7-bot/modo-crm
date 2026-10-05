@@ -132,6 +132,7 @@ model Sale {
   geoLng         Float?
   geoStores      String?   // nearest UPS locations (JSON), refreshed monthly
   geoAt          DateTime?
+  dropStore      String?   // where the customer dropped the return package (JSON: name, addr, at, how)
   shiftDate String   @default("")
   status    String   @default("NEW") // NEW | VERIFIED (= Active) | REJECTED (= Not active)
   createdAt DateTime @default(now())
