@@ -49,6 +49,7 @@ function Frame({ children }) {
     ...(P.modoAI !== false ? [{ href: "/agent/ai", label: "Modo AI", hint: "Scripts, objections and quick help", icon: i(Sparkles) }] : []),
     ...(P.aiBuilder !== false ? [{ href: "/agent/builder", label: "AI Builder", hint: "Describe any app, tool or page and it builds it live", icon: i(Wand2) }] : []),
     { href: "/agent/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },
+    { href: "/agent/whatsnew", label: "What's new", hint: "New features and changes in Modo", icon: i(Sparkles) },
   ];
   const chatItem = { href: "/agent/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true };
   const nav = [

@@ -47,6 +47,14 @@ function Setup({ info, onDone }) {
       <label>Redirect address (copy this)
         <div className="row" style={{ gap: 6, flexWrap: "nowrap" }}><input readOnly value={redirect} onFocus={(e) => e.target.select()} />
           <button className="ghost sm" onClick={() => { navigator.clipboard?.writeText(redirect); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? <Check size={13} /> : <Copy size={13} />}</button></div></label>
+      {prov === "gdrive" && (
+        <label className="drive-json">Easiest: upload the JSON file Google lets you download for the client (Download JSON)
+          <input type="file" accept=".json,application/json" onChange={async (e) => {
+            const f = e.target.files?.[0]; if (!f) return;
+            try { const j = JSON.parse(await f.text()); const c = j.web || j.installed || j; if (!c.client_id || !c.client_secret) throw 0; setId(c.client_id); setSecret(c.client_secret); setErr(""); }
+            catch { setErr("That file isn't a Google OAuth client JSON. Download it from Credentials → your OAuth client → Download JSON."); }
+          }} /></label>
+      )}
       <div className="form">
         <label>{prov === "dropbox" ? "App key" : "Client ID"}<input value={id} onChange={(e) => setId(e.target.value)} placeholder={reconnect ? "saved (leave empty to keep)" : ""} autoComplete="off" /></label>
         <label>{prov === "dropbox" ? "App secret" : "Client secret"}<input type="password" value={secret} onChange={(e) => setSecret(e.target.value)} placeholder={reconnect ? "saved (leave empty to keep)" : ""} autoComplete="off" /></label>

@@ -15,7 +15,7 @@ export default function Updates() {
           : <p className="muted small" style={{ margin: 0 }}>{d.latest ? "You're on the latest version." : "How to update: double-click update-crm.bat in your Modo folder (it adds new files and database tables), then push to GitHub so Netlify publishes it."}</p>}
       </section>
       {d.changelog.map((c) => (
-        <section key={c.version} className="panel stack"><h2 style={{ fontSize: 16 }}>{c.version} <span className="muted small">{c.date}</span></h2><ul className="qa-ul">{c.notes.map((n, i) => <li key={i}>{n}</li>)}</ul></section>
+        <section key={c.version} className="panel stack"><h2 style={{ fontSize: 16 }}>{c.version} <span className="muted small">{c.date}</span></h2><ul className="qa-ul">{c.notes.map((n, i) => <li key={i}>{typeof n === "string" ? n : n.text}</li>)}</ul></section>
       ))}
     </div>
   );

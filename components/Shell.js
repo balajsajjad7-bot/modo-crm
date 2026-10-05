@@ -17,6 +17,7 @@ import Spectrum from "@/components/Spectrum";
 const ShellCtx = createContext(null);
 export const useShell = () => useContext(ShellCtx);
 import { SoftphoneProvider } from "./Softphone";
+import { WhatsNewBanner } from "./WhatsNew";
 
 // Subscribe this device for web push so alerts reach a locked/closed phone.
 const b64ToU8 = (b64) => { const pad = "=".repeat((4 - (b64.length % 4)) % 4); const s = (b64 + pad).replace(/-/g, "+").replace(/_/g, "/"); const raw = atob(s); return Uint8Array.from([...raw].map((c) => c.charCodeAt(0))); };
@@ -259,6 +260,7 @@ me?.role === "AGENT" ? (
       {lockOn && <div className="lock-banner" role="status"><Power size={14} /> Emergency stop is ON: agents are locked out. <button className="sm" onClick={toggleLock}>Turn back on</button></div>}
       {locked && <div className="lock-screen" role="alertdialog" aria-label="CRM paused"><div className="panel"><Power size={34} /><h1>Paused by admin</h1><p>{locked}</p><p className="muted small">This page will come back by itself when admin turns the CRM on again.</p></div></div>}
       <main className="shell">
+        <WhatsNewBanner />
         <div className="bar">
           <div>{current && <><h1>{current.label}</h1>{current.hint && <div className="page-title">{current.hint}</div>}</>}</div>
           <div className="row small muted" style={{ gap: 8 }}>

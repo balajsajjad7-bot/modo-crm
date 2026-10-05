@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, PackageSearch, Wand2, Phone, HardDrive } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2 } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 import { sectionForPath } from "@/lib/supaccess";
@@ -10,6 +10,9 @@ export default function AdminLayout({ children }) {
   const fresh = (Array.isArray(sales) ? sales : []).filter((s) => s.status === "NEW").length;
   const [secure, setSecure] = useState(false);
   const [me, setMe] = useState(null);
+  // Connected apps show up in the menu by themselves (Apps group)
+  const [apps, setApps] = useState([]);
+  useEffect(() => { fetch("/api/apps", { cache: "no-store" }).then((r) => (r.ok ? r.json() : { apps: [] })).then((d) => setApps((d.apps || []).filter((x) => x.connected && x.open))).catch(() => {}); }, []);
   useEffect(() => { fetch("/api/me").then((r) => r.json()).then((m) => { setMe(m); setSecure(!!m?.ceo || !!m?.secureLine); }).catch(() => {}); }, []);
   const i = (C) => <C size={17} />;
   const nav = [
@@ -59,6 +62,10 @@ export default function AdminLayout({ children }) {
       { href: "/admin/train", label: "Train Modo AI", hint: "Teach the AI your prices, script, rules and objections", icon: i(Brain) },
       { href: "/admin/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },
     ] },
+    { label: "Apps", icon: i(Blocks), children: [
+      { href: "/admin/apps", label: "Connected apps", hint: "Connect Google Drive, Dropbox, AI, dialer, labels… with one tap", icon: i(Plug) },
+      ...apps.map((x) => ({ href: x.open.href + "?app=" + x.key, label: x.label.replace(/ \(.*\)$/, ""), hint: (x.detail ? x.detail + " · " : "") + "Open " + x.open.label, icon: i(CheckCircle2) })),
+    ] },
     { label: "Setup", icon: i(Wrench), children: [
       { href: "/admin/lookups", label: "Lookups", hint: "USA phone, ZIP, address, email and your own lookup APIs", icon: i(SearchCheck) },
       { href: "/admin/calculator", label: "Discount calculator", hint: "Quotes and discount rules", icon: i(Calculator) },
@@ -67,6 +74,7 @@ export default function AdminLayout({ children }) {
       { href: "/admin/settings", label: "Settings", hint: "IP lock, breaks, idle and targets", icon: i(Settings) },
       { href: "/admin/app", label: "Windows app", hint: "Download the installer and lock down PCs", icon: i(MonitorDown) },
       { href: "/install", label: "Install on phones", hint: "Add Modo to Android & iPhone (QR + steps)", icon: i(MonitorSmartphone) },
+      { href: "/admin/whatsnew", label: "What's new", hint: "Every new feature and change in Modo", icon: i(Sparkles) },
       { href: "/admin/updates", label: "Updates", hint: "Modo version and what's new", icon: i(Download) },
     ] },
   ];
