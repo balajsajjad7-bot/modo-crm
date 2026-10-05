@@ -7,6 +7,7 @@ import Lookups from "@/components/Lookups";
 import AiButton from "@/components/AiButton";
 import CallAI from "@/components/CallAI";
 import RecentCalls from "@/components/RecentCalls";
+import { PhoneStatus } from "@/components/Softphone";
 import { Phone, PhoneOff, Pause, Play, ParkingCircle, ArrowRightLeft, Circle, ExternalLink, Delete, User, MapPin, Mail, StickyNote, Mic, CheckCircle2, AlertCircle, Loader2, Zap, SkipForward, Square } from "lucide-react";
 
 const post = (b) => fetch("/api/dialer", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }).then(async (r) => ({ ok: r.ok, d: await r.json().catch(() => ({})) }));
@@ -74,6 +75,7 @@ export default function Dialer({ admin = false }) {
           <button className="ghost" onClick={openVici} disabled={!st.agentUrl}><ExternalLink size={14} /> {st.loggedIn ? "Show VICIdial" : "Open VICIdial & log in"}</button>
         </div>
       </section>
+      <PhoneStatus />
       {count > 0 && <section className="panel dl-hint auto-count"><Zap size={18} /><div><b>Next lead in {count}…</b> Auto-dial is on.</div><button className="ghost sm" onClick={stopCount}><Square size={12} /> Stop</button></section>}
       {!st.loggedIn && (
         <section className="panel dl-hint"><AlertCircle size={18} /><div><b>Log into VICIdial first.</b> Press “Open VICIdial & log in”, sign in with your phone and campaign, then leave that window open in the background. This screen takes over from there.{st.error && <div className="err small" style={{ marginTop: 6 }}>{st.error}</div>}</div></section>

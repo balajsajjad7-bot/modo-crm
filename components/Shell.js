@@ -16,6 +16,7 @@ import Spectrum from "@/components/Spectrum";
 
 const ShellCtx = createContext(null);
 export const useShell = () => useContext(ShellCtx);
+import { SoftphoneProvider } from "./Softphone";
 
 // Subscribe this device for web push so alerts reach a locked/closed phone.
 const b64ToU8 = (b64) => { const pad = "=".repeat((4 - (b64.length % 4)) % 4); const s = (b64 + pad).replace(/-/g, "+").replace(/_/g, "/"); const raw = atob(s); return Uint8Array.from([...raw].map((c) => c.charCodeAt(0))); };
@@ -234,6 +235,7 @@ me?.role === "AGENT" ? (
 
   return (
     <ShellCtx.Provider value={{ me, chat, reloadChat: loadChat, huddle, openDM, presence, nav: withBadges, home }}>
+      <SoftphoneProvider>
       <Translator />
       <TopBar nav={withBadges} home={home} action={navAction} search={<ErrorBoundary resetKey={path}><SearchPalette nav={nav} home={home} role={me?.role} /></ErrorBoundary>}
         user={{ name: me?.name || "", sub: userSub || (me?.role === "ADMIN" ? "Admin" : me?.agentId), status: status || (myStatus === "away" ? "off" : myStatus === "busy" ? "warn" : "") }}
@@ -293,6 +295,7 @@ me?.role === "AGENT" ? (
       {/* Floating dock: Notepad · Tools · Chats + the quick-actions button. Drag the grip to put it anywhere. */}
       <ErrorBoundary resetKey="float"><FloatDock extra={speedDial} onMenu={setDialOpen} /></ErrorBoundary>
       <div ref={huddle.audioRef} hidden />
+      </SoftphoneProvider>
     </ShellCtx.Provider>
   );
 }

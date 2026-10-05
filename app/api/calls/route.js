@@ -23,7 +23,7 @@ export async function POST(req) {
   if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   const b = await req.json().catch(() => ({}));
   const phone = d10(b.phone);
-  const source = ["gvoice", "manual"].includes(b.source) ? b.source : "gvoice";
+  const source = ["gvoice", "manual", "webphone"].includes(b.source) ? b.source : "webphone";
   if (b.action === "start") {
     if (phone.length !== 10) return NextResponse.json({ error: "Enter a 10-digit US number." }, { status: 400 });
     const c = await startCall(s.uid, { phone, name: String(b.name || "").slice(0, 120) || null, source });
@@ -36,7 +36,7 @@ export async function POST(req) {
       try {
         const near = await db.contact.findMany({ where: { phone: { contains: phone.slice(-4) } }, take: 50 });
         let ct = near.find((x) => d10(x.phone) === phone);
-        if (!ct) ct = await db.contact.create({ data: { name: String(b.name || "").trim() || "Caller " + phone.slice(-4), phone, tags: "dialer", source: "Google Voice", ownerId: s.uid } });
+        if (!ct) ct = await db.contact.create({ data: { name: String(b.name || "").trim() || "Caller " + phone.slice(-4), phone, tags: "dialer", source: "Modo phone", ownerId: s.uid } });
         await log(s.uid, { contactId: ct.id, kind: "call", text: `${b.label || b.code || "Call"}${b.note ? " · " + String(b.note).slice(0, 1500) : ""}` });
         if (b.callbackAt) await db.task.create({ data: { title: `Call back ${ct.name}`, type: "callback", dueAt: new Date(b.callbackAt), contactId: ct.id, assigneeId: s.uid, createdById: s.uid, notes: b.note || null } });
       } catch {}

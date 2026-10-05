@@ -2,7 +2,7 @@
 // Admin → Tools → Dialer setup: pick the dialer, connect it, link agents, set results and pause codes. All in one place.
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download } from "lucide-react";
+import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download, Headset } from "lucide-react";
 
 // Office relay: gets Modo past the dialer's IP firewall by sending requests through a PC in the office.
 function Relay() {
@@ -26,6 +26,29 @@ function Relay() {
       {r.lastSeen && <span className="small muted">Last check-in {new Date(r.lastSeen).toLocaleString()}</span>}
       {msg && <p className="small" style={{ margin: 0 }}>{msg}</p>}
       <button className="ghost sm" style={{ justifySelf: "start" }} onClick={renew}>Make a new relay key</button>
+    </section>
+  );
+}
+
+// Modo phone (WebRTC on the VICIdial lines): shared settings
+function WebPhone({ d, save }) {
+  const [w, setW] = useState(d.webphone || {});
+  useEffect(() => setW(d.webphone || {}), [d.webphone]);
+  let host = ""; try { host = new URL(d.vicidial?.config?.url || "").hostname; } catch {}
+  return (
+    <section className="panel stack">
+      <div className="row" style={{ justifyContent: "space-between" }}><h2><Headset size={17} /> Modo phone (calls inside Modo)</h2>
+        <button role="switch" aria-checked={w.on !== false} className={"toggle" + (w.on !== false ? " on" : "")} onClick={() => { const n = { ...w, on: w.on === false }; setW(n); save({ webphone: n }, n.on ? "Modo phone on." : "Modo phone off."); }}><span /></button></div>
+      <p className="muted small" style={{ margin: 0 }}>A phone inside Modo on your VICIdial lines. People only allow the microphone. In VICIdial, each phone login must be a <b>WebRTC phone</b> (Admin → Phones → Set As Webphone = Y). When someone logs into VICIdial, it rings their Modo phone and Modo answers by itself.</p>
+      <div className="form">
+        <label>Phone server (WebSocket)<input value={w.wss || ""} onChange={(e) => setW({ ...w, wss: e.target.value })} placeholder={host ? `wss://${host}:8089/ws` : "wss://your-dialer:8089/ws"} /></label>
+        <label>SIP domain<input value={w.domain || ""} onChange={(e) => setW({ ...w, domain: e.target.value })} placeholder={host || "your-dialer"} /></label>
+        <label>Dial prefix for manual calls<input value={w.prefix ?? "9"} onChange={(e) => setW({ ...w, prefix: e.target.value })} placeholder="9" /></label>
+        <label>Phone password (if all phones share one)<input type="password" value={w.pass || ""} onChange={(e) => setW({ ...w, pass: e.target.value })} placeholder="phone registration password" autoComplete="off" /></label>
+      </div>
+      <label className="row" style={{ gap: 8 }}><input type="checkbox" style={{ width: "auto" }} checked={w.autoAnswer !== false} onChange={(e) => setW({ ...w, autoAnswer: e.target.checked })} /> Answer calls from the dialer automatically</label>
+      <button className="sm" style={{ justifySelf: "start" }} onClick={() => save({ webphone: w }, "Modo phone saved. Everyone's phone reconnects on their next page load.")}><Save size={13} /> Save phone settings</button>
+      <span className="small muted">Each person's phone login and password (if different) are under Agents below. Empty phone login = their VICIdial user.</span>
     </section>
   );
 }
@@ -71,7 +94,7 @@ function CodeList({ items, onChange }) {
 
 export default function DialerSetup() {
   const [dz, setDz] = useState(null); const [dzBusy, setDzBusy] = useState(false); const [dzErr, setDzErr] = useState(""); const [dzQ, setDzQ] = useState("");
-  const [d, setD] = useState(null); const [v, setV] = useState({}); const [links, setLinks] = useState({}); const [msg, setMsg] = useState(""); const [test, setTest] = useState(""); const [custom, setCustom] = useState({}); const [tAgent, setTAgent] = useState("");
+  const [d, setD] = useState(null); const [v, setV] = useState({}); const [links, setLinks] = useState({}); const [phones, setPhones] = useState({}); const [msg, setMsg] = useState(""); const [test, setTest] = useState(""); const [custom, setCustom] = useState({}); const [tAgent, setTAgent] = useState("");
   const load = () => api("/api/dialer/config").then((r) => { if (!r.ok) return; setD(r.data); setV(r.data.vicidial?.config || {}); setCustom(r.data.custom || {}); setLinks(Object.fromEntries(r.data.agents.map((a) => [a.id, a.vicidialUser || ""]))); });
   useEffect(() => { load(); }, []);
   async function detectAgents() {
@@ -128,6 +151,7 @@ export default function DialerSetup() {
 
       {d.provider === "vicidial" && d.vicidial && <Relay />}
       {d.provider === "vicidial" && <Health />}
+      {d.provider === "vicidial" && d.vicidial && <WebPhone d={d} save={save} />}
 
       {d.provider === "vicidial" && d.vicidial && (
         <section className="panel stack">
@@ -192,11 +216,15 @@ export default function DialerSetup() {
           <section className="panel stack">
             <div className="row" style={{ justifyContent: "space-between" }}><h2><Users size={17} /> Agents <span className="muted small">{linked} of {d.agents.length} linked</span></h2>
               <div className="row"><button className="ghost sm" onClick={() => save({ autoMatch: true }, "Empty ones filled with each agent's Modo ID.")}><Wand2 size={13} /> Fill empty with Modo IDs</button>
-                <button className="sm" onClick={() => save({ links: Object.entries(links).map(([id, user]) => ({ id, user })) }, "Agent logins saved.")}><Save size={13} /> Save logins</button></div></div>
+                <button className="sm" onClick={() => save({ links: d.agents.map((a) => ({ id: a.id, user: links[a.id] || "", ...(phones[a.id]?.phone !== undefined ? { phone: phones[a.id].phone } : {}), ...(phones[a.id]?.pass ? { phonePass: phones[a.id].pass } : {}) })) }, "Agent logins saved.")}><Save size={13} /> Save logins</button></div></div>
             <p className="muted small" style={{ margin: 0 }}>Type each agent's login on the dialer ({d.provider === "vicidial" ? "their VICIdial user" : "their dialer login"}).</p>
             <div className="link-grid">{d.agents.map((a) => (
               <label key={a.id} style={a.active ? undefined : { opacity: .5 }}><span><b>{a.name}</b> <span className="muted small">{a.agentId}</span>{a.role === "ADMIN" && <span className="chip" style={{ marginLeft: 6 }}>admin</span>}</span>
-                <input value={links[a.id] || ""} onChange={(e) => setLinks({ ...links, [a.id]: e.target.value })} placeholder="dialer login" /></label>
+                <input value={links[a.id] || ""} onChange={(e) => setLinks({ ...links, [a.id]: e.target.value })} placeholder="dialer login" />
+                <span className="row" style={{ gap: 6, flexWrap: "nowrap" }}>
+                  <input value={phones[a.id]?.phone ?? a.sipUser ?? ""} onChange={(e) => setPhones({ ...phones, [a.id]: { ...phones[a.id], phone: e.target.value } })} placeholder="phone login (optional)" style={{ minWidth: 0 }} />
+                  <input type="password" value={phones[a.id]?.pass ?? ""} onChange={(e) => setPhones({ ...phones, [a.id]: { ...phones[a.id], pass: e.target.value } })} placeholder={a.sipPassSet ? "phone pass saved" : "phone pass (optional)"} style={{ minWidth: 0 }} autoComplete="off" />
+                </span></label>
             ))}</div>
           </section>
           <div className="two-col">

@@ -63,6 +63,8 @@ const SQL = [
   `CREATE INDEX IF NOT EXISTS "CallLog_userId_startedAt_idx" ON "CallLog"("userId", "startedAt")`,
   `CREATE INDEX IF NOT EXISTS "CallLog_startedAt_idx" ON "CallLog"("startedAt")`,
   fk("CallLog", "CallLog_userId_fkey", "userId", "User"),
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "sipUser" TEXT`,
+  `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "sipPass" TEXT`,
   `ALTER TABLE "Sale" ADD COLUMN IF NOT EXISTS "email" TEXT`,
   `ALTER TABLE "Sale" ADD COLUMN IF NOT EXISTS "deviceValue" DOUBLE PRECISION`,
   `ALTER TABLE "Sale" ADD COLUMN IF NOT EXISTS "deviceValueUsed" DOUBLE PRECISION`,

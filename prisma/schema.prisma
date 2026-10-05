@@ -24,6 +24,8 @@ model User {
   phone        String?
   cnic         String?
   vicidialUser String?
+  sipUser      String?   // Modo browser phone: VICIdial phone login (defaults to vicidialUser)
+  sipPass      String?   // its SIP password (encrypted); empty = the shared one in Dialer setup
   baseSalary   Float        @default(0)
   shiftStart   String       @default("19:00") // HH:MM local time
   shiftHours   Float        @default(9)

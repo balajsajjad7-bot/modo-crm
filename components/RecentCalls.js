@@ -5,7 +5,7 @@ import { History, Phone, RefreshCw } from "lucide-react";
 
 const fmt = (p) => { const d = String(p || "").replace(/\D/g, "").slice(-10); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p; };
 const len = (s) => (s == null ? "—" : s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`);
-const SRC = { vicidial: "VICIdial", gvoice: "Google Voice", custom: "Dialer", manual: "Manual" };
+const SRC = { vicidial: "VICIdial", gvoice: "Google Voice", webphone: "Modo phone", custom: "Dialer", manual: "Manual" };
 
 export default function RecentCalls({ mine = false, limit = 25, onRedial, title = "Recent calls", showAgent, refreshKey }) {
   const [rows, setRows] = useState(null); const [err, setErr] = useState("");

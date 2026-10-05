@@ -42,7 +42,7 @@ function Frame({ children }) {
   ];
   const callKids = [
     ...(dialerOn ? [{ href: "/agent/dialer", label: "Dialer", hint: "Make and manage calls (your dialer runs in the background)", icon: i(PhoneCall) }] : []),
-    ...(P.googleVoice !== false ? [{ href: "/agent/phone", label: "Google Voice", hint: "Manual calls through Google Voice, logged with notes and AI help", icon: i(Phone) }] : []),
+    ...(P.googleVoice !== false ? [{ href: "/agent/phone", label: "Phone", hint: "Call anyone from Modo on your VICIdial lines (just allow the microphone)", icon: i(Phone) }] : []),
     ...(P.callAssist !== false ? [{ href: "/agent/call", label: "Call assist", hint: "Live suggestions while you talk", icon: i(Mic) }] : []),
   ];
   const aiKids = [

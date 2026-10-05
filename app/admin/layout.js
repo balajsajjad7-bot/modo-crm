@@ -29,7 +29,7 @@ export default function AdminLayout({ children }) {
     ] },
     { label: "Calls", icon: i(PhoneCall), children: [
       { href: "/admin/autodial", label: "Auto dialer", hint: "Dial through VICIdial from Modo, auto next lead, AI assistant", icon: i(PhoneCall) },
-      { href: "/admin/phone", label: "Google Voice", hint: "Manual calls through Google Voice, logged with notes and AI help", icon: i(Phone) },
+      { href: "/admin/phone", label: "Phone", hint: "Call anyone from Modo on your VICIdial lines (just allow the microphone)", icon: i(Phone) },
       { href: "/admin/quality", label: "Call quality (QA)", hint: "AI review of every call: grammar, nervousness, compliance", icon: i(BadgeCheck) },
       { href: "/admin/recordings", label: "Call recordings", hint: "Play & download your VICIdial recordings by day", icon: i(Disc3) },
       { href: "/admin/dialer", label: "Dialer setup", hint: "Connect VICIdial or another dialer, link agents, results & pause codes", icon: i(PhoneCall) },
