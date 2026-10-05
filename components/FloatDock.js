@@ -4,7 +4,7 @@
 // Everything here is free and works without API keys or connectors.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { MessageSquare, NotebookPen, Wrench, X, Minus, Maximize2, Search, ArrowLeft, BellOff, Bell, Copy, Download, Trash2, Clock, Type, Check } from "lucide-react";
+import { GripVertical, MessageSquare, NotebookPen, Wrench, X, Minus, Maximize2, Search, ArrowLeft, BellOff, Bell, Copy, Download, Trash2, Clock, Type, Check } from "lucide-react";
 import { useShell } from "./Shell";
 import { Avatar, ConvIcon, Conversation } from "./Chat";
 import ToolsPanel from "./FreeTools";
@@ -160,7 +160,27 @@ function FloatNotes({ onClose }) {
 }
 
 // ---------- the dock ----------
-export default function FloatDock() {
+// Movable dock: drag the grip (mouse or finger) to put the buttons anywhere; double-click the grip to send it
+// back to the bottom-right corner. Remembers its spot. Menus open towards the middle of the screen.
+function useDockDrag() {
+  const ref = useRef(null);
+  const [pos, setPos] = useState(null); // null = default corner
+  const [side, setSide] = useState({ down: false, left: false });
+  const drag = useRef(null);
+  const clamp = (p) => { const el = ref.current; const w = el?.offsetWidth || 240, h = el?.offsetHeight || 60;
+    return { x: Math.max(6, Math.min(p.x, window.innerWidth - w - 6)), y: Math.max(6, Math.min(p.y, window.innerHeight - h - 6)) }; };
+  const updateSide = useCallback(() => { const r = ref.current?.getBoundingClientRect(); if (!r) return; setSide({ down: r.top + r.height / 2 < window.innerHeight * 0.42, left: r.left + r.width / 2 < window.innerWidth / 2 }); }, []);
+  useEffect(() => { const p = LS("modo-dock-pos", null); if (p) setPos(p); }, []);
+  useEffect(() => { const t = setTimeout(updateSide, 0); const onR = () => { setPos((p) => (p ? clamp(p) : p)); updateSide(); }; window.addEventListener("resize", onR); return () => { clearTimeout(t); window.removeEventListener("resize", onR); }; }, [pos, updateSide]); // eslint-disable-line
+  const onDown = (e) => { const r = ref.current.getBoundingClientRect(); drag.current = { sx: e.clientX, sy: e.clientY, x: r.left, y: r.top, moved: false }; e.currentTarget.setPointerCapture?.(e.pointerId); e.preventDefault(); };
+  const onMove = (e) => { const d = drag.current; if (!d) return; const dx = e.clientX - d.sx, dy = e.clientY - d.sy; if (!d.moved && Math.hypot(dx, dy) < 4) return; d.moved = true; setPos(clamp({ x: d.x + dx, y: d.y + dy })); };
+  const onUp = () => { const d = drag.current; drag.current = null; if (d?.moved) setPos((p) => { SAVE("modo-dock-pos", p); return p; }); };
+  const reset = () => { setPos(null); try { localStorage.removeItem("modo-dock-pos"); } catch {} };
+  return { ref, pos, side, grip: { onPointerDown: onDown, onPointerMove: onMove, onPointerUp: onUp, onPointerCancel: onUp, onDoubleClick: reset } };
+}
+
+export default function FloatDock({ extra }) {
+  const dock = useDockDrag();
   const path = usePathname() || "";
   const { chat } = useShell();
   const [open, setOpen] = useState({ chat: false, notes: false, tools: false });
@@ -175,10 +195,13 @@ export default function FloatDock() {
   }, []);
   return (
     <>
-      <div className="fl-rail" role="toolbar" aria-label="Floating tools">
+      <div ref={dock.ref} className={"fl-dock" + (dock.pos ? " placed" : "") + (dock.side.down ? " down" : "") + (dock.side.left ? " left" : "")}
+        style={dock.pos ? { left: dock.pos.x, top: dock.pos.y, right: "auto", bottom: "auto" } : undefined} role="toolbar" aria-label="Floating tools">
+        <button className="fl-grip" aria-label="Move these buttons (drag). Double-click to reset." title="Drag to move · double-click to reset" {...dock.grip}><GripVertical size={16} /></button>
         <button className={"fl-fab" + (open.notes ? " on" : "")} onClick={() => set("notes", !open.notes)} title="Notepad (Alt+N)" aria-label="Notepad"><NotebookPen size={18} /></button>
         <button className={"fl-fab" + (open.tools ? " on" : "")} onClick={() => set("tools", !open.tools)} title="Tools (Alt+T)" aria-label="Tools"><Wrench size={18} /></button>
         {!onChatPage && <button className={"fl-fab" + (open.chat ? " on" : "")} onClick={() => set("chat", !open.chat)} title="Chats (Alt+C)" aria-label="Chats"><MessageSquare size={18} />{unread > 0 && <em className="fl-badge">{unread > 99 ? "99+" : unread}</em>}</button>}
+        {extra}
       </div>
       {open.notes && <FloatNotes onClose={() => set("notes", false)} />}
       {open.tools && <FloatWin id="tools" title="Tools" icon={<Wrench size={15} />} onClose={() => set("tools", false)} width={420} height={560}><ToolsPanel /></FloatWin>}

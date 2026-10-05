@@ -195,6 +195,44 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   const current = flat.find((n) => (n.exact ? path === n.href : path === n.href || path.startsWith(n.href + "/")));
   const loc = presence?.attendance?.location;
 
+  // Quick-actions speed-dial (agents: their most-used actions; admins: overview/settings/chat). Lives in the movable dock.
+  const speedDial = (
+me?.role === "AGENT" ? (
+        <div className={"agent-dial" + (dialOpen ? " open" : "")}>
+          {dialOpen && <div className="ad-backdrop" onClick={() => setDialOpen(false)} />}
+          <div className="ad-actions" role="menu">
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/dialer"); }}><span className="ad-ic"><PhoneCall size={18} /></span>Dialer</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/sale"); }}><span className="ad-ic"><Receipt size={18} /></span>Submit sale</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/lookups"); }}><span className="ad-ic"><SearchCheck size={18} /></span>Lookups</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent"); }}><span className="ad-ic"><Timer size={18} /></span>My shift</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/chat"); }}><span className="ad-ic"><MessageSquare size={18} /></span>Chat{unread > 0 && <em className="ad-badge">{unread > 99 ? "99+" : unread}</em>}</button>
+            <div className="ad-status">
+              {[["available", "🟢", "Available"], ["away", "⚪", "Away"], ["busy", "🟠", "Busy"]].map(([k, e, l]) => (
+                <button key={k} className={myStatus === k ? "on" : ""} title={l} onClick={() => { setStatus(k); setDialOpen(false); }}>{e}</button>
+              ))}
+            </div>
+          </div>
+          <button className="chat-fab ad-main" aria-label="Quick actions" aria-expanded={dialOpen} onClick={() => setDialOpen((o) => !o)}>
+            {dialOpen ? <X size={24} /> : <Plus size={26} />}
+            {!dialOpen && unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
+          </button>
+        </div>
+      ) : (
+        <div className={"agent-dial" + (dialOpen ? " open" : "")}>
+          {dialOpen && <div className="ad-backdrop" onClick={() => setDialOpen(false)} />}
+          <div className="ad-actions" role="menu">
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin"); }}><span className="ad-ic"><LayoutDashboard size={18} /></span>Overview</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/settings"); }}><span className="ad-ic"><SettingsIcon size={18} /></span>Settings</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/chat"); }}><span className="ad-ic"><MessageSquare size={18} /></span>Chat{unread > 0 && <em className="ad-badge">{unread > 99 ? "99+" : unread}</em>}</button>
+          </div>
+          <button className="chat-fab ad-main" aria-label="Quick actions" aria-expanded={dialOpen} onClick={() => setDialOpen((o) => !o)}>
+            {dialOpen ? <X size={24} /> : <Plus size={26} />}
+            {!dialOpen && unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
+          </button>
+        </div>
+      )
+  );
+
   return (
     <ShellCtx.Provider value={{ me, chat, reloadChat: loadChat, huddle, openDM, presence }}>
       <Translator />
@@ -234,42 +272,6 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
         <ErrorBoundary resetKey={path}>{children}</ErrorBoundary>
       </main>
 
-      {/* Floating shortcuts: agents get a speed-dial of their most-used actions; everyone else a chat button */}
-      {me?.role === "AGENT" ? (
-        <div className={"agent-dial" + (dialOpen ? " open" : "")}>
-          {dialOpen && <div className="ad-backdrop" onClick={() => setDialOpen(false)} />}
-          <div className="ad-actions" role="menu">
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/dialer"); }}><span className="ad-ic"><PhoneCall size={18} /></span>Dialer</button>
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/sale"); }}><span className="ad-ic"><Receipt size={18} /></span>Submit sale</button>
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/lookups"); }}><span className="ad-ic"><SearchCheck size={18} /></span>Lookups</button>
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent"); }}><span className="ad-ic"><Timer size={18} /></span>My shift</button>
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/chat"); }}><span className="ad-ic"><MessageSquare size={18} /></span>Chat{unread > 0 && <em className="ad-badge">{unread > 99 ? "99+" : unread}</em>}</button>
-            <div className="ad-status">
-              {[["available", "🟢", "Available"], ["away", "⚪", "Away"], ["busy", "🟠", "Busy"]].map(([k, e, l]) => (
-                <button key={k} className={myStatus === k ? "on" : ""} title={l} onClick={() => { setStatus(k); setDialOpen(false); }}>{e}</button>
-              ))}
-            </div>
-          </div>
-          <button className="chat-fab ad-main" aria-label="Quick actions" aria-expanded={dialOpen} onClick={() => setDialOpen((o) => !o)}>
-            {dialOpen ? <X size={24} /> : <Plus size={26} />}
-            {!dialOpen && unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
-          </button>
-        </div>
-      ) : (
-        <div className={"agent-dial" + (dialOpen ? " open" : "")}>
-          {dialOpen && <div className="ad-backdrop" onClick={() => setDialOpen(false)} />}
-          <div className="ad-actions" role="menu">
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin"); }}><span className="ad-ic"><LayoutDashboard size={18} /></span>Overview</button>
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/settings"); }}><span className="ad-ic"><SettingsIcon size={18} /></span>Settings</button>
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/chat"); }}><span className="ad-ic"><MessageSquare size={18} /></span>Chat{unread > 0 && <em className="ad-badge">{unread > 99 ? "99+" : unread}</em>}</button>
-          </div>
-          <button className="chat-fab ad-main" aria-label="Quick actions" aria-expanded={dialOpen} onClick={() => setDialOpen((o) => !o)}>
-            {dialOpen ? <X size={24} /> : <Plus size={26} />}
-            {!dialOpen && unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
-          </button>
-        </div>
-      )}
-
       {invites.slice(0, 1).map((c) => (
         <div key={c.huddle.id} className="call-banner" role="alert">
           <Phone size={18} />
@@ -291,7 +293,8 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
       {notif !== "granted" && <button className="notif-ask ghost" onClick={askNotif}><Phone size={14} /> Turn on phone alerts</button>}
       {huddle.error && <div className="call-banner warn" role="alert"><div>{huddle.error}</div><button className="ghost" onClick={huddle.clearError}><X size={16} /></button></div>}
       {huddle.call && <CallPanel huddle={huddle} me={me} conv={chat.conversations.find((c) => c.id === huddle.call.conversationId)} />}
-      <ErrorBoundary resetKey="float"><FloatDock /></ErrorBoundary>
+      {/* Floating dock: Notepad · Tools · Chats + the quick-actions button. Drag the grip to put it anywhere. */}
+      <ErrorBoundary resetKey="float"><FloatDock extra={speedDial} onMenu={setDialOpen} /></ErrorBoundary>
       <div ref={huddle.audioRef} hidden />
     </ShellCtx.Provider>
   );

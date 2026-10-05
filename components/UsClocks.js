@@ -28,8 +28,8 @@ export default function UsClocks({ compact = false }) {
         const ok = now ? canCall(z.tz, now) : false;
         return (
           <div key={z.tz} className={"usc" + (ok ? " ok" : " off")} title={ok ? "Inside calling hours (8 AM – 9 PM)" : "Outside calling hours"}>
-            <span className="usc-z">{z.label} <em>{z.short} · {day}</em></span>
-            <b className="usc-t num">{time}</b>
+            <span className="usc-z">{z.label} <em>{z.short}</em></span>
+            <b className="usc-t num">{time} <small>{day}</small></b>
             <span className="usc-s"><i aria-hidden="true" />{ok ? "OK to call" : "Quiet hours"}</span>
           </div>
         );

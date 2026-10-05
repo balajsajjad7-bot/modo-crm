@@ -1,4 +1,5 @@
 "use client";
+import { ModoMark, ModoWord } from "@/components/ModoLogo";
 // Opened by scanning the office kiosk QR code with a phone.
 import { useEffect, useState } from "react";
 
@@ -15,7 +16,7 @@ export default function CheckIn() {
   return (
     <main className="login">
       <div className="panel">
-        <div className="pn-logo" style={{ padding: 0 }}><span className="diamond" /><b>Modo</b></div>
+        <div className="pn-logo" style={{ padding: 0 }}><ModoMark size={30} glow={false} /><ModoWord height={14} /></div>
         <h1 style={{ fontSize: 22 }}>Office check-in</h1>
         {state === "loading" && <p className="muted">Checking you in…</p>}
         {state === "done" && <div className="receipt" role="status">{msg}</div>}

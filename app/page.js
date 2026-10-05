@@ -6,6 +6,7 @@ import { ShieldCheck, KeyRound } from "lucide-react";
 import AppearanceToggle from "@/components/Appearance";
 import UsClocks from "@/components/UsClocks";
 import LoginAura from "@/components/LoginAura";
+import ModoLogo from "@/components/ModoLogo";
 
 export default function Login() {
   const [agentId, setId] = useState(""); const [password, setPw] = useState("");
@@ -45,8 +46,8 @@ export default function Login() {
       <div className="corner-toggle"><AppearanceToggle /></div>
       <div className="panel login-card">
         <div className="ova-hero">
-          <span className="ova-orb" aria-hidden="true" />
-          <h1 className="ova-word" aria-label="Modo">Modo</h1>
+          <h1 className="sr-only">Modo</h1>
+          <ModoLogo size={76} stack />
         </div>
         {lock && <div className="err small">{lock} Only admins can sign in right now.</div>}
         {step === "creds" && (

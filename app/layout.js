@@ -1,7 +1,7 @@
 import "./globals.css";
 import PlasmaBackground from "@/components/PlasmaBackground";
 import { bootScript } from "@/components/Appearance";
-export const metadata = { title: "Modo", description: "Call-center CRM: attendance, pipeline, sales, chat and AI", manifest: "/manifest.json", appleWebApp: { capable: true, title: "Modo", statusBarStyle: "black-translucent" }, icons: { icon: "/icon-192.png", apple: "/apple-touch-icon.png" } };
+export const metadata = { title: "Modo", description: "Call-center CRM: attendance, pipeline, sales, chat and AI", manifest: "/manifest.json", appleWebApp: { capable: true, title: "Modo", statusBarStyle: "black-translucent" }, icons: { icon: [{ url: "/logo.svg", type: "image/svg+xml" }, { url: "/favicon-32.png", sizes: "32x32" }, { url: "/icon-192.png", sizes: "192x192" }], apple: "/apple-touch-icon.png" } };
 export const viewport = { themeColor: "#07080f", width: "device-width", initialScale: 1 };
 export default function RootLayout({ children }) {
   return (

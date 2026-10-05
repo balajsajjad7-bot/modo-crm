@@ -1,4 +1,5 @@
 "use client";
+import { ModoMark, ModoWord } from "@/components/ModoLogo";
 // Office entrance screen: rotating QR code for phone check-in, plus an ID/password pad. Keep it open on a tablet or TV.
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
@@ -31,7 +32,7 @@ export default function Kiosk() {
     <main className="kiosk">
       <div className="corner-toggle"><AppearanceToggle /></div>
       <div className="stack" style={{ gap: 22 }}>
-        <div className="row" style={{ gap: 10 }}><span className="pn-logo" style={{ padding: 0 }}><span className="diamond" /><b>Modo</b></span><span className="muted">Office check-in</span></div>
+        <div className="row" style={{ gap: 10 }}><span className="pn-logo" style={{ padding: 0 }}><ModoMark size={30} glow={false} /><ModoWord height={14} /></span><span className="muted">Office check-in</span></div>
         <div><div className="clock">{now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}<span style={{ fontSize: "40%", opacity: .6 }}>:{String(now.getSeconds()).padStart(2, "0")}</span></div>
           <div className="muted" style={{ fontSize: 20 }}>{now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}</div></div>
         <div className="row" style={{ gap: 24, alignItems: "flex-start" }}>
