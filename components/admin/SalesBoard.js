@@ -5,7 +5,7 @@ import { usePoll, api } from "./api";
 import SaleCard from "@/components/SaleCard";
 import EmailComposer from "@/components/EmailComposer";
 import { useShell } from "@/components/Shell";
-import { Search, ChevronsUpDown } from "lucide-react";
+import { Search, ChevronsUpDown, ChevronLeft, ChevronRight, LayoutGrid, RectangleHorizontal } from "lucide-react";
 
 const TABS = [["NEW", "New"], ["VERIFIED", "Active"], ["REJECTED", "Not active"], ["ALL", "All"]];
 
@@ -14,6 +14,10 @@ export default function SalesBoard() {
   const [tab, setTab] = useState("NEW"); const [q, setQ] = useState(""); const [office, setOffice] = useState(""); const [camp, setCamp] = useState(""); const [camps, setCamps] = useState([]);
   useEffect(() => { api("/api/org").then((r) => r.ok && setCamps(Array.isArray(r.data.campaigns) ? r.data.campaigns : [])); }, []);
   const { me } = useShell(); const [mail, setMail] = useState(null);
+  // One sale at a time (wide, with Previous / Next) or the grid of cards
+  const [one, setOne] = useState(true); const [idx, setIdx] = useState(0); const touch = useRef(null);
+  useEffect(() => { try { const v = localStorage.getItem("modo-sales-view"); if (v) setOne(v === "one"); } catch {} }, []);
+  const setView = (v) => { setOne(v); try { localStorage.setItem("modo-sales-view", v ? "one" : "grid"); } catch {} };
   const [local, setLocal] = useState({}); const [gone, setGone] = useState({}); const [expand, setExpand] = useState(false);
   const list = useMemo(() => (data || []).filter((s) => !gone[s.id]).map((s) => { const c = camps.find((x) => x.id === s.campaignId); return { ...s, status: local[s.id] || s.status, campaignName: c?.name, campaignColor: c?.color }; }), [data, local, gone, camps]);
   const count = (st) => list.filter((s) => st === "ALL" || s.status === st).length;
@@ -21,6 +25,14 @@ export default function SalesBoard() {
     (!q || [s.orderNumber, s.customer, s.phone, s.email, s.device, s.user?.name, s.closer, s.zip, s.locationCode].join(" ").toLowerCase().includes(q.toLowerCase())));
   const offices = [...new Set(list.map((s) => s.office).filter(Boolean))];
   const active = list.filter((s) => s.status === "VERIFIED");
+  const cur = Math.min(idx, Math.max(0, shown.length - 1));
+  const go = (d) => { setIdx((i) => Math.max(0, Math.min(shown.length - 1, Math.min(i, shown.length - 1) + d))); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  useEffect(() => { setIdx(0); }, [tab, q, office, camp]);
+  useEffect(() => {
+    if (!one) return;
+    const key = (e) => { if (/input|textarea|select/i.test(e.target.tagName) || document.querySelector(".sale-card.max")) return; if (e.key === "ArrowRight") go(1); if (e.key === "ArrowLeft") go(-1); };
+    window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
+  }, [one, shown.length]); // eslint-disable-line
   const activeValue = active.reduce((t, s) => t + (s.deviceValue || 0), 0);
   const unpriced = active.filter((s) => s.device && s.deviceValue == null).length;
   // Return labels (Shippo) set up?
@@ -55,12 +67,29 @@ export default function SalesBoard() {
       <div className="toolbar">
         <nav className="seg" role="tablist">{TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{l} <span className="muted">({count(k)})</span></button>)}</nav>
         <label className="sl-search" style={{ margin: 0, maxWidth: 340, flex: 1, background: "rgba(255,255,255,.06)" }}><Search size={14} /><input placeholder="Order #, customer, phone, device, agent…" value={q} onChange={(e) => setQ(e.target.value)} /></label>
-        <button className="ghost sm" onClick={() => setExpand(!expand)}><ChevronsUpDown size={14} /> {expand ? "Collapse all" : "Expand all"}</button>
+        <nav className="seg view-seg" aria-label="View"><button aria-selected={one} onClick={() => setView(true)}><RectangleHorizontal size={14} /> One at a time</button><button aria-selected={!one} onClick={() => setView(false)}><LayoutGrid size={14} /> Grid</button></nav>
+        {!one && <button className="ghost sm" onClick={() => setExpand(!expand)}><ChevronsUpDown size={14} /> {expand ? "Collapse all" : "Expand all"}</button>}
         {camps.length > 0 && <select value={camp} onChange={(e) => setCamp(e.target.value)} style={{ maxWidth: 170 }}><option value="">All campaigns</option>{camps.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>}
         {offices.length > 0 && <select value={office} onChange={(e) => setOffice(e.target.value)} style={{ maxWidth: 170 }}><option value="">All offices</option>{offices.map((o) => <option key={o}>{o}</option>)}</select>}
       </div>
       {!data ? <p className="muted">Loading sales…</p> : !shown.length ? <p className="muted">No {tab === "ALL" ? "" : TABS.find((t) => t[0] === tab)[1].toLowerCase() + " "}sales{q ? " match your search" : " yet"}.</p> : (
+        one ? (
+          <div className="sale-one" onTouchStart={(e) => (touch.current = e.touches[0].clientX)} onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touch.current ?? 0); if (Math.abs(dx) > 80 && !e.target.closest(".sm-map-wrap")) go(dx < 0 ? 1 : -1); }}>
+            <div className="sale-pager">
+              <button className="ghost" onClick={() => go(-1)} disabled={cur === 0}><ChevronLeft size={16} /> Previous</button>
+              <span className="sale-pos"><b>{cur + 1}</b> of {shown.length}</span>
+              <button onClick={() => go(1)} disabled={cur >= shown.length - 1}>Next sale <ChevronRight size={16} /></button>
+            </div>
+            <SaleCard key={shown[cur].id} s={shown[cur]} labels={labels} onStatus={setStatus} onDelete={remove} onEmail={setMail} defaultOpen wide />
+            {shown.length > 1 && <div className="sale-pager bottom">
+              <button className="ghost" onClick={() => go(-1)} disabled={cur === 0}><ChevronLeft size={16} /> Previous</button>
+              <div className="sale-dots">{shown.slice(Math.max(0, cur - 6), cur + 7).map((x) => { const i = shown.indexOf(x); return <button key={x.id} className={"sale-dot" + (i === cur ? " on" : "")} title={`#${x.orderNumber || ""} ${x.customer || ""}`} onClick={() => { setIdx(i); window.scrollTo({ top: 0, behavior: "smooth" }); }} aria-label={`Sale ${i + 1}`} />; })}</div>
+              <button onClick={() => go(1)} disabled={cur >= shown.length - 1}>Next sale <ChevronRight size={16} /></button>
+            </div>}
+          </div>
+        ) : (
         <div className="sale-grid">{shown.map((s, i) => <div key={s.id} className="rise" style={{ animationDelay: Math.min(i, 12) * 45 + "ms" }}><SaleCard key={s.id + (expand ? "o" : "c")} s={s} labels={labels} onStatus={setStatus} onDelete={remove} onEmail={setMail} defaultOpen={expand} /></div>)}</div>
+        )
       )}
       {mail && <EmailComposer to={mail.email} sender={me?.name} saleId={mail.id}
         data={{ customer: (mail.customer || "").split(" ")[0], orderNumber: mail.orderNumber, device: mail.device, storage: mail.storage, deviceColor: mail.deviceColor, gift: mail.gift, billBefore: mail.billBefore, billAfter: mail.billAfter, discountPct: mail.discountPct, nextBillDate: mail.nextBillDate }}

@@ -139,7 +139,7 @@ function ReturnLabel({ s, labels, onPatch }) {
   );
 }
 
-export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview, labels, defaultOpen = false }) {
+export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview, labels, defaultOpen = false, wide = false }) {
   const [open, setOpen] = useState(defaultOpen);
   const [max, setMax] = useState(false);
   useEffect(() => {
@@ -167,7 +167,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
   return (
     <Portal on={max}>
     {max && <div className="sale-max-bg" onClick={() => setMax(false)} />}
-    <article className={"sale-card " + cls[status] + (max ? " max" : "")}>
+    <article className={"sale-card " + cls[status] + (max ? " max" : "") + (wide && !max ? " wide" : "")}>
       {!preview && (
         <div className="sale-winbtns">
           {(open || max) && <button className="ghost sm icon-btn" title="Minimise" aria-label="Minimise" onClick={() => { setMax(false); setOpen(false); }}><Minimize2 size={14} /></button>}
@@ -223,6 +223,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
 
       {open && (
         <div className="sale-details">
+          <div className="sd-a">
           {!preview && (
             <div className="sale-actions">
               {s.phone && <a className="btn-link" href={`tel:+1${String(s.phone).replace(/\D/g, "").slice(-10)}`}><Phone size={13} /> Call</a>}
@@ -233,8 +234,6 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
             </div>
           )}
           {s.notes ? <section className="sale-sec sale-notes"><h4><StickyNote size={13} /> Notes</h4><div className="sf-v" style={{ fontWeight: 600, whiteSpace: "pre-wrap" }}>{s.notes}</div></section> : null}
-          {!preview && s.id && <section className="sale-sec"><h4><MapPin size={13} /> Where the customer is · nearest UPS</h4><SaleMap sale={s} big={max} /></section>}
-          {!preview && s.id && <ReturnLabel s={s} labels={labels} onPatch={onPatch} />}
           <section className="sale-sec"><h4><Smartphone size={13} /> Device</h4><div className="sf-grid">
             <F label="Device" value={v(s.device)} /><F label="Color" value={v(s.deviceColor)} /><F label="Storage" value={v(s.storage)} />
             <F label="Specifications" value={v(s.specs)} /><F label={<><Gift size={11} /> Gift</>} value={v(s.gift)} />
@@ -252,6 +251,11 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
           <section className="sale-sec"><h4><Building2 size={13} /> Team</h4><div className="sf-grid">
             <F label="Office" value={v(s.office)} /><F label="Location code" value={v(s.locationCode)} /><F label="Sent by" value={v(s.user?.name || s.sentBy)} /><F label="Closed by" value={v(s.closer)} />
           </div></section>
+          </div>
+          <div className="sd-b">
+          {!preview && s.id && <section className="sale-sec"><h4><MapPin size={13} /> Where the customer is · nearest UPS</h4><SaleMap sale={s} big={max} /></section>}
+          {!preview && s.id && <ReturnLabel s={s} labels={labels} onPatch={onPatch} />}
+          </div>
         </div>
       )}
 

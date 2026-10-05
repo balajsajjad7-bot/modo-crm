@@ -2242,3 +2242,23 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 @media (max-width:760px){.smap.big .sm-body{grid-template-columns:1fr}.sale-card.max{inset:0;border-radius:0}}
 .sale-card.max{background:rgb(var(--bg2))!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:0 30px 90px rgba(0,0,0,.6)!important}
 [data-appearance="light"] .sale-card.max{background:#fff!important}
+
+/* Sales: one sale at a time, wide two-column card */
+.sale-details{display:flex;flex-direction:column}
+.sd-a,.sd-b{display:contents}
+.sd-a>.sale-actions{order:1}.sd-a>.sale-notes{order:2}.sd-b>*{order:3}.sd-a>.sale-sec:not(.sale-notes){order:4}
+.sale-one{display:grid;gap:12px}
+.sale-pager{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sale-pager button{display:inline-flex;align-items:center;gap:6px}
+.sale-pos{font-size:14px;color:var(--muted-fg)}.sale-pos b{color:rgb(var(--fg));font-size:16px}
+.sale-dots{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
+.sale-dot{width:10px;height:10px;padding:0!important;border-radius:50%!important;background:rgba(var(--fg),.2)!important;border:none!important;box-shadow:none!important;min-height:0}
+.sale-dot.on{background:var(--accent)!important;width:22px;border-radius:6px!important}
+.view-seg button{display:inline-flex;align-items:center;gap:6px}
+@media (min-width:901px){
+  .sale-card.wide .sale-details{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start}
+  .sale-card.wide .sd-a,.sale-card.wide .sd-b{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .sale-card.wide .sd-b{position:sticky;top:90px}
+  .sale-card.wide .sm-map-wrap{height:420px}
+}
+@media (max-width:600px){.sale-pager button{padding:8px 12px}.sale-pager.bottom .sale-dots{display:none}}
