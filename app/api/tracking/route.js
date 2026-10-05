@@ -12,7 +12,7 @@ export async function GET() {
   const rows = await db.sale.findMany({
     where: { status: { not: "REJECTED" }, OR: [{ trackingNo: { not: null } }, { orderNumber: { not: null } }] },
     orderBy: { createdAt: "desc" }, take: 800,
-    select: { id: true, receipt: true, customer: true, phone: true, zip: true, email: true, orderNumber: true, trackingNo: true, carrier: true, trackStatus: true, trackStage: true, trackUpdatedAt: true, deliveredAt: true, createdAt: true, device: true, office: true, user: { select: { name: true } } },
+    select: { id: true, receipt: true, customer: true, phone: true, zip: true, email: true, locationCode: true, orderNumber: true, trackingNo: true, carrier: true, trackStatus: true, trackStage: true, trackUpdatedAt: true, deliveredAt: true, createdAt: true, device: true, office: true, user: { select: { name: true } } },
   });
   return NextResponse.json({ configured: !!cfg, rows });
 }

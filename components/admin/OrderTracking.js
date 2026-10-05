@@ -2,7 +2,7 @@
 // Admin report: automatic order tracking — which packages are delivered and which aren't.
 import { useEffect, useMemo, useState } from "react";
 import { usePoll, api } from "./api";
-import { PackageSearch, RefreshCw, Search, Download, ExternalLink, Plug } from "lucide-react";
+import { PackageSearch, RefreshCw, Search, Download, ExternalLink, Plug, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import OrderCheck from "@/components/OrderCheck";
 
@@ -22,6 +22,12 @@ const trackUrl = (r) => (CARRIER_URL[(r.carrier || "").toLowerCase()] || ((t) =>
 const badgeClass = (s) => s === "delivered" ? "ok" : s === "exception" || s === "returned" ? "red" : s === "out_for_delivery" ? "ok" : "late";
 const fmt = (d) => d ? new Date(d).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
+// Click-to-copy cell (order number, location code)
+function CopyCell({ v }) {
+  const [ok, setOk] = useState(false);
+  return <button className="copy-cell" title="Copy" onClick={async () => { try { await navigator.clipboard.writeText(String(v)); setOk(true); setTimeout(() => setOk(false), 1200); } catch {} }}>{v}{ok ? <Check size={12} /> : <Copy size={12} />}</button>;
+}
+
 export default function OrderTracking() {
   const [{ data }, reload] = usePoll("/api/tracking", 60000);
   const [q, setQ] = useState(""); const [filter, setFilter] = useState("all"); const [busy, setBusy] = useState(false); const [msg, setMsg] = useState("");
@@ -37,7 +43,7 @@ export default function OrderTracking() {
   const rows = data?.rows || [];
   const list = useMemo(() => rows.filter((r) => {
     const s = q.trim().toLowerCase();
-    const matchQ = !s || (`${r.customer} ${r.orderNumber} ${r.trackingNo} ${r.user?.name}`.toLowerCase().includes(s));
+    const matchQ = !s || (`${r.customer} ${r.orderNumber} ${r.locationCode || ""} ${r.trackingNo} ${r.user?.name}`.toLowerCase().includes(s));
     const st = r.trackStatus || "pending";
     const matchF = filter === "all" || (filter === "notdelivered" ? st !== "delivered" : st === filter);
     return matchQ && matchF;
@@ -46,8 +52,8 @@ export default function OrderTracking() {
   const delivered = n("delivered"); const notDel = rows.length - delivered;
 
   function exportCsv() {
-    const head = ["Customer", "Order #", "Carrier", "Tracking", "Status", "Latest update", "Delivered", "Agent"];
-    const body = list.map((r) => [r.customer, r.orderNumber, r.carrier, r.trackingNo, STATUS_LABEL[r.trackStatus] || "—", r.trackStage, r.deliveredAt ? new Date(r.deliveredAt).toLocaleString() : "", r.user?.name]);
+    const head = ["Customer", "Order #", "Location code", "Carrier", "Tracking", "Status", "Latest update", "Delivered", "Agent"];
+    const body = list.map((r) => [r.customer, r.orderNumber, r.locationCode || "", r.carrier, r.trackingNo, STATUS_LABEL[r.trackStatus] || "—", r.trackStage, r.deliveredAt ? new Date(r.deliveredAt).toLocaleString() : "", r.user?.name]);
     const csv = [head, ...body].map((row) => row.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "order-tracking.csv"; a.click();
   }
@@ -90,11 +96,12 @@ export default function OrderTracking() {
       <section className="panel">
         {!list.length ? <p className="muted" style={{ margin: 0 }}>No orders match. Agents add a tracking number when submitting a sale.</p> : (
           <div className="tablewrap"><table>
-            <thead><tr><th>Customer</th><th>Order #</th><th>Carrier</th><th>Status</th><th>Latest update</th><th>Delivered</th><th>Agent</th><th></th></tr></thead>
+            <thead><tr><th>Customer</th><th>Order #</th><th>Location code</th><th>Carrier</th><th>Status</th><th>Latest update</th><th>Delivered</th><th>Agent</th><th></th></tr></thead>
             <tbody>{list.map((r) => (
               <tr key={r.id}>
                 <td>{r.customer || "—"}<div className="muted small num">{r.trackingNo || r.orderNumber}</div></td>
-                <td className="num">{r.orderNumber || "—"}</td>
+                <td className="num">{r.orderNumber ? <CopyCell v={r.orderNumber} /> : "—"}</td>
+                <td className="num">{r.locationCode ? <CopyCell v={r.locationCode} /> : "—"}</td>
                 <td className="small">{(r.carrier || "auto").toUpperCase()}</td>
                 <td><span className={"chip " + badgeClass(r.trackStatus)}>{STATUS_LABEL[r.trackStatus] || "Not checked"}</span></td>
                 <td className="small" style={{ maxWidth: 320 }}>{r.trackStage || "—"}<div className="muted small">{fmt(r.trackUpdatedAt)}</div></td>

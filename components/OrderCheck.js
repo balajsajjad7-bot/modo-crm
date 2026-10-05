@@ -29,17 +29,39 @@ export default function OrderCheck({ s, onSaved }) {
 
   async function go() {
     setMsg("");
+    const url = CARRIER_ORDER_PAGES[carrier];
+    const code = encodeFill(s, location.origin, carrier);
+    // 1) Android: the Modo app opens the carrier page itself, fills it, reads the status and saves it.
+    //    If the app (or this version of it) isn't installed, Android falls back to opening the page normally.
+    if (/Android/i.test(navigator.userAgent)) {
+      await copy(String(s.orderNumber || ""), "Order #");
+      setMsg("Opening in the Modo app — it fills the order and saves the status by itself. (No app? The page opens in Chrome; the order number is copied.)");
+      location.href = `intent://check?d=${encodeURIComponent(code)}&u=${encodeURIComponent(url)}#Intent;scheme=modo;package=com.modo.crm;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+      return;
+    }
+    // 2) Computer with the Modo Fill add-on: fully automatic.
+    if (document.documentElement.dataset.modoFill === "1") {
+      window.open(url + "#modo=" + encodeURIComponent(code), "_blank");
+      setMsg("Verizon is opening — Modo Fill types the details, searches and saves the status here by itself.");
+      return;
+    }
+    // 3) iPhone / phone without the app: copy the order number, then paste or screenshot the result back.
     if (phone) {
       const ok = await copy(String(s.orderNumber || ""), "Order #");
-      window.open(CARRIER_ORDER_PAGES[carrier], "_blank");
+      window.open(url, "_blank");
       setMsg((ok ? "Order number copied — paste it on the carrier page" : "Type the order number on the carrier page") + (s.zip ? ` and enter ZIP ${String(s.zip).slice(0, 5)}` : "") + ". Then copy the result (or take a screenshot) and come back here.");
       return;
     }
-    const code = encodeFill(s, location.origin, carrier);
+    // 4) Computer without the add-on: the bookmark.
     const ok = await copy(code, "code");
-    window.open(CARRIER_ORDER_PAGES[carrier], "_blank");
-    setMsg(ok ? "Order details copied. On the carrier page, click your “Modo Fill” bookmark." : "Couldn't copy automatically — use the copy buttons below.");
+    window.open(url, "_blank");
+    setMsg(ok ? "Order details copied. On the carrier page, click your “Modo Fill” bookmark — or install the Modo Fill add-on below so it happens by itself." : "Couldn't copy automatically — use the copy buttons below.");
   }
+  // Refresh when the add-on / app saves a status in another tab.
+  useEffect(() => {
+    const on = (e) => { if (e.key !== "modo-order-status" || !e.newValue) return; try { const d = JSON.parse(e.newValue); if (d.id === s.id) { setMsg(`Saved: ${d.trackStage}`); onSaved?.(d); } } catch {} };
+    window.addEventListener("storage", on); return () => window.removeEventListener("storage", on);
+  }, [s.id]); // eslint-disable-line
   const applyPasted = (text) => {
     setPasted(text);
     const r = detectStatus(text, s.orderNumber);
@@ -88,7 +110,7 @@ export default function OrderCheck({ s, onSaved }) {
         {msg && <p className="small" style={{ margin: 0 }}>{msg}</p>}
 
         <div className="oc-fields">
-          {[["Order #", s.orderNumber], ["ZIP", String(s.zip || "").slice(0, 5)], ["Email", s.email], ["Last name", String(s.customer || "").trim().split(/\s+/).slice(-1)[0]], ["Phone", s.phone]].filter(([, v]) => v).map(([l, v]) => (
+          {[["Order #", s.orderNumber], ["Location code", s.locationCode], ["ZIP", String(s.zip || "").slice(0, 5)], ["Email", s.email], ["Last name", String(s.customer || "").trim().split(/\s+/).slice(-1)[0]], ["Phone", s.phone]].filter(([, v]) => v).map(([l, v]) => (
             <button key={l} className="oc-f" onClick={() => copy(String(v), l)} title={"Copy " + l}><span>{l}</span><b>{v}</b>{copied === l ? <Check size={13} /> : <Copy size={13} />}</button>
           ))}
         </div>
@@ -97,7 +119,14 @@ export default function OrderCheck({ s, onSaved }) {
           <div className="oc-phone small"><Smartphone size={15} /> <span>On a phone: <b>1</b> open the carrier page above, <b>2</b> paste the order number{ s.zip ? <> and ZIP <b>{String(s.zip).slice(0, 5)}</b></> : null} and search, <b>3</b> copy the result or take a screenshot, <b>4</b> come back and use “Bring the result back” below.</span></div>
         ) : (
         <details className="oc-help">
-          <summary><Bookmark size={14} /> First time? Add the “Modo Fill” bookmark (one time, 10 seconds)</summary>
+          <summary><Bookmark size={14} /> Make it automatic on this computer (one-time setup)</summary>
+          <p className="small" style={{ margin: "10px 0 4px" }}><b>Best: the Modo Fill add-on</b> — after this, Check order fills Verizon, searches and saves the status with no clicks.</p>
+          <ol className="small">
+            <li><a href="/downloads/modo-fill-addon.zip" download>Download Modo Fill (zip)</a> and unzip it (right-click → Extract all).</li>
+            <li>In Chrome or Edge open <code>chrome://extensions</code> (Edge: <code>edge://extensions</code>) and turn on <b>Developer mode</b>.</li>
+            <li>Press <b>Load unpacked</b> and pick the unzipped <b>modo-fill-addon</b> folder. Then reload Modo.</li>
+          </ol>
+          <p className="small" style={{ margin: "10px 0 4px" }}><b>Or the bookmark</b> (one click on the Verizon page each time):</p>
           <ol className="small">
             <li>Show your bookmarks bar: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>.</li>
             <li>Drag this button onto the bookmarks bar: <a ref={bm} className="oc-bm" onClick={(e) => { e.preventDefault(); setMsg("Drag it to the bookmarks bar — don't click it here."); }}>⚡ Modo Fill</a></li>

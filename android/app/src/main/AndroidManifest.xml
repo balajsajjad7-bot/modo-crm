@@ -56,6 +56,21 @@
       </intent-filter>
     </activity>
 
+    <!-- Check order: opens the carrier's order page in-app and fills it automatically -->
+    <activity
+        android:name=".OrderCheckActivity"
+        android:exported="true"
+        android:label="Check order"
+        android:theme="@android:style/Theme.Material.NoActionBar"
+        android:configChanges="orientation|screenSize|keyboardHidden">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="modo" android:host="check" />
+      </intent-filter>
+    </activity>
+
     <provider
         android:name="androidx.core.content.FileProvider"
         android:authorities="com.modo.crm.fileprovider"

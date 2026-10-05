@@ -1581,7 +1581,7 @@ body:has(.mic-banner) .chat-fab{bottom:calc(60px + env(safe-area-inset-bottom,0p
 /* Primary buttons: ember gradient, subtle shine, tactile press */
 button:not(.ghost):not(.toggle):not(.pn-item):not(.pn-user):not(.chip-btn):not(.seg button):not(.appear2 button):not(.search-item):not(.lk-tool):not(.conn-tile):not(.dock-item):not(.danger):not(.icon-btn):not(.np-item):not(.sl-item):not(:is(
   .sl-tools button,.sl-actions button,.sl-picker button,.sl-mentions button,.sl-icon,.sl-fold,.sl-add,.sl-members,.sl-topic,.sl-react,.sl-replies,.sl-huddle,
-  .fl-btn,.fl-fab,.fl-grip,.fl-conv,.ft-tabs button,.ft-keys button,.oc-f,.pal-btn,.pal-menu button,.ad-item,.ad-status button,.pn-burger,.pn-menu button,.days button,.status-switch button,.appear button,[role="tab"],[role="menuitem"])){
+  .fl-btn,.fl-fab,.fl-grip,.fl-conv,.ft-tabs button,.ft-keys button,.oc-f,.copy-cell,.pal-btn,.pal-menu button,.ad-item,.ad-status button,.pn-burger,.pn-menu button,.days button,.status-switch button,.appear button,[role="tab"],[role="menuitem"])){
   background:var(--grad-ember)!important;border:none!important;color:#fff!important;
   box-shadow:0 6px 18px rgba(var(--p),.30),inset 0 1px 0 rgba(255,255,255,.28)!important;letter-spacing:.005em;
 }
@@ -1892,3 +1892,6 @@ svg.lucide{flex-shrink:0}
 @media (max-width:560px){.oc-fields{grid-template-columns:1fr 1fr}.oc-f b{font-size:13px}}
 .usc-z{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .usc-t small{font-size:11px;font-weight:600;color:var(--muted-fg);letter-spacing:.04em}
+.copy-cell{display:inline-flex!important;align-items:center;gap:6px;padding:3px 8px!important;border-radius:8px!important;background:transparent!important;border:1px dashed var(--border)!important;
+  color:var(--foreground)!important;box-shadow:none!important;font:600 13px var(--font)!important;font-variant-numeric:tabular-nums;cursor:copy}
+.copy-cell svg{opacity:.55}.copy-cell:hover{border-color:rgba(var(--p),.6)!important}.copy-cell:hover svg{opacity:1}

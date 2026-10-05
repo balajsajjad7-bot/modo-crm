@@ -1,43 +1,4 @@
-// "Modo Fill" bookmarklet: runs on the carrier's order-status page (Verizon first), fills the order number,
-// ZIP, email and last name that Modo put on the clipboard, presses the search button, reads the status off
-// the page and sends it back to the sale in Modo. Everything runs in the agent's own browser — no API keys,
-// no server scraping (carriers block that), nothing installed except one bookmark.
-//
-// Clipboard payload: "MODO1:" + base64(JSON {o: order, z: zip, e: email, l: last name, p: phone, id: sale id, u: Modo origin, c: carrier})
-
-export const FILL_PREFIX = "MODO1:";
-
-export const CARRIER_ORDER_PAGES = {
-  verizon: "https://www.verizon.com/digital/nsa/nos/ui/orders/trackmyorder/",
-  att: "https://www.att.com/orderstatus/",
-  tmobile: "https://www.t-mobile.com/order-status",
-};
-
-export const ORDER_STATUSES = ["Order received", "Processing", "Shipped", "Out for delivery", "Delivered", "Ready for pickup", "Backordered", "Activated", "Cancelled", "Other"];
-
-// Map a carrier's wording to Modo's tracking status (used by the Order tracking page).
-export function normalizeOrderStatus(s) {
-  const t = String(s || "").toLowerCase();
-  if (/deliver(ed)?\b/.test(t) && !/out for/.test(t)) return "delivered";
-  if (/out for delivery/.test(t)) return "out_for_delivery";
-  if (/ship|transit/.test(t)) return "in_transit";
-  if (/cancel|return/.test(t)) return /return/.test(t) ? "returned" : "exception";
-  if (/back ?order|delay|hold|problem|exception/.test(t)) return "exception";
-  if (/pick ?up/.test(t)) return "dropped_off";
-  return "pending";
-}
-
-export function encodeFill(sale, origin, carrier = "verizon") {
-  const name = String(sale.customer || "").trim().split(/\s+/);
-  const data = { o: String(sale.orderNumber || "").trim(), z: String(sale.zip || "").replace(/\D/g, "").slice(0, 5), e: sale.email || "", l: name.length > 1 ? name[name.length - 1] : "",
-    p: String(sale.phone || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""), id: sale.id, u: origin, c: carrier };
-  return FILL_PREFIX + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-}
-
-// Status is only read once the order number itself shows up on the page (the results), so marketing text
-// on the search form ("track a delivered order…") can't be mistaken for a status.
-// The bookmarklet source (kept readable here; minified into a javascript: URL below).
-const SRC = String.raw`(async()=>{
+(async()=>{
 const P='MODO1:';const AUTO=!!window.__MODO_AUTO;let raw=String(window.__MODO_CODE||'').trim();
 if(!raw.startsWith(P)&&!AUTO){try{raw=(await navigator.clipboard.readText()||'').trim()}catch(e){}
 if(!raw.startsWith(P))raw=(prompt('Modo Fill: paste the order code from Modo (Ctrl+V)')||'').trim();}
@@ -71,24 +32,4 @@ const sub=all('button,input[type=submit],a[role=button]').find(b=>vis(b)&&!b.dis
 const K='mf-'+d.o;let once='';try{once=sessionStorage.getItem(K)||''}catch(e){}if(n&&sub&&(!once||force)){try{sessionStorage.setItem(K,'1')}catch(e){}setTimeout(()=>sub.click(),400)}
 let tries=0;const t=setInterval(()=>{const r=scan();if(r||++tries>30){clearInterval(t);r?(render(r.st,r.snip,AUTO?'Found the status — saving it to Modo…':'Found the status on this page — check it and save.'),AUTO&&(()=>{let k=3;const b=box.querySelector('#mf-save');const tick=()=>{if(!box.isConnected||box.dataset.stop)return;if(k===0){b.click();return}b.textContent='Saving in '+k--+'… (tap the status to change)';setTimeout(tick,1000)};tick()})()):render(null,'','No status found yet. If the page asks you to sign in or verify, do that, then press Fill again. Or pick the status yourself and save.')}},1000)};
 go();
-})()`;
-
-export const FILL_SRC = SRC;
-
-export const BOOKMARKLET = "javascript:" + encodeURIComponent(SRC.replace(/\n/g, ""));
-
-// Read a status out of text the agent copied from the carrier's page (phone flow, no bookmark needed).
-const WORDS = [["out for delivery", "Out for delivery"], ["delivered", "Delivered"], ["in transit", "Shipped"], ["shipped", "Shipped"], ["ready for pickup", "Ready for pickup"],
-  ["backordered", "Backordered"], ["back ordered", "Backordered"], ["on backorder", "Backordered"], ["on hold", "Backordered"], ["delayed", "Backordered"], ["cancelled", "Cancelled"], ["canceled", "Cancelled"],
-  ["activated", "Activated"], ["processing", "Processing"], ["in progress", "Processing"], ["pending", "Processing"], ["order received", "Order received"], ["received", "Order received"], ["complete", "Delivered"]];
-export function detectStatus(text, orderNumber) {
-  const body = String(text || ""); const low = body.toLowerCase();
-  const at = orderNumber ? low.indexOf(String(orderNumber).toLowerCase()) : -1;
-  const zone = at >= 0 ? low.slice(Math.max(0, at - 600), at + 1500) : low;
-  const base = at >= 0 ? Math.max(0, at - 600) : 0;
-  let best = null;
-  for (const [w, st] of WORDS) { const i = zone.indexOf(w); if (i >= 0 && (!best || i < best.i)) best = { i, st, w }; }
-  if (!best) return null;
-  const s = base + best.i;
-  return { status: best.st, note: body.slice(Math.max(0, s - 60), s + 140).replace(/\s+/g, " ").trim() };
-}
+})()

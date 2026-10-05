@@ -15,14 +15,15 @@ export default function OrderStatusReturn() {
         if (!ok) return setSt({ state: "error", msg: d.error || "Couldn't save." });
         setSt({ state: "done", sale: d.sale });
         try { localStorage.setItem("modo-order-status", JSON.stringify({ ...d.sale, at: Date.now() })); } catch {}
-        setTimeout(() => { try { window.close(); } catch {} }, 1800);
+        // Opened by the add-on/bookmark → close this tab. Opened by the Android app → go back to Sales.
+        setTimeout(() => { try { window.close(); } catch {} setTimeout(() => location.replace(document.referrer && !/order-status/.test(document.referrer) ? document.referrer : "/admin/sales"), 300); }, 1800);
       }).catch(() => setSt({ state: "error", msg: "Can't reach Modo. Check the internet connection." }));
   }, []);
   return (
     <main className="login">
       <div className="panel stack" style={{ maxWidth: 420, textAlign: "center", alignItems: "center" }}>
         {st.state === "saving" && <p className="muted">Saving the order status to Modo…</p>}
-        {st.state === "done" && <><PackageCheck size={36} style={{ color: "var(--green)" }} /><h2>Saved to order #{st.sale?.orderNumber}</h2><p className="muted small" style={{ margin: 0 }}>{st.sale?.trackStage}</p><p className="muted small" style={{ margin: 0 }}>This tab closes by itself.</p></>}
+        {st.state === "done" && <><PackageCheck size={36} style={{ color: "var(--green)" }} /><h2>Saved to order #{st.sale?.orderNumber}</h2><p className="muted small" style={{ margin: 0 }}>{st.sale?.trackStage}</p><p className="muted small" style={{ margin: 0 }}>Taking you back…</p></>}
         {st.state === "error" && <><AlertTriangle size={34} style={{ color: "var(--amber)" }} /><h2>Not saved</h2><p className="small" style={{ margin: 0 }}>{st.msg}</p>{/Sign in/.test(st.msg) && <a href="/">Sign in to Modo</a>}</>}
       </div>
     </main>
