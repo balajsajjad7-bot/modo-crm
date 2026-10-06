@@ -53,6 +53,7 @@ export default function VoiceDialer() {
         <div className="dl-meta"><span>Modo phone</span><span className="muted">{sp?.cfg?.user ? `line ${sp.cfg.user}` : "VICIdial lines"}</span></div>
       </section>
       <PhoneStatus />
+      {sp?.reg !== "registered" && <section className="panel dl-hint"><AlertCircle size={18} /><div><b>Modo phone not connected?</b> Use VICIdial's own phone instead: open <a href={typeof location !== "undefined" && location.pathname.startsWith("/admin") ? "/admin/autodial" : "/agent/dialer"}>the Dialer → VICIdial screen</a> and make calls right there (works through the dialer's firewall).</div></section>}
 
       <div className="dl-grid">
         <section className="panel stack dl-phone">

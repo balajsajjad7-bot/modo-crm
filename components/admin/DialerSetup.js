@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import DownloadLink from "@/components/DownloadLink";
-import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download, Headset } from "lucide-react";
+import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download, Headset, MonitorSmartphone } from "lucide-react";
 
 // Office relay: gets Modo past the dialer's IP firewall by sending requests through a PC in the office.
 function Relay() {
@@ -36,6 +36,24 @@ function Relay() {
       {r.lastSeen && <span className="small muted">Last check-in {new Date(r.lastSeen).toLocaleString()}{r.url ? " · " + r.url.replace("https://", "") : ""}</span>}
       {msg && <p className="small" style={{ margin: 0 }}>{msg}</p>}
       <button className="ghost sm" style={{ justifySelf: "start" }} onClick={renew}>Make a new relay key</button>
+    </section>
+  );
+}
+
+// VICIdial screen inside Modo: shared agent password + campaign so everyone is signed in automatically
+function EmbedSettings({ d, save }) {
+  const [e, setE] = useState(d.embed || {});
+  useEffect(() => setE(d.embed || {}), [d.embed]);
+  return (
+    <section className="panel stack">
+      <h2><MonitorSmartphone size={17} /> VICIdial screen inside Modo</h2>
+      <p className="muted small" style={{ margin: 0 }}>The Dialer page shows the real VICIdial agent screen, signed in for each person. It runs in their own browser, so it works past the dialer's firewall and VICIdial's own phone works in it. Fill these once:</p>
+      <div className="form">
+        <label>Agent password (if all agents share one)<input type="password" value={e.agentPass || ""} onChange={(x) => setE({ ...e, agentPass: x.target.value })} placeholder="VICIdial agent password" autoComplete="off" /></label>
+        <label>Campaign (optional)<input value={e.campaign || ""} onChange={(x) => setE({ ...e, campaign: x.target.value })} placeholder="e.g. VERIZON" /></label>
+      </div>
+      <span className="small muted">Phone login = each person's dialer login (Agents below). Phone password = "Phone password" in Modo phone below.</span>
+      <button className="sm" style={{ justifySelf: "start" }} onClick={() => save({ embed: e }, "Saved. The Dialer page signs everyone in automatically.")}><Save size={13} /> Save</button>
     </section>
   );
 }
@@ -161,6 +179,7 @@ export default function DialerSetup() {
 
       {d.provider === "vicidial" && d.vicidial && <Relay />}
       {d.provider === "vicidial" && <Health />}
+      {d.provider === "vicidial" && d.vicidial && <EmbedSettings d={d} save={save} />}
       {d.provider === "vicidial" && d.vicidial && <WebPhone d={d} save={save} />}
 
       {d.provider === "vicidial" && d.vicidial && (

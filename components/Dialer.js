@@ -8,6 +8,7 @@ import AiButton from "@/components/AiButton";
 import CallAI from "@/components/CallAI";
 import RecentCalls from "@/components/RecentCalls";
 import { PhoneStatus } from "@/components/Softphone";
+import VicidialScreen from "@/components/VicidialScreen";
 import { Phone, PhoneOff, Pause, Play, ParkingCircle, ArrowRightLeft, Circle, ExternalLink, Delete, User, MapPin, Mail, StickyNote, Mic, CheckCircle2, AlertCircle, Loader2, Zap, SkipForward, Square } from "lucide-react";
 
 const post = (b) => fetch("/api/dialer", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }).then(async (r) => ({ ok: r.ok, d: await r.json().catch(() => ({})) }));
@@ -15,7 +16,7 @@ const fmt = (p) => { const d = String(p || "").replace(/\D/g, "").slice(0, 10); 
 const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 const LOOK = { READY: ["Ready", "ready"], QUEUE: ["Ringing", "call"], INCALL: ["On a call", "call"], CLOSER: ["On a call", "call"], PAUSED: ["Paused", "paused"], DEAD: ["Call ended", "dead"], DISPO: ["Wrap-up", "dead"] };
 
-export default function Dialer({ admin = false }) {
+function ModoControls({ admin = false }) {
   const [st, setSt] = useState(null); const [num, setNum] = useState(""); const [busy, setBusy] = useState(""); const [toast, setToast] = useState(null);
   const [since, setSince] = useState(Date.now()); const [now, setNow] = useState(Date.now()); const lastStatus = useRef(null);
   const [pauseCode, setPauseCode] = useState(""); const [xfer, setXfer] = useState(false); const [xNum, setXNum] = useState(""); const [rec, setRec] = useState(false);
@@ -152,6 +153,23 @@ export default function Dialer({ admin = false }) {
         <RecentCalls mine limit={15} title="My recent calls" refreshKey={calls} onRedial={(r) => { if (!inCall) { setNum(r.phone); window.scrollTo({ top: 0, behavior: "smooth" }); } }} />
       </div>
       {toast && <div className={"dl-toast " + (toast.ok ? "ok" : "bad")} role="status">{toast.ok ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />} {toast.text}</div>}
+    </div>
+  );
+}
+
+// Two ways to dial: the real VICIdial screen inside Modo (works in your browser, past the firewall) or
+// Modo's own controls (need Modo's server to reach the dialer).
+export default function Dialer({ admin = false }) {
+  const [mode, setMode] = useState("screen");
+  useEffect(() => { try { const m = localStorage.getItem("modo-dialer-mode"); if (m) setMode(m); } catch {} }, []);
+  const pick = (m) => { setMode(m); try { localStorage.setItem("modo-dialer-mode", m); } catch {} };
+  return (
+    <div className="stack">
+      <nav className="seg" style={{ alignSelf: "flex-start" }} aria-label="Dialer view">
+        <button aria-selected={mode === "screen"} onClick={() => pick("screen")}>VICIdial screen</button>
+        <button aria-selected={mode === "controls"} onClick={() => pick("controls")}>Modo controls</button>
+      </nav>
+      {mode === "screen" ? <VicidialScreen /> : <ModoControls admin={admin} />}
     </div>
   );
 }

@@ -14,7 +14,7 @@ export async function GET() {
     db.user.findMany({ where: { role: { in: ["AGENT", "ADMIN"] } }, orderBy: [{ role: "asc" }, { name: "asc" }], select: { id: true, name: true, agentId: true, role: true, vicidialUser: true, sipUser: true, sipPass: true, active: true } }),
   ]);
   const agentsOut = agents.map(({ sipPass, ...a }) => ({ ...a, sipPassSet: !!sipPass }));
-  return NextResponse.json({ ...cfg, agents: agentsOut, webphone: { ...cfg.webphone, pass: cfg.webphone.pass ? "••••" + cfg.webphone.pass.slice(-2) : "" }, custom: { ...cfg.custom, key: cfg.custom.key ? "••••" + cfg.custom.key.slice(-4) : "" },
+  return NextResponse.json({ ...cfg, agents: agentsOut, webphone: { ...cfg.webphone, pass: cfg.webphone.pass ? "••••" + cfg.webphone.pass.slice(-2) : "" }, embed: { ...cfg.embed, agentPass: cfg.embed.agentPass ? "••••" + cfg.embed.agentPass.slice(-2) : "" }, custom: { ...cfg.custom, key: cfg.custom.key ? "••••" + cfg.custom.key.slice(-4) : "" },
     dispositions: cfg.dispositions || DEFAULT_DISPOS, pauseCodes: cfg.pauseCodes || DEFAULT_PAUSE, actions: ACTIONS, vicidial: vici ? publicView(vici) : null, agents: agentsOut });
 }
 // { provider?, name?, agentsSeeDialer?, dispositions?, pauseCodes?, custom?, links?: [{id, user}], autoMatch?, testAgent? }
@@ -34,6 +34,7 @@ export async function PATCH(req) {
   if (b.dispositions) patch.dispositions = clean(b.dispositions);
   if (b.pauseCodes) patch.pauseCodes = clean(b.pauseCodes);
   if (b.custom) patch.custom = b.custom;
+  if (b.embed) patch.embed = { agentPass: String(b.embed.agentPass || ""), campaign: String(b.embed.campaign || "").trim().slice(0, 30), on: b.embed.on !== false };
   if (b.webphone) patch.webphone = { wss: String(b.webphone.wss || "").trim().slice(0, 200), domain: String(b.webphone.domain || "").trim().slice(0, 120), prefix: String(b.webphone.prefix ?? "").replace(/[^0-9*#]/g, "").slice(0, 6), autoAnswer: b.webphone.autoAnswer !== false, on: b.webphone.on !== false, pass: b.webphone.pass || "" };
   if (Object.keys(patch).length) await saveDialerConfig(patch);
   if (Array.isArray(b.links)) for (const l of b.links) {
