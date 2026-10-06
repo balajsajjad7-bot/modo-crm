@@ -18,14 +18,14 @@ export default function UpsTrack({ s: s0, compact }) {
   const s = own ? { ...s0, ...own } : s0;
   const num = s.returnTracking || (s.trackingNo && (isUpsNo(s.trackingNo) || !/^(verizon|att|tmobile)$/i.test(s.carrier || "")) ? s.trackingNo : null);
   const service = s.returnTracking ? s.returnService : isUpsNo(s.trackingNo) ? "ups" : s.carrier;
-  const [edit, setEdit] = useState(false); const [val, setVal] = useState("");
+  const [edit, setEdit] = useState(false); const [val, setVal] = useState(""); const [saved, setSaved] = useState("");
   async function saveNo(v) {
     setBusy(true); setErr("");
     const r = await fetch("/api/sales/ups-bot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: s.id, trackingNo: v }) });
     const d = await r.json().catch(() => ({})); setBusy(false);
     if (!r.ok) return setErr(d.error || "Couldn't save.");
     setOwn({ trackingNo: d.sale?.trackingNo ?? null, carrier: d.sale?.carrier ?? null, upsAt: null }); setT(pick(d.sale || {})); setEdit(false); setVal("");
-    if (d.needsSetup) setErr("Saved. Connect UPS tracking in Connectors so the bot can follow it.");
+    setSaved(v ? (d.needsSetup ? "Saved on this sale. Connect UPS tracking in Connectors so the bot can read UPS scans." : "Saved on this sale ✓ The Modo bot tracks it from now on and alerts you when it's delivered.") : "");
   }
   const [t, setT] = useState(() => pick(s)); const [busy, setBusy] = useState(false); const [err, setErr] = useState(""); const [open, setOpen] = useState(false); const [copied, setCopied] = useState(false);
   useEffect(() => { setT((x) => (new Date(s.upsAt || 0) >= new Date(x.upsAt || 0) ? pick(s) : x)); }, [s.upsAt, s.upsStatus]); // eslint-disable-line
@@ -93,6 +93,7 @@ export default function UpsTrack({ s: s0, compact }) {
         <button className="ghost sm icon-btn" aria-label="Check UPS now" title="Check UPS now" onClick={check} disabled={busy}><RefreshCw size={13} className={busy ? "spin" : ""} /></button>
         {events.length > 0 && <button className="ghost sm icon-btn" aria-label="Show scans" title="Show UPS scans" onClick={() => setOpen(!open)}><ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "", transition: ".2s" }} /></button>}
       </div>
+      {saved && <p className="small ups-saved">{saved}</p>}
       {(err || t.upsError) && <p className="small ups-err">{err || (/NO_SOURCE/.test(t.upsError) ? "Connect UPS tracking in Connectors so the bot can follow this package." : t.upsError)}</p>}
       {open && <ol className="ups-scans">{events.map((e, n) => <li key={n}><b>{e.msg}</b><span className="small muted">{[e.loc, when(e.at)].filter(Boolean).join(" · ")}</span></li>)}</ol>}
     </div>

@@ -5,16 +5,13 @@ import { runBot, sources } from "@/lib/upsBot";
 
 export const maxDuration = 45;
 
-// Daily safety run (Vercel cron). The bot also runs every few minutes while anyone in management has Modo open.
+// Scheduled tick (Vercel cron daily + GitHub every 30 min, see .github/workflows/ups-bot.yml). Safe to call by anyone:
+// it only refreshes packages not checked in the last 25 minutes and returns counts, never sale data.
 export async function GET(req) {
   const secret = process.env.CRON_SECRET;
-  const authed = secret && req.headers.get("authorization") === `Bearer ${secret}`;
-  if (!authed && !/vercel-cron/i.test(req.headers.get("user-agent") || "")) {
-    const s = await currentUser(); if (!s) return NextResponse.json({ error: "Not allowed." }, { status: 403 });
-    const src = await sources();
-    return NextResponse.json({ ups: !!src.ups, shippo: !!src.shippo, aftership: !!src.aftership });
-  }
-  return NextResponse.json(await runBot({ limit: 40, staleMin: 60 }));
+  const big = (secret && req.headers.get("authorization") === `Bearer ${secret}`) || /vercel-cron/i.test(req.headers.get("user-agent") || "");
+  const r = await runBot({ limit: big ? 40 : 20, staleMin: 25 });
+  return NextResponse.json({ ok: r.ok, checked: r.checked, changed: r.changed || 0, needsSetup: !!r.needsSetup });
 }
 
 // { id } → track one sale now. {} → the bot's regular round (stale packages only).

@@ -1,0 +1,12 @@
+# Modo bot heartbeat: asks Modo to check UPS packages every 30 minutes, even when nobody has Modo open.
+name: Modo UPS bot
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: curl -fsS --max-time 60 "https://modo-crm1.vercel.app/api/sales/ups-bot" || true

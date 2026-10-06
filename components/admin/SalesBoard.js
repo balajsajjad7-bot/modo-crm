@@ -34,6 +34,14 @@ export default function SalesBoard() {
     const key = (e) => { if (/input|textarea|select/i.test(e.target.tagName) || document.querySelector(".sale-card.max")) return; if (e.key === "ArrowRight") go(1); if (e.key === "ArrowLeft") go(-1); };
     window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
   }, [one, shown.length]); // eslint-disable-line
+  // Package delivered (the Modo bot noticed) → a quick celebration on screen
+  const seenUps = useRef(null);
+  useEffect(() => {
+    if (!Array.isArray(data)) return;
+    const now = Object.fromEntries(data.map((x) => [x.id, x.upsStatus]));
+    if (seenUps.current) data.forEach((x) => { const was = seenUps.current[x.id]; if (x.upsStatus === "delivered" && was !== undefined && was !== "delivered") cheer({ title: `📦 Delivered · #${x.orderNumber || ""}`, body: `${(x.customer || "The customer").split(" ")[0]}'s ${x.device || "package"} arrived (UPS).`, device: x.device, color: x.deviceColor }); });
+    seenUps.current = now;
+  }, [data]);
   const activeValue = active.reduce((t, s) => t + (s.deviceValue || 0), 0);
   const unpriced = active.filter((s) => s.device && s.deviceValue == null).length;
   // Return labels (Shippo) set up?
