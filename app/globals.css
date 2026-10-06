@@ -2465,3 +2465,24 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 /* one-tap Day/Night button in the top bar */
 .tb-theme svg{transition:transform .25s var(--ease)}
 .tb-theme:hover svg{transform:rotate(-15deg)}
+.tr-badge.kb{color:var(--accent-2);background:rgba(var(--s),.14)}
+/* Product knowledge page */
+.kb-page{display:grid;gap:14px}
+.kb-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.kb-tools input{flex:1 1 240px}
+.kb-chips{display:flex;gap:6px;flex-wrap:wrap}
+.kb-chip{padding:6px 12px!important;border-radius:999px!important;font-size:13px}
+.kb-ask{display:grid;gap:8px}
+.kb-ask .row{flex-wrap:nowrap}
+.kb-ask input{flex:1}
+.kb-answer{white-space:pre-wrap;font-size:14px;line-height:1.55;margin:0}
+.kb-list .tr-card{margin:0;max-width:none}
+.kb-list{display:grid;gap:12px}
+mark.kb-hit{background:rgba(var(--s),.3);color:inherit;border-radius:3px}
+/* Notepad coach */
+.coach-out{display:grid;gap:10px;padding:14px;border:1px solid rgba(var(--p),.3);border-radius:14px;background:var(--card-solid)}
+.coach-overview{margin:0;font-size:14px}
+.coach-agent{display:grid;gap:8px;padding-top:8px;border-top:1px solid var(--border)}
+.coach-cst{display:grid;gap:6px;padding:10px 12px;border-radius:12px;background:var(--background)}
+.coach-engage{margin:0;color:var(--muted-fg)}
+.coach.compact .coach-out{padding:10px}

@@ -477,9 +477,9 @@ function Members({ conv, me, onClose, onChanged, onLeft }) {
 
 // ---------- #modo-training lessons ----------
 // Body format: "# Heading", "\"Line to say\"", "- bullet", "[ ] checklist item", "! important", plain paragraph.
-const parseLesson = (text) => { try { const l = JSON.parse(text || "{}"); return { title: l.title || "Lesson", body: l.body || "" }; } catch { return { title: "Lesson", body: String(text || "") }; } };
+export const parseLesson = (text) => { try { const l = JSON.parse(text || "{}"); return { title: l.title || "Lesson", body: l.body || "", kind: l.kind === "knowledge" ? "knowledge" : "lesson", provider: l.provider || "" }; } catch { return { title: "Lesson", body: String(text || ""), kind: "lesson", provider: "" }; } };
 
-function LessonBody({ body, checks, onCheck }) {
+export function LessonBody({ body, checks, onCheck }) {
   const out = []; let list = null, ci = 0;
   const flush = () => { if (list) { out.push(<ul key={"u" + out.length} className="tr-ul">{list}</ul>); list = null; } };
   body.split("\n").forEach((raw, i) => {
@@ -501,7 +501,7 @@ function LessonBody({ body, checks, onCheck }) {
 function Lesson({ m, me, conv, onThread, reload, inThread, active, onEdit }) {
   const l = parseLesson(m.text);
   const isAdmin = me?.role === "ADMIN";
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(l.kind !== "knowledge" || !!inThread);
   const [showWho, setShowWho] = useState(false);
   // Personal checklist ticks stay on this device only (a self-check while practising).
   const ck = "modo-lesson-" + m.id;
@@ -518,7 +518,7 @@ function Lesson({ m, me, conv, onThread, reload, inThread, active, onEdit }) {
   return (
     <article className={"tr-card" + (active ? " active" : "")}>
       <header className="tr-top">
-        <span className="tr-badge"><GraduationCap size={14} /> Lesson</span>
+        {l.kind === "knowledge" ? <span className="tr-badge kb"><BookOpen size={14} /> Product knowledge{l.provider ? " · " + l.provider : ""}</span> : <span className="tr-badge"><GraduationCap size={14} /> Lesson</span>}
         <span className="muted small">{m.by && m.by !== "Modo bot 🤖" ? m.by + " · " : ""}{dayLabel(m.at)}{m.editedAt ? " · edited" : ""}</span>
         {isAdmin && !inThread && <span className="tr-admin">
           <button className="sl-icon" title="Edit lesson" aria-label="Edit lesson" onClick={() => onEdit?.(m)}><Pencil size={15} /></button>
@@ -544,23 +544,30 @@ function Lesson({ m, me, conv, onThread, reload, inThread, active, onEdit }) {
   );
 }
 
-function LessonEditor({ lesson, onClose, onDone }) {
+export function LessonEditor({ lesson, onClose, onDone }) {
   const editing = !!lesson?.id;
-  const start = editing ? parseLesson(lesson.text) : { title: "", body: "" };
+  const start = editing ? parseLesson(lesson.text) : { title: "", body: "", kind: lesson?.kind || "lesson", provider: lesson?.provider || "" };
   const [title, setTitle] = useState(start.title); const [body, setBody] = useState(start.body);
+  const [kind, setKind] = useState(start.kind); const [provider, setProvider] = useState(start.provider);
   const [tab, setTab] = useState("write"); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   async function save() {
     setErr(""); setBusy(true);
     let r;
-    if (editing) r = await api(`/api/chat/messages/${lesson.id}`, "PATCH", { lesson: { title, body } });
-    else { const f = new FormData(); f.set("c", TRAINING); f.set("lesson", JSON.stringify({ title, body }));
+    const data = { title, body, kind, provider: kind === "knowledge" ? provider : undefined };
+    if (editing) r = await api(`/api/chat/messages/${lesson.id}`, "PATCH", { lesson: data });
+    else { const f = new FormData(); f.set("c", TRAINING); f.set("lesson", JSON.stringify(data));
       const x = await fetch("/api/chat/messages", { method: "POST", body: f }); r = { ok: x.ok, data: await x.json().catch(() => ({})) }; }
     setBusy(false);
     if (!r.ok) return setErr(r.data.error || "Couldn't save.");
     onDone();
   }
   return (
-    <Modal title={editing ? "Edit lesson" : "New lesson"} onClose={onClose} wide>
+    <Modal title={editing ? "Edit " + (kind === "knowledge" ? "product knowledge" : "lesson") : kind === "knowledge" ? "New product knowledge" : "New lesson"} onClose={onClose} wide>
+      <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+        <label style={{ flex: "1 1 160px" }}>Type<select value={kind} onChange={(e) => setKind(e.target.value)}><option value="lesson">Lesson (how to do the job)</option><option value="knowledge">Product knowledge (facts about a provider)</option></select></label>
+        {kind === "knowledge" && <label style={{ flex: "1 1 160px" }}>Provider<input value={provider} onChange={(e) => setProvider(e.target.value)} placeholder="e.g. Verizon, AT&T, Xfinity" list="tr-providers" />
+          <datalist id="tr-providers">{["Verizon", "AT&T", "T-Mobile", "Xfinity", "Spectrum", "Cox", "Other providers", "Glossary"].map((p) => <option key={p} value={p} />)}</datalist></label>}
+      </div>
       <label>Title<input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Handling the 'I'm happy with my provider' objection" /></label>
       <div className="row" style={{ gap: 6 }}>
         <button className={tab === "write" ? "sm" : "ghost sm"} onClick={() => setTab("write")}>Write</button>
