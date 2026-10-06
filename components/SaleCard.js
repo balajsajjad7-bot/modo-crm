@@ -7,6 +7,7 @@ import OrderCheck, { OrderStatusChip } from "@/components/OrderCheck";
 import dynamic from "next/dynamic";
 const SaleMap = dynamic(() => import("@/components/SaleMap"), { ssr: false, loading: () => <div className="sm-loading muted small">Loading map…</div> });
 import { nearestLine, dropLine } from "@/lib/nearest";
+import DeviceArt from "@/components/DeviceArt";
 import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard, Maximize2, Minimize2, X, Store } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
@@ -199,9 +200,12 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
           </div>
         </div>
         <div className="sk-dev">
-          <span className="sf-l"><Smartphone size={11} /> {v(s.device)}{s.storage ? " · " + s.storage : ""}</span>
-          <b className="sk-val">{s.deviceValue != null ? $(s.deviceValue) : s.device && !preview ? <span className="muted" style={{ fontSize: 15 }}>Checking value…</span> : "—"}</b>
-          <span className="small muted">{s.deviceValueUsed != null ? `used ${$(s.deviceValueUsed)}` : "device value"}{s.deviceColor ? " · " + s.deviceColor : ""}</span>
+          <DeviceArt device={s.device} color={s.deviceColor} size={wide ? 50 : 56} />
+          <div className="sk-dev-t">
+            <span className="sf-l"><Smartphone size={11} /> {v(s.device)}{s.storage ? " · " + s.storage : ""}</span>
+            <b className="sk-val">{s.deviceValue != null ? $(s.deviceValue) : s.device && !preview ? <span className="muted" style={{ fontSize: 15 }}>Checking value…</span> : "—"}</b>
+            <span className="small muted">{s.deviceValueUsed != null ? `used ${$(s.deviceValueUsed)}` : "device value"}{s.deviceColor ? " · " + s.deviceColor : ""}</span>
+          </div>
         </div>
       </div>
       <div className="sale-meta">
@@ -215,7 +219,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
         <div className="sibs">
           <span className="sf-l">This customer's other sales</span>
           <div className="row" style={{ gap: 6 }}>
-            {sibs.map((x) => <span key={x.id} className={"sib " + cls[x.status]}><i />#{x.orderNumber || "—"} · {x.device || "device"} · {STATUS.find(([k]) => k === x.status)?.[1]}</span>)}
+            {sibs.map((x) => <span key={x.id} className={"sib " + cls[x.status]}><i /><DeviceArt device={x.device} size={16} />#{x.orderNumber || "—"} · {x.device || "device"} · {STATUS.find(([k]) => k === x.status)?.[1]}</span>)}
           </div>
         </div>
       )}

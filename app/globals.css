@@ -2325,3 +2325,13 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 .ph-row input{min-width:0;padding:7px 9px}
 .ph-acts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 @media (max-width:900px){.ph-row{grid-template-columns:1fr 1fr}.ph-who,.ph-acts{grid-column:1/-1}.ph-acts{justify-content:flex-start}}
+
+/* Device pictures on sales */
+.sk-dev{display:flex!important;align-items:center;justify-content:flex-end;gap:12px}
+.sk-dev-t{display:grid;gap:3px;min-width:0;justify-items:end;text-align:right}
+.dev-art{display:inline-flex;flex:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.28));transition:transform .2s}
+.dev-art svg{display:block;overflow:visible}
+.sale-card:hover .sk-dev .dev-art{transform:rotate(-4deg) translateY(-1px)}
+.sib .dev-art{filter:none;vertical-align:middle;margin-right:2px}
+.sib .dev-art text{display:none}
+@media (max-width:760px){.sk-dev{justify-content:flex-start}.sk-dev-t{justify-items:start;text-align:left}}
