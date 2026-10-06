@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { PackageSearch, ExternalLink, Copy, Check, X, Bookmark, RefreshCw, ClipboardPaste, Camera, Smartphone } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import { BOOKMARKLET, CARRIER_ORDER_PAGES, ORDER_STATUSES, encodeFill, detectStatus } from "@/lib/orderFill";
 
 const CARRIERS = [["verizon", "Verizon"], ["att", "AT&T"], ["tmobile", "T-Mobile"]];
@@ -11,7 +12,8 @@ const guessCarrier = (s) => { const t = `${s.campaignName || ""} ${s.device || "
 
 export function OrderStatusChip({ s }) {
   if (!s?.trackStage || !/^(Verizon|AT&T|T-Mobile):/.test(s.trackStage)) return null;
-  return <span className={"ord-chip " + (s.trackStatus || "pending")} title={s.trackStage + (s.trackUpdatedAt ? " · " + new Date(s.trackUpdatedAt).toLocaleString() : "")}><PackageSearch size={11} /> {s.trackStage.replace(/^[^:]+:\s*/, "").split(" — ")[0]}</span>;
+  const carrier = s.trackStage.split(":")[0];
+  return <span className={"ord-chip b3d " + (s.trackStatus || "pending")} title={s.trackStage + (s.trackUpdatedAt ? " · " + new Date(s.trackUpdatedAt).toLocaleString() : "")}><span className="b3d-logo"><BrandLogo name={carrier} size={14} round={4} /></span><PackageSearch size={11} /> {s.trackStage.replace(/^[^:]+:\s*/, "").split(" — ")[0]}</span>;
 }
 
 export default function OrderCheck({ s, onSaved }) {

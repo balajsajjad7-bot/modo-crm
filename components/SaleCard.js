@@ -9,6 +9,8 @@ const SaleMap = dynamic(() => import("@/components/SaleMap"), { ssr: false, load
 import { nearestLine, dropLine } from "@/lib/nearest";
 import DeviceArt from "@/components/DeviceArt";
 import UpsTrack from "@/components/UpsTrack";
+import BrandLogo from "@/components/BrandLogo";
+import { brandDomain } from "@/lib/brands";
 import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard, Maximize2, Minimize2, X, Store } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
@@ -24,6 +26,8 @@ const cityOf = (addr) => {
   return city ? `${city}, ${m[2]}` : m[2];
 };
 const ORD = (n) => n + (["th", "st", "nd", "rd"][((n % 100) - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
+const BRAND_COLORS = [[/verizon/i, "#cd040b"], [/at&t|\batt\b/i, "#009fdb"], [/t-?mobile|metro/i, "#e20074"], [/spectrum/i, "#0099d8"], [/xfinity|comcast/i, "#6138f5"], [/cricket/i, "#2a8c3c"], [/boost/i, "#f7931e"], [/mint/i, "#3fa34d"]];
+const brandColor = (n) => (BRAND_COLORS.find(([re]) => re.test(n || "")) || [, "#7c3aed"])[1];
 export const STATUS = [["NEW", "New"], ["VERIFIED", "Active"], ["REJECTED", "Not active"]];
 const cls = { NEW: "new", VERIFIED: "active", REJECTED: "inactive" };
 
@@ -180,9 +184,9 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
         <div style={{ minWidth: 0 }}>
           <div className="row" style={{ gap: 6 }}>
             <span className="sf-l">Order</span>
-            {s.seqTotal > 1 && <span className="seq-badge"><Layers size={11} /> {ORD(s.seq)} sale of {s.seqTotal}</span>}
-            {s.saleType === "addon" && <span className="seq-badge addon"><PackagePlus size={11} /> Add-on device</span>}
-            {s.campaignName && <span className="seq-badge camp" style={s.campaignColor ? { color: s.campaignColor, borderColor: s.campaignColor + "66" } : undefined}>{s.campaignName}</span>}
+            {s.seqTotal > 1 && <span className="seq-badge b3d"><Layers size={11} /> {ORD(s.seq)} sale of {s.seqTotal}</span>}
+            {s.saleType === "addon" && <span className="seq-badge addon b3d"><PackagePlus size={11} /> Add-on device</span>}
+            {s.campaignName && <span className="seq-badge camp b3d" style={{ "--bc": s.campaignColor || brandColor(s.campaignName) }}>{brandDomain(s.campaignName) && <span className="b3d-logo"><BrandLogo name={s.campaignName} size={14} round={4} /></span>}{s.campaignName}</span>}
           </div>
           <div className="order-no">#{v(s.orderNumber)}</div>
           {!preview && <OrderStatusChip s={s} />}

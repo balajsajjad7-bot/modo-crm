@@ -2398,3 +2398,22 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 
 /* Phones: the order block was taking a 180px-tall slot when the header stacks */
 @media (max-width:520px){.sale-head{gap:8px}.sale-head>div:first-child{flex:0 0 auto;width:100%}.sale-head .status-switch{align-self:stretch}}
+
+/* 3D badges on the sale card (campaign with the carrier's logo, order status, sale number, add-on) */
+.b3d{--bc:rgb(var(--s-hi));position:relative;gap:6px!important;padding:4px 10px 4px 5px!important;border-radius:10px!important;color:#fff!important;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--bc) 55%,#fff 0%) 0%,color-mix(in srgb,var(--bc) 70%,#000) 100%)!important;
+  border:1px solid color-mix(in srgb,var(--bc) 60%,#fff)!important;
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 -2px 0 rgba(0,0,0,.25) inset,0 3px 0 color-mix(in srgb,var(--bc) 45%,#000),0 6px 14px color-mix(in srgb,var(--bc) 40%,transparent)!important;
+  text-shadow:0 1px 1px rgba(0,0,0,.35);transform:translateY(-1px)}
+.b3d::after{content:"";position:absolute;left:6px;right:6px;top:2px;height:42%;border-radius:8px 8px 14px 14px;background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0));pointer-events:none}
+.b3d:not(:has(.b3d-logo)){padding-left:9px!important}
+.b3d-logo{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35),0 0 0 1px rgba(0,0,0,.06);flex:none}
+.b3d-logo .brand-logo,.b3d-logo .brand-badge{display:block}
+.seq-badge.b3d{--bc:#7c3aed}
+.seq-badge.addon.b3d{--bc:#0891b2}
+.seq-badge.camp.b3d{--bc:#e11d48}
+.ord-chip.b3d{--bc:#2563eb;font-size:12px;margin-top:8px}
+.ord-chip.b3d.delivered{--bc:#16a34a}
+.ord-chip.b3d.in_transit,.ord-chip.b3d.out_for_delivery,.ord-chip.b3d.picked_up,.ord-chip.b3d.dropped_off{--bc:#d97706}
+.ord-chip.b3d.exception,.ord-chip.b3d.returned{--bc:#dc2626}
+[data-appearance="light"] .b3d{color:#fff!important}
