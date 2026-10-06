@@ -5,8 +5,8 @@ import { askAI } from "@/lib/ai";
 // Agent pastes messy notes; AI fills the sale form fields (agent still reviews before sending).
 const SYS = `Extract sale details from the agent's notes. Return JSON only with these keys (null when unknown):
 {"customer":string,"phone":string,"email":string,"address":string,"zip":string,"orderNumber":string,"discountPct":number,"billBefore":number,
-"billAfter":number,"nextBillDate":"YYYY-MM-DD","lines":number,"overcharged":number,"device":string,"deviceColor":string,"storage":string,"specs":string,"gift":string,"locationCode":string}
-Money as plain numbers (no $). Never invent values.`;
+"billAfter":number,"nextBillDate":"YYYY-MM-DD","lines":number,"overcharged":number,"device":string,"deviceColor":string,"storage":string,"specs":string,"gift":string,"locationCode":string,"trackingNo":string}
+Money as plain numbers (no $). trackingNo is a shipping tracking number (UPS numbers start with 1Z). Never invent values.`;
 export async function POST(req) {
   const { error } = await requireRole("AGENT");
   if (error) return error;

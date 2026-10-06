@@ -17,6 +17,8 @@ export default function UpsTrack({ s: s0, compact }) {
   const [own, setOwn] = useState(null); // tracking number added/changed here
   const s = own ? { ...s0, ...own } : s0;
   const num = s.returnTracking || (s.trackingNo && (isUpsNo(s.trackingNo) || !/^(verizon|att|tmobile)$/i.test(s.carrier || "")) ? s.trackingNo : null);
+  // A 1Z… number written in the sale's notes/details but not in the Tracking box → offer it (and save it once).
+  const found = !num ? (String([s.notes, s.specs, s.gift, s.raw].filter(Boolean).join(" ")).match(/\b1Z[\s-]?(?:[0-9A-Z][\s-]?){15}[0-9A-Z]\b/i)?.[0] || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase() : "";
   const service = s.returnTracking ? s.returnService : isUpsNo(s.trackingNo) ? "ups" : s.carrier;
   const [edit, setEdit] = useState(false); const [val, setVal] = useState(""); const [saved, setSaved] = useState("");
   async function saveNo(v) {
@@ -36,6 +38,7 @@ export default function UpsTrack({ s: s0, compact }) {
     if (!r.ok) return setErr(d.error || "Couldn't check UPS.");
     if (d.sale) setT(pick(d.sale));
   }
+  useEffect(() => { if (found && !compact && /^1Z[0-9A-Z]{16}$/.test(found)) saveNo(found); }, [found]); // eslint-disable-line
   // Never checked yet → let the bot look right away
   useEffect(() => { if (num && !s.upsAt && !compact && !edit) check(); }, [s.id, num]); // eslint-disable-line
   if (!num || edit) return (

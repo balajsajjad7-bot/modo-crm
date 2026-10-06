@@ -8,6 +8,7 @@ import { resolveShift } from "@/lib/payroll";
 import { emit } from "@/lib/connectors";
 import { log } from "@/lib/crm";
 import { returnConfig, makeLabel } from "@/lib/returnLabel";
+import { findTracking } from "@/lib/upsBot";
 
 const num = (v) => (v === "" || v == null || isNaN(Number(v)) ? null : Number(v));
 const str = (v, n = 200) => (v == null || String(v).trim() === "" ? null : String(v).trim().slice(0, n));
@@ -42,6 +43,9 @@ export async function POST(req) {
     saleType: b.saleType === "addon" ? "addon" : "new", campaignId: str(b.campaignId, 60),
     trackingNo: str(b.trackingNo, 60), carrier: str(b.carrier, 20),
   };
+  // Tracking number pasted into notes/specs instead of its own box → use it.
+  if (!f.trackingNo) { const t = findTracking(f.notes, f.specs, f.gift); if (t) { f.trackingNo = t.num; f.carrier = t.carrier; } }
+  else { const t = findTracking(f.trackingNo); if (t) { f.trackingNo = t.num; if (!f.carrier || f.carrier === "auto") f.carrier = t.carrier; } }
   if (!f.customer || !f.phone || !f.orderNumber) return NextResponse.json({ error: "Customer name, contact number and order number are required." }, { status: 400 });
   if (f.nextBillDate && isNaN(f.nextBillDate)) f.nextBillDate = null;
   if (f.billAfter == null && f.billBefore != null && f.discountPct != null) f.billAfter = +(f.billBefore * (1 - f.discountPct / 100)).toFixed(2);
