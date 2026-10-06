@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
+import { TRAINING_ID } from "@/lib/training";
 
 // Browse public channels, and join or leave them.
 export async function GET() {
@@ -22,6 +23,7 @@ export async function POST(req) {
     await db.message.create({ data: { conversationId: id, userId: "system", kind: "SYSTEM", text: `${s.name} joined #${c.name}` } });
   } else if (action === "leave") {
     if (id === "everyone") return NextResponse.json({ error: "Everyone stays in #general." }, { status: 400 });
+    if (id === TRAINING_ID) return NextResponse.json({ error: "Everyone stays in #modo-training." }, { status: 400 });
     await db.convMember.deleteMany({ where: { conversationId: id, userId: s.uid } });
     await db.message.create({ data: { conversationId: id, userId: "system", kind: "SYSTEM", text: `${s.name} left #${c.name}` } });
   }

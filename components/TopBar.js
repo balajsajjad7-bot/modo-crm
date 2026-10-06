@@ -8,7 +8,7 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X, MoreHorizontal, Palette } from "lucide-react";
-import AppearanceToggle from "./Appearance";
+import AppearanceToggle, { QuickTheme } from "./Appearance";
 import LangPicker from "./LangPicker";
 import { ModoMark, ModoWord } from "./ModoLogo";
 
@@ -119,8 +119,9 @@ export default function TopBar({ nav, home, user, userMenu, action, search }) {
 
       <div className="tb-right">
         {search && <div className="tb-search">{search}</div>}
+        <QuickTheme />
         <div className="tb-group tb-look-g">
-          <button type="button" className="tb-icon" aria-label="Appearance and language" title="Day / Night, colours, language" aria-expanded={open === "__look"} onClick={() => toggle("__look")}><Palette size={18} /></button>
+          <button type="button" className="tb-icon" aria-label="Appearance and language" title="Colours, Auto mode, language" aria-expanded={open === "__look"} onClick={() => toggle("__look")}><Palette size={18} /></button>
           {open === "__look" && (
             <div className="tb-menu right tb-look" role="dialog" aria-label="Appearance">
               <b className="tb-h">Appearance</b>

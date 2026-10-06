@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { isMember, MAX_FILE, shapeAll } from "@/lib/chat";
 import { sendPush } from "@/lib/push";
+import { TRAINING_ID, postLesson, cleanLesson } from "@/lib/training";
 
 // ?c=<conversation>  [&thread=<parent id>]  [&since=<ISO>]  (since = anything created or changed after)
 export async function GET(req) {
@@ -31,6 +32,21 @@ export async function POST(req) {
   if (parentId) {
     const p = await db.message.findUnique({ where: { id: parentId } });
     if (!p || p.conversationId !== c || p.parentId) return NextResponse.json({ error: "Can't reply to that message." }, { status: 400 });
+  }
+  // #modo-training: only admins post (lessons or messages); agents ask questions in a lesson's thread.
+  if (c === TRAINING_ID && !parentId && s.role !== "ADMIN") return NextResponse.json({ error: "Only admins post in #modo-training. Ask your question in the lesson's thread." }, { status: 403 });
+  const lessonRaw = form.get("lesson");
+  if (lessonRaw) {
+    if (c !== TRAINING_ID || s.role !== "ADMIN") return NextResponse.json({ error: "Lessons can only be posted by admins in #modo-training." }, { status: 403 });
+    let l = null; try { l = cleanLesson(JSON.parse(String(lessonRaw))); } catch {}
+    if (!l) return NextResponse.json({ error: "Give the lesson a title and some content." }, { status: 400 });
+    const m = await postLesson(s.uid, l);
+    await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: m.createdAt } });
+    try {
+      const others = (await db.convMember.findMany({ where: { conversationId: c, userId: { not: s.uid } }, select: { userId: true } })).map((x) => x.userId);
+      if (others.length) sendPush(others, { title: "📘 New lesson in #modo-training", body: l.title, url: "/", tag: "chat-" + c });
+    } catch {}
+    return NextResponse.json((await shapeAll([m], s.uid))[0]);
   }
   const file = form.get("file");
   const voice = form.get("voice") === "1";

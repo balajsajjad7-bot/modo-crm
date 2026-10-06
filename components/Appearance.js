@@ -36,18 +36,20 @@ function init() {
   state = { mode, style, palette, eff: effective(mode) };
   // Keep in sync with other tabs, and flip by itself at 7 PM / 7 AM while on Auto.
   window.addEventListener("storage", (e) => { if ([KEY, STYLE_KEY, PALETTE_KEY].includes(e.key)) set({ mode: read(KEY, MODES, state.mode), style: read(STYLE_KEY, STYLES, state.style), palette: read(PALETTE_KEY, PAL, state.palette) }, false); });
-  setInterval(() => { if (state.mode === "auto") apply(); }, 60000);
+  if (!init.timer) init.timer = setInterval(() => { if (state.mode === "auto") apply(); }, 60000);
 }
+// Switch instantly. (It used to fade every element on the page at once, which froze big pages like
+// the admin Overview for 1–2 seconds and could crash weaker PCs and phones when picking Night.)
 function apply() {
   const root = document.documentElement;
   const eff = effective(state.mode);
   const changed = root.dataset.appearance !== eff || root.dataset.look !== state.style || root.dataset.palette !== state.palette;
   if (changed) {
-    root.classList.add("theme-switching");
-    clearTimeout(apply.t); apply.t = setTimeout(() => root.classList.remove("theme-switching"), 450);
+    root.dataset.appearance = eff; root.dataset.look = state.style; root.dataset.palette = state.palette;
+    root.style.colorScheme = eff; // native scrollbars, inputs and dropdowns follow Day/Night too
   }
-  root.dataset.appearance = eff; root.dataset.appearanceMode = state.mode; root.dataset.look = state.style; root.dataset.palette = state.palette;
-  if (state.eff !== eff) state = { ...state, eff };
+  if (root.dataset.appearanceMode !== state.mode) root.dataset.appearanceMode = state.mode;
+  if (state.eff !== eff) { state = { ...state, eff }; subs.forEach((f) => f()); } // tell React instead of changing the snapshot silently
   if (changed) window.dispatchEvent(new CustomEvent("modo-appearance", { detail: { appearance: eff, look: state.style, palette: state.palette } }));
 }
 function set(patch, save = true) {
@@ -64,7 +66,7 @@ const snap = () => { init(); return state || SERVER; };
 
 export function useAppearance() {
   const s = useSyncExternalStore(subscribe, snap, () => SERVER);
-  useEffect(() => { init(); apply(); }, []);
+  useEffect(() => { init(); if (state) apply(); }, []);
   return [s.mode, (mode) => set({ mode }), s.eff, s.style, (style) => set({ style }), s.palette, (palette) => set({ palette })];
 }
 
@@ -110,5 +112,17 @@ export default function AppearanceToggle({ compact, showStyle = true }) {
         </span>
       )}
     </div>
+  );
+}
+
+// One-tap Day/Night switch for the top bar: a single icon, nothing else.
+export function QuickTheme() {
+  const [, setMode, eff] = useAppearance();
+  const night = eff === "dark";
+  return (
+    <button type="button" className="tb-icon tb-theme" onClick={() => setMode(night ? "light" : "dark")}
+      aria-label={night ? "Switch to day mode" : "Switch to night mode"} title={night ? "Day mode" : "Night mode"}>
+      {night ? <Sun size={17} /> : <Moon size={17} />}
+    </button>
   );
 }

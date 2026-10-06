@@ -7,10 +7,13 @@ import { useShell } from "./Shell";
 import {
   Hash, Lock, Plus, ChevronDown, ChevronRight, Search, SquarePen, Headphones, Users, X, ArrowLeft,
   Paperclip, Mic, Send, Smile, AtSign, Trash2, Pencil, MessageSquareReply, FileText, Download, Compass, LogOut as Leave,
+  GraduationCap, CheckCircle2, Circle, AlertTriangle, BookOpen,
 } from "lucide-react";
 
 const EMOJIS = ["👍", "❤️", "😂", "🎉", "👀", "✅", "🙏", "🔥", "💯", "😮"];
 const MAX = 4 * 1024 * 1024;
+const TRAINING = "modo-training";
+const GOT_IT = "✅";
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const t = (d) => new Date(d).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 const dayLabel = (d) => { const x = new Date(d), n = new Date(); const y = new Date(n); y.setDate(n.getDate() - 1);
@@ -28,7 +31,7 @@ export function Avatar({ name, size = 36, online, square = true }) {
     </span>
   );
 }
-export const ConvIcon = ({ c, size = 16 }) => c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
+export const ConvIcon = ({ c, size = 16 }) => c.id === TRAINING ? <GraduationCap size={size} /> : c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
 
 // Turns text into React nodes: links and @mentions highlighted.
 function RichText({ text, names, meName }) {
@@ -59,7 +62,7 @@ export default function Chat() {
   useEffect(() => { setThread(null); }, [openId]);
 
   const match = (c) => !q || c.title.toLowerCase().includes(q.toLowerCase());
-  const channels = convs.filter((c) => c.kind === "channel" && match(c)).sort((a, b) => a.title.localeCompare(b.title));
+  const channels = convs.filter((c) => c.kind === "channel" && match(c)).sort((a, b) => (b.id === TRAINING) - (a.id === TRAINING) || a.title.localeCompare(b.title));
   const dms = convs.filter((c) => c.kind !== "channel" && match(c));
   const open = (id) => { setOpenId(id); setModal(null); reloadChat(); };
 
@@ -68,7 +71,7 @@ export default function Chat() {
       {c.kind === "dm" ? <Avatar name={c.title} size={20} online={c.online} /> : <span className="sl-ico"><ConvIcon c={c} /></span>}
       <span className="ellipsis">{c.title}</span>
       {c.huddle && <Headphones size={14} className="sl-huddle-ico" aria-label="Huddle in progress" />}
-      {(c.mentions > 0 || (c.kind !== "channel" && c.unread > 0)) && <span className="sl-badge">{c.kind === "channel" ? c.mentions : c.unread}</span>}
+      {(c.mentions > 0 || ((c.kind !== "channel" || c.id === TRAINING) && c.unread > 0)) && <span className="sl-badge">{c.kind === "channel" && c.id !== TRAINING ? c.mentions : c.unread}</span>}
     </button>
   );
   const Section = ({ id, label, children, onAdd, addLabel }) => (
@@ -131,6 +134,8 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
   const [msgs, reload] = useMessages(conv.id, null);
   const [editTopic, setEditTopic] = useState(false);
   const [topic, setTopic] = useState(conv.topic || "");
+  const [lessonEdit, setLessonEdit] = useState(null); // null | {} (new) | message (edit)
+  const training = conv.id === TRAINING;
   const bottom = useRef(null); const lastCount = useRef(0);
   useEffect(() => { if (msgs && msgs.length !== lastCount.current) { bottom.current?.scrollIntoView({ block: "end" }); lastCount.current = msgs.length; } }, [msgs]);
   useEffect(() => { reloadChat(); }, [msgs?.length, reloadChat]);
@@ -153,7 +158,8 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
             : <span className="sl-sub">{conv.kind === "dm" ? (other?.online ? "Active now" : "Away") + (other?.role === "ADMIN" ? " · Admin" : other?.agentId ? " · " + other.agentId : "") : conv.members.length + " members"}</span>}
         </div>
         <div className="sl-head-actions">
-          <AiButton task="summarize_chat" payload={{ conversationId: conv.id }} label="Catch me up" />
+          {training && isAdmin && <button className="sl-huddle" onClick={() => setLessonEdit({})}><BookOpen size={16} /> New lesson</button>}
+          {!training && <AiButton task="summarize_chat" payload={{ conversationId: conv.id }} label="Catch me up" />}
           <button className="sl-members" onClick={onMembers} aria-label="Members">
             <span className="stack-av">{conv.members.slice(0, 3).map((m) => <Avatar key={m.id} name={m.name} size={22} />)}</span>{conv.members.length}
           </button>
@@ -169,20 +175,23 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
             <div className="sl-intro">
               {conv.kind === "dm" ? <Avatar name={conv.title} size={64} /> : <span className="sl-intro-ico"><ConvIcon c={conv} size={30} /></span>}
               <h2>{conv.kind === "channel" ? "#" + conv.title : conv.title}</h2>
-              <p className="muted">{conv.kind === "channel" ? `This is the start of #${conv.title}. ${conv.topic || ""}` : conv.kind === "dm" ? `This is your conversation with ${conv.title}.` : `Group with ${names.join(", ")}.`}</p>
+              <p className="muted">{training ? "Lessons and call guides from management. Read each one, tap Got it, and ask questions in the lesson's thread." : conv.kind === "channel" ? `This is the start of #${conv.title}. ${conv.topic || ""}` : conv.kind === "dm" ? `This is your conversation with ${conv.title}.` : `Group with ${names.join(", ")}.`}</p>
             </div>
-            <MessageList msgs={msgs} me={me} names={names} onThread={onThread} reload={reload} activeThread={thread} />
+            <MessageList msgs={msgs} me={me} names={names} onThread={onThread} reload={reload} activeThread={thread} conv={conv} onEditLesson={setLessonEdit} />
           </>
         )}
         <div ref={bottom} />
       </div>
-      <Composer conv={conv} names={names} members={conv.members} me={me} onSent={reload}
-        placeholder={`Message ${conv.kind === "channel" ? "#" + conv.title : conv.title}`} />
+      {training && !isAdmin
+        ? <div className="sl-composer-wrap"><div className="tr-readonly"><GraduationCap size={16} /> Only admins post here. Have a question? Open a lesson's thread and ask.</div></div>
+        : <Composer conv={conv} names={names} members={conv.members} me={me} onSent={reload}
+            placeholder={training ? "Post a short note to everyone (use New lesson for a full guide)" : `Message ${conv.kind === "channel" ? "#" + conv.title : conv.title}`} />}
+      {lessonEdit && <LessonEditor lesson={lessonEdit} onClose={() => setLessonEdit(null)} onDone={() => { setLessonEdit(null); reload(); reloadChat(); }} />}
     </>
   );
 }
 
-function MessageList({ msgs, me, names, onThread, reload, activeThread, inThread }) {
+function MessageList({ msgs, me, names, onThread, reload, activeThread, inThread, conv, onEditLesson }) {
   let lastDay = "", prev = null;
   return msgs.map((m, idx) => {
     const d = dayLabel(m.at); const newDay = d !== lastDay; if (newDay) lastDay = d;
@@ -192,6 +201,7 @@ function MessageList({ msgs, me, names, onThread, reload, activeThread, inThread
       <Fragment key={m.id}>
         {newDay && <div className="sl-day"><span>{d}</span></div>}
         {m.kind === "SYSTEM" ? <div className="sl-sys">{m.text} <span>· {t(m.at)}</span></div>
+          : m.kind === "LESSON" ? <Lesson m={m} me={me} conv={conv} onThread={onThread} reload={reload} inThread={inThread} active={activeThread === m.id} onEdit={onEditLesson} />
           : <Message m={m} me={me} names={names} grouped={grouped} onThread={onThread} reload={reload} active={activeThread === m.id} inThread={inThread} isParent={inThread && idx === 0} />}
       </Fragment>
     );
@@ -339,14 +349,14 @@ function Thread({ conv, me, parentId, onClose }) {
       <div className="sl-msgs">
         {msgs === null ? <p className="sl-empty">Loading…</p> : (
           <>
-            <MessageList msgs={msgs.slice(0, 1)} me={me} names={names} reload={reload} inThread />
+            <MessageList msgs={msgs.slice(0, 1)} me={me} names={names} reload={reload} inThread conv={conv} />
             {msgs.length > 1 && <div className="sl-divider"><span>{msgs.length - 1} {msgs.length === 2 ? "reply" : "replies"}</span></div>}
             <MessageList msgs={msgs.slice(1)} me={me} names={names} reload={reload} inThread />
           </>
         )}
         <div ref={bottom} />
       </div>
-      <Composer conv={conv} names={names} members={conv.members} me={me} onSent={reload} parentId={parentId} placeholder="Reply…" />
+      <Composer conv={conv} names={names} members={conv.members} me={me} onSent={reload} parentId={parentId} placeholder={conv.id === TRAINING ? "Ask a question about this lesson…" : "Reply…"} />
     </aside>
   );
 }
@@ -456,11 +466,115 @@ function Members({ conv, me, onClose, onChanged, onLeft }) {
             ))}
           </div>
           <div className="row" style={{ justifyContent: "space-between" }}>
-            {conv.kind === "channel" && conv.id !== "everyone" ? <button className="ghost" onClick={leave}><Leave size={15} /> Leave channel</button> : <span />}
+            {conv.kind === "channel" && conv.id !== "everyone" && conv.id !== TRAINING ? <button className="ghost" onClick={leave}><Leave size={15} /> Leave channel</button> : <span />}
             {conv.kind !== "dm" && <button onClick={() => setAdding(true)}><Plus size={15} /> Add people</button>}
           </div>
         </>
       )}
+    </Modal>
+  );
+}
+
+// ---------- #modo-training lessons ----------
+// Body format: "# Heading", "\"Line to say\"", "- bullet", "[ ] checklist item", "! important", plain paragraph.
+const parseLesson = (text) => { try { const l = JSON.parse(text || "{}"); return { title: l.title || "Lesson", body: l.body || "" }; } catch { return { title: "Lesson", body: String(text || "") }; } };
+
+function LessonBody({ body, checks, onCheck }) {
+  const out = []; let list = null, ci = 0;
+  const flush = () => { if (list) { out.push(<ul key={"u" + out.length} className="tr-ul">{list}</ul>); list = null; } };
+  body.split("\n").forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line) { flush(); return; }
+    if (line.startsWith("- ")) { (list ||= []).push(<li key={i}>{line.slice(2)}</li>); return; }
+    flush();
+    if (line.startsWith("# ")) out.push(<h4 key={i} className="tr-h">{line.slice(2)}</h4>);
+    else if (line.startsWith("! ")) out.push(<div key={i} className="tr-warn"><AlertTriangle size={15} /><span>{line.slice(2)}</span></div>);
+    else if (/^\[( |x)\]\s/i.test(line)) { const k = ci++; const on = !!checks?.[k];
+      out.push(<div key={i} role="checkbox" tabIndex={0} aria-checked={on} className={"tr-check" + (on ? " on" : "")} onClick={() => onCheck?.(k)} onKeyDown={(e) => (e.key === " " || e.key === "Enter") && (e.preventDefault(), onCheck?.(k))}>{on ? <CheckCircle2 size={16} /> : <Circle size={16} />}<span>{line.replace(/^\[( |x)\]\s/i, "")}</span></div>); }
+    else if (/^["“].*["”]$/.test(line)) out.push(<blockquote key={i} className="tr-say">{line.replace(/^["“]|["”]$/g, "")}</blockquote>);
+    else out.push(<p key={i} className="tr-p">{line}</p>);
+  });
+  flush();
+  return out;
+}
+
+function Lesson({ m, me, conv, onThread, reload, inThread, active, onEdit }) {
+  const l = parseLesson(m.text);
+  const isAdmin = me?.role === "ADMIN";
+  const [open, setOpen] = useState(true);
+  const [showWho, setShowWho] = useState(false);
+  // Personal checklist ticks stay on this device only (a self-check while practising).
+  const ck = "modo-lesson-" + m.id;
+  const [checks, setChecks] = useState({});
+  useEffect(() => { try { setChecks(JSON.parse(localStorage.getItem(ck) || "{}")); } catch {} }, [ck]);
+  const tick = (k) => setChecks((c) => { const n = { ...c, [k]: !c[k] }; try { localStorage.setItem(ck, JSON.stringify(n)); } catch {} return n; });
+  const got = m.reactions?.find((r) => r.emoji === GOT_IT);
+  const mine = !!got?.mine;
+  const readers = got?.who || [];
+  const agents = (conv?.members || []).filter((x) => x.role !== "ADMIN" && x.id !== m.userId);
+  const pending = agents.filter((x) => !readers.includes(x.name));
+  const toggle = async () => { await api("/api/chat/react", "POST", { messageId: m.id, emoji: GOT_IT }); reload(); };
+  const del = async () => { if (confirm("Delete this lesson for everyone?")) { await api(`/api/chat/messages/${m.id}`, "DELETE"); reload(); } };
+  return (
+    <article className={"tr-card" + (active ? " active" : "")}>
+      <header className="tr-top">
+        <span className="tr-badge"><GraduationCap size={14} /> Lesson</span>
+        <span className="muted small">{m.by && m.by !== "Modo bot 🤖" ? m.by + " · " : ""}{dayLabel(m.at)}{m.editedAt ? " · edited" : ""}</span>
+        {isAdmin && !inThread && <span className="tr-admin">
+          <button className="sl-icon" title="Edit lesson" aria-label="Edit lesson" onClick={() => onEdit?.(m)}><Pencil size={15} /></button>
+          <button className="sl-icon" title="Delete lesson" aria-label="Delete lesson" onClick={del}><Trash2 size={15} /></button>
+        </span>}
+      </header>
+      <h3 className="tr-title">{l.title}</h3>
+      {open ? <div className="tr-body"><LessonBody body={l.body} checks={checks} onCheck={tick} /></div>
+        : <button className="tr-more" onClick={() => setOpen(true)}>Show lesson</button>}
+      <footer className="tr-foot">
+        <button className={"tr-got" + (mine ? " on" : "")} onClick={toggle}>{mine ? <CheckCircle2 size={16} /> : <Circle size={16} />}{mine ? "Got it" : "Mark as read"}</button>
+        {!inThread && <button className="ghost sm" onClick={() => onThread?.(m.id)}><MessageSquareReply size={14} /> {m.replies ? `${m.replies.count} ${m.replies.count === 1 ? "question" : "questions"}` : "Ask a question"}</button>}
+        {open && <button className="ghost sm" onClick={() => setOpen(false)}>Collapse</button>}
+        {isAdmin && <span role="button" tabIndex={0} className="tr-stat" onClick={() => setShowWho((x) => !x)} onKeyDown={(e) => e.key === "Enter" && setShowWho((x) => !x)} title="Who has read it">{readers.length} of {agents.length || readers.length} read</span>}
+      </footer>
+      {isAdmin && showWho && (
+        <div className="tr-who">
+          <div><b className="small">Read</b><p className="small muted">{readers.length ? readers.join(", ") : "No one yet"}</p></div>
+          <div><b className="small">Not yet</b><p className="small muted">{pending.length ? pending.map((x) => x.name).join(", ") : "Everyone has read it"}</p></div>
+        </div>
+      )}
+    </article>
+  );
+}
+
+function LessonEditor({ lesson, onClose, onDone }) {
+  const editing = !!lesson?.id;
+  const start = editing ? parseLesson(lesson.text) : { title: "", body: "" };
+  const [title, setTitle] = useState(start.title); const [body, setBody] = useState(start.body);
+  const [tab, setTab] = useState("write"); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
+  async function save() {
+    setErr(""); setBusy(true);
+    let r;
+    if (editing) r = await api(`/api/chat/messages/${lesson.id}`, "PATCH", { lesson: { title, body } });
+    else { const f = new FormData(); f.set("c", TRAINING); f.set("lesson", JSON.stringify({ title, body }));
+      const x = await fetch("/api/chat/messages", { method: "POST", body: f }); r = { ok: x.ok, data: await x.json().catch(() => ({})) }; }
+    setBusy(false);
+    if (!r.ok) return setErr(r.data.error || "Couldn't save.");
+    onDone();
+  }
+  return (
+    <Modal title={editing ? "Edit lesson" : "New lesson"} onClose={onClose} wide>
+      <label>Title<input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Handling the 'I'm happy with my provider' objection" /></label>
+      <div className="row" style={{ gap: 6 }}>
+        <button className={tab === "write" ? "sm" : "ghost sm"} onClick={() => setTab("write")}>Write</button>
+        <button className={tab === "preview" ? "sm" : "ghost sm"} onClick={() => setTab("preview")} disabled={!body.trim()}>Preview</button>
+      </div>
+      {tab === "write" ? (
+        <>
+          <textarea className="tr-editor" value={body} onChange={(e) => setBody(e.target.value)} rows={14}
+            placeholder={'Paste your guide or notes. Optional formatting:\n# Section heading\n"A line the agent says to the customer"\n- bullet point\n[ ] checklist item\n! important warning'} />
+          <p className="muted small" style={{ margin: 0 }}><b># </b>heading · <b>"quotes"</b> line to say · <b>- </b>bullet · <b>[ ] </b>checklist · <b>! </b>warning. Modo AI also learns every lesson.</p>
+        </>
+      ) : <div className="tr-card tr-preview"><h3 className="tr-title">{title || "Untitled lesson"}</h3><div className="tr-body"><LessonBody body={body} /></div></div>}
+      {err && <div className="err">{err}</div>}
+      <div className="row" style={{ justifyContent: "flex-end" }}><button className="ghost" onClick={onClose}>Cancel</button><button onClick={save} disabled={busy || !title.trim() || !body.trim()}>{busy ? "Saving…" : editing ? "Save changes" : "Post to everyone"}</button></div>
     </Modal>
   );
 }

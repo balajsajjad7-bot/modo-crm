@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
+import { cleanLesson } from "@/lib/training";
 
 async function own(id, s, allowAdmin) {
   const m = await db.message.findUnique({ where: { id } });
@@ -13,9 +14,20 @@ async function own(id, s, allowAdmin) {
 export async function PATCH(req, { params }) {
   const s = await currentUser();
   if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+  const b = await req.json();
+  // Lessons in #modo-training: any admin can edit them.
+  if (b.lesson) {
+    if (s.role !== "ADMIN") return NextResponse.json({ error: "Only admins can edit lessons." }, { status: 403 });
+    const lm = await db.message.findUnique({ where: { id: params.id } });
+    if (!lm || lm.deletedAt || lm.kind !== "LESSON") return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
+    const l = cleanLesson(b.lesson);
+    if (!l) return NextResponse.json({ error: "Give the lesson a title and some content." }, { status: 400 });
+    await db.message.update({ where: { id: lm.id }, data: { text: JSON.stringify(l), editedAt: new Date() } });
+    return NextResponse.json({ ok: true });
+  }
   const m = await own(params.id, s, false);
   if (!m) return NextResponse.json({ error: "You can only edit your own messages." }, { status: 403 });
-  const { text } = await req.json();
+  const { text } = b;
   if (!String(text || "").trim()) return NextResponse.json({ error: "Message can't be empty." }, { status: 400 });
   await db.message.update({ where: { id: m.id }, data: { text: String(text).trim().slice(0, 4000), editedAt: new Date() } });
   return NextResponse.json({ ok: true });

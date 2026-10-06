@@ -915,7 +915,7 @@ textarea.pad{min-height:55vh;font-size:15px;line-height:1.6;resize:vertical}
 .appear button:hover:not(.on){color:#fff}
 @media (max-width:1180px){.appear .lbl{display:none}.appear{grid-template-columns:34px 34px 34px}.appear.p1 .thumb{width:34px}}
 .corner-toggle{position:fixed;top:16px;right:16px;z-index:60}
-.theme-switching,.theme-switching *{transition:background-color .45s var(--ease),color .45s var(--ease),border-color .45s var(--ease),box-shadow .45s var(--ease)!important}
+/* theme switch is instant now (the page-wide fade froze big pages) */
 
 /* ══════════ DAY MODE (light) ══════════════════════════════════════
    Same layout and plasma, on warm paper with frosted white glass and dark text. */
@@ -2431,3 +2431,37 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 .ups-step.pick .ups-dot{outline:2px solid rgb(var(--s));outline-offset:3px;box-shadow:0 0 16px rgba(var(--s),.6)}
 .ups-confirm{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(var(--s),.10);border:1px solid rgba(var(--s),.35)}
 .ups-back{display:grid;gap:8px;margin-top:8px;padding:12px;border-radius:12px;background:rgba(var(--p),.08);border:1px dashed rgba(var(--p),.45)}
+
+/* ---------- #modo-training lessons ---------- */
+.tr-card{margin:10px 20px;padding:16px 18px;border:1px solid var(--border);border-radius:16px;background:var(--card-solid);display:grid;gap:10px;max-width:760px}
+.tr-card.active{border-color:rgba(var(--p),.45)}
+.tr-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tr-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:3px 8px;border-radius:999px}
+.tr-admin{margin-left:auto;display:flex;gap:2px}
+.tr-title{font-size:18px;font-weight:650;margin:0}
+.tr-body{display:grid;gap:8px;font-size:14px;line-height:1.55}
+.tr-h{margin:10px 0 0;font-size:14px;font-weight:650;color:var(--foreground)}
+.tr-p{margin:0;color:var(--muted-fg)}
+.tr-say{margin:0;padding:10px 12px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;color:var(--foreground)}
+.tr-ul{margin:0;padding-left:20px;color:var(--muted-fg);display:grid;gap:3px}
+.tr-warn{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:var(--amber-soft);color:var(--foreground)}
+.tr-warn svg{color:var(--amber);flex-shrink:0;margin-top:2px}
+.tr-check{display:flex;outline-offset:2px;gap:8px;align-items:flex-start;cursor:pointer;padding:4px 0;color:var(--foreground);font-size:14px}
+.tr-check svg{flex-shrink:0;margin-top:2px;color:var(--muted-fg)}
+.tr-check.on svg{color:var(--green)}
+.tr-check.on span{color:var(--muted-fg);text-decoration:line-through}
+.tr-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--border)}
+.tr-got{display:inline-flex;align-items:center;gap:6px}
+.tr-got.on{background:var(--green-soft)!important;color:var(--green)!important;box-shadow:none!important}
+.tr-stat{margin-left:auto;cursor:pointer;font-size:12px;color:var(--muted-fg);text-decoration:underline dotted}
+.tr-who{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tr-who p{margin:2px 0 0}
+.tr-more{justify-self:start}
+.tr-readonly{display:flex;align-items:center;gap:8px;padding:12px 14px;border:1px dashed var(--border);border-radius:12px;color:var(--muted-fg);font-size:13px}
+.tr-editor{width:100%;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}
+.tr-preview{margin:0;max-height:50vh;overflow:auto}
+@media (max-width:700px){.tr-card{margin:8px 10px;padding:14px}.tr-who{grid-template-columns:1fr}}
+
+/* one-tap Day/Night button in the top bar */
+.tb-theme svg{transition:transform .25s var(--ease)}
+.tb-theme:hover svg{transform:rotate(-15deg)}
