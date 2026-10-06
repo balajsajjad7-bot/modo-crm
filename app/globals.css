@@ -2299,3 +2299,7 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 .maplibregl-ctrl-group button{background:#fff!important;border:none!important;box-shadow:none!important;padding:0!important;border-radius:0!important;width:29px!important;height:29px!important;min-height:0!important;transform:none!important}
 .maplibregl-ctrl-group button+button{border-top:1px solid #ddd!important}
 .maplibregl-ctrl-group{border-radius:8px!important;overflow:hidden}
+/* Map buttons: clear white pills on the map in every theme */
+.sm-tools button,.sm-tools button.ghost{background:#fff!important;color:#14151c!important;border:1px solid rgba(0,0,0,.12)!important;box-shadow:0 2px 8px rgba(0,0,0,.18)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font-weight:600!important}
+.sm-tools button svg{color:#14151c!important}
+.sm-tools button:hover{background:#f1f1f5!important}
