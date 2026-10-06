@@ -74,6 +74,8 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   // Modo bot: while management has Modo open, keep UPS package statuses fresh (the bot skips anything checked recently).
   // Keep the Modo bot (UPS tracking) going from every open Modo screen — admins and agents. The server only
   // re-checks packages not checked in the last 25 minutes, so this is cheap and never double-checks.
+  // Notepad coach bot: any open Modo nudges it every ~3 min; it only works when an agent's notepad changed.
+  useEffect(() => { if (!me?.role) return; const run = () => { if (!document.hidden) fetch("/api/chat/notepad-coach", { cache: "no-store" }).catch(() => {}); }; const f = setTimeout(run, 15000 + Math.random() * 15000); const t = setInterval(run, 3 * 60000 + Math.random() * 60000); return () => { clearTimeout(f); clearInterval(t); }; }, [me?.role]);
   useEffect(() => { if (!me?.role) return; const run = () => fetch("/api/sales/ups-bot", { cache: "no-store" }).catch(() => {}); const f = setTimeout(run, 20000 + Math.random() * 20000); const t = setInterval(run, 5 * 60000 + Math.random() * 60000); return () => { clearTimeout(f); clearInterval(t); }; }, [me?.role]);
   useEffect(() => { if (me?.role === "ADMIN") fetch("/api/status").then((x) => x.json()).then((d) => setLockOn(!!d.lockdown)).catch(() => {}); }, [me]);
   const toggleLock = async () => {

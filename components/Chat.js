@@ -1,5 +1,6 @@
 "use client";
 import AiButton from "@/components/AiButton";
+import CoachResult from "@/components/CoachResult";
 // Slack-style team chat: #channels, direct & group messages, threads, reactions, @mentions,
 // voice notes, attachments, edit/delete, presence and huddles/calls.
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -7,12 +8,13 @@ import { useShell } from "./Shell";
 import {
   Hash, Lock, Plus, ChevronDown, ChevronRight, Search, SquarePen, Headphones, Users, X, ArrowLeft,
   Paperclip, Mic, Send, Smile, AtSign, Trash2, Pencil, MessageSquareReply, FileText, Download, Compass, LogOut as Leave,
-  GraduationCap, CheckCircle2, Circle, AlertTriangle, BookOpen,
+  GraduationCap, CheckCircle2, Circle, AlertTriangle, BookOpen, Brain, Sparkles,
 } from "lucide-react";
 
 const EMOJIS = ["👍", "❤️", "😂", "🎉", "👀", "✅", "🙏", "🔥", "💯", "😮"];
 const MAX = 4 * 1024 * 1024;
 const TRAINING = "modo-training";
+const COACH = "notepad-coach";
 const GOT_IT = "✅";
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const t = (d) => new Date(d).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -31,7 +33,7 @@ export function Avatar({ name, size = 36, online, square = true }) {
     </span>
   );
 }
-export const ConvIcon = ({ c, size = 16 }) => c.id === TRAINING ? <GraduationCap size={size} /> : c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
+export const ConvIcon = ({ c, size = 16 }) => c.id === TRAINING ? <GraduationCap size={size} /> : c.id === COACH ? <Brain size={size} /> : c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
 
 // Turns text into React nodes: links and @mentions highlighted.
 function RichText({ text, names, meName }) {
@@ -62,7 +64,7 @@ export default function Chat() {
   useEffect(() => { setThread(null); }, [openId]);
 
   const match = (c) => !q || c.title.toLowerCase().includes(q.toLowerCase());
-  const channels = convs.filter((c) => c.kind === "channel" && match(c)).sort((a, b) => (b.id === TRAINING) - (a.id === TRAINING) || a.title.localeCompare(b.title));
+  const channels = convs.filter((c) => c.kind === "channel" && match(c)).sort((a, b) => (b.id === TRAINING) - (a.id === TRAINING) || (b.id === COACH) - (a.id === COACH) || a.title.localeCompare(b.title));
   const dms = convs.filter((c) => c.kind !== "channel" && match(c));
   const open = (id) => { setOpenId(id); setModal(null); reloadChat(); };
 
@@ -71,7 +73,7 @@ export default function Chat() {
       {c.kind === "dm" ? <Avatar name={c.title} size={20} online={c.online} /> : <span className="sl-ico"><ConvIcon c={c} /></span>}
       <span className="ellipsis">{c.title}</span>
       {c.huddle && <Headphones size={14} className="sl-huddle-ico" aria-label="Huddle in progress" />}
-      {(c.mentions > 0 || ((c.kind !== "channel" || c.id === TRAINING) && c.unread > 0)) && <span className="sl-badge">{c.kind === "channel" && c.id !== TRAINING ? c.mentions : c.unread}</span>}
+      {(c.mentions > 0 || ((c.kind !== "channel" || c.id === TRAINING || c.id === COACH) && c.unread > 0)) && <span className="sl-badge">{c.kind === "channel" && c.id !== TRAINING && c.id !== COACH ? c.mentions : c.unread}</span>}
     </button>
   );
   const Section = ({ id, label, children, onAdd, addLabel }) => (
@@ -136,6 +138,9 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
   const [topic, setTopic] = useState(conv.topic || "");
   const [lessonEdit, setLessonEdit] = useState(null); // null | {} (new) | message (edit)
   const training = conv.id === TRAINING;
+  const coach = conv.id === COACH;
+  const [coachBusy, setCoachBusy] = useState(false); const [coachErr, setCoachErr] = useState("");
+  async function coachNow() { setCoachBusy(true); setCoachErr(""); const r = await api("/api/chat/notepad-coach", "POST", {}); setCoachBusy(false); if (!r.ok) setCoachErr(r.data.error || "The coach couldn't run."); reload(); reloadChat(); }
   const bottom = useRef(null); const lastCount = useRef(0);
   useEffect(() => { if (msgs && msgs.length !== lastCount.current) { bottom.current?.scrollIntoView({ block: "end" }); lastCount.current = msgs.length; } }, [msgs]);
   useEffect(() => { reloadChat(); }, [msgs?.length, reloadChat]);
@@ -159,7 +164,8 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
         </div>
         <div className="sl-head-actions">
           {training && isAdmin && <button className="sl-huddle" onClick={() => setLessonEdit({})}><BookOpen size={16} /> New lesson</button>}
-          {!training && <AiButton task="summarize_chat" payload={{ conversationId: conv.id }} label="Catch me up" />}
+          {coach && isAdmin && <button className="sl-huddle" onClick={coachNow} disabled={coachBusy}><Sparkles size={16} /> {coachBusy ? "Reading notepads…" : "Coach everyone now"}</button>}
+          {!training && !coach && <AiButton task="summarize_chat" payload={{ conversationId: conv.id }} label="Catch me up" />}
           <button className="sl-members" onClick={onMembers} aria-label="Members">
             <span className="stack-av">{conv.members.slice(0, 3).map((m) => <Avatar key={m.id} name={m.name} size={22} />)}</span>{conv.members.length}
           </button>
@@ -175,13 +181,14 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
             <div className="sl-intro">
               {conv.kind === "dm" ? <Avatar name={conv.title} size={64} /> : <span className="sl-intro-ico"><ConvIcon c={conv} size={30} /></span>}
               <h2>{conv.kind === "channel" ? "#" + conv.title : conv.title}</h2>
-              <p className="muted">{training ? "Lessons and call guides from management. Read each one, tap Got it, and ask questions in the lesson's thread." : conv.kind === "channel" ? `This is the start of #${conv.title}. ${conv.topic || ""}` : conv.kind === "dm" ? `This is your conversation with ${conv.title}.` : `Group with ${names.join(", ")}.`}</p>
+              <p className="muted">{coach ? "Only admins can see this. Whenever an agent's notepad changes, the Modo bot posts a summary here with what to say to each customer and how to engage them." : training ? "Lessons and call guides from management. Read each one, tap Got it, and ask questions in the lesson's thread." : conv.kind === "channel" ? `This is the start of #${conv.title}. ${conv.topic || ""}` : conv.kind === "dm" ? `This is your conversation with ${conv.title}.` : `Group with ${names.join(", ")}.`}</p>
             </div>
             <MessageList msgs={msgs} me={me} names={names} onThread={onThread} reload={reload} activeThread={thread} conv={conv} onEditLesson={setLessonEdit} />
           </>
         )}
         <div ref={bottom} />
       </div>
+      {coachErr && <div className="err small" style={{ margin: "0 20px 6px" }}>{coachErr}</div>}
       {training && !isAdmin
         ? <div className="sl-composer-wrap"><div className="tr-readonly"><GraduationCap size={16} /> Only admins post here. Have a question? Open a lesson's thread and ask.</div></div>
         : <Composer conv={conv} names={names} members={conv.members} me={me} onSent={reload}
@@ -201,6 +208,7 @@ function MessageList({ msgs, me, names, onThread, reload, activeThread, inThread
       <Fragment key={m.id}>
         {newDay && <div className="sl-day"><span>{d}</span></div>}
         {m.kind === "SYSTEM" ? <div className="sl-sys">{m.text} <span>· {t(m.at)}</span></div>
+          : m.kind === "COACH" ? <CoachPost m={m} />
           : m.kind === "LESSON" ? <Lesson m={m} me={me} conv={conv} onThread={onThread} reload={reload} inThread={inThread} active={activeThread === m.id} onEdit={onEditLesson} />
           : <Message m={m} me={me} names={names} grouped={grouped} onThread={onThread} reload={reload} active={activeThread === m.id} inThread={inThread} isParent={inThread && idx === 0} />}
       </Fragment>
@@ -583,5 +591,19 @@ export function LessonEditor({ lesson, onClose, onDone }) {
       {err && <div className="err">{err}</div>}
       <div className="row" style={{ justifyContent: "flex-end" }}><button className="ghost" onClick={onClose}>Cancel</button><button onClick={save} disabled={busy || !title.trim() || !body.trim()}>{busy ? "Saving…" : editing ? "Save changes" : "Post to everyone"}</button></div>
     </Modal>
+  );
+}
+
+// #notepad-coach post from the Modo bot
+function CoachPost({ m }) {
+  let d = {}; try { d = JSON.parse(m.text || "{}"); } catch {}
+  return (
+    <article className="tr-card coach-post">
+      <header className="tr-top">
+        <span className="tr-badge"><Brain size={14} /> Notepad coach</span>
+        <span className="muted small">{d.all ? "All notepads" + (d.by ? " · asked by " + d.by : "") : (d.agent || "Agent") + "'s notepad"} · {t(m.at)}</span>
+      </header>
+      {d.pending ? <p className="muted small" style={{ margin: 0 }}>Reading {d.agent ? d.agent + "'s" : "the"} notepad…</p> : <CoachResult res={d.result} hideAgentNames={!d.all} />}
+    </article>
   );
 }

@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { ensureEveryone, userMap, activeHuddle, ONLINE_MS } from "@/lib/chat";
 import { ensureTraining, lessonTitle } from "@/lib/training";
+import { ensureCoach } from "@/lib/coach";
+
+const coachPreview = (t) => { try { const d = JSON.parse(t); return d.pending ? "Reading " + (d.agent || "an agent") + "'s notepad..." : "Coaching: " + (d.all ? "all notepads" : d.agent || "notepad"); } catch { return "Coaching"; } };
 
 // Sidebar data: my channels and direct messages, unread counts, presence and live calls.
 export async function GET() {
@@ -11,6 +14,7 @@ export async function GET() {
   await db.user.update({ where: { id: s.uid }, data: { lastSeenAt: new Date() } }).catch(() => {});
   await ensureEveryone();
   await ensureTraining().catch(() => {}); // #modo-training never blocks the chat list
+  if (s.role === "ADMIN") await ensureCoach().catch(() => {});
   const mine = await db.convMember.findMany({ where: { userId: s.uid }, select: { conversationId: true, lastReadAt: true } });
   const convs = await db.conversation.findMany({
     where: { id: { in: mine.map((m) => m.conversationId) } }, orderBy: { lastMessageAt: "desc" },
@@ -36,7 +40,7 @@ export async function GET() {
       members: c.members.map((m) => ({ id: m.userId, name: U[m.userId]?.name || "Former user", role: U[m.userId]?.role, agentId: U[m.userId]?.agentId, online: online(m.userId) })),
       unread: unreadMsgs.length,
       mentions: unreadMsgs.filter((m) => meName && (m.text || "").toLowerCase().includes("@" + meName)).length,
-      last: last ? { kind: last.kind, text: last.kind === "LESSON" ? "📘 " + lessonTitle(last.text) : last.kind === "AUDIO" ? "🎤 Voice note" : last.kind === "FILE" ? "📎 " + (last.fileName || "File") : last.text, at: last.createdAt, by: U[last.userId]?.name } : null,
+      last: last ? { kind: last.kind, text: last.kind === "COACH" ? "🧠 " + coachPreview(last.text) : last.kind === "LESSON" ? "📘 " + lessonTitle(last.text) : last.kind === "AUDIO" ? "🎤 Voice note" : last.kind === "FILE" ? "📎 " + (last.fileName || "File") : last.text, at: last.createdAt, by: U[last.userId]?.name } : null,
       huddle: h ? { id: h.id, startedById: h.startedById, startedBy: U[h.startedById]?.name || (await userMap([h.startedById]))[h.startedById]?.name, count: h.participants.length, inIt: h.participants.some((p) => p.userId === s.uid) } : null,
     };
   }));

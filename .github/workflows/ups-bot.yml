@@ -10,3 +10,5 @@ jobs:
     timeout-minutes: 2
     steps:
       - run: curl -fsS --max-time 60 "https://modo-crm1.vercel.app/api/sales/ups-bot" || true
+      # Notepad coach: posts coaching to #notepad-coach when an agent's notepad changed, even if no one has Modo open
+      - run: curl -fsS --max-time 60 "https://modo-crm1.vercel.app/api/chat/notepad-coach" || true
