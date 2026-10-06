@@ -133,6 +133,15 @@ model Sale {
   geoStores      String?   // nearest UPS locations (JSON), refreshed monthly
   geoAt          DateTime?
   dropStore      String?   // where the customer dropped the return package (JSON: name, addr, at, how)
+  upsStatus      String?   // Modo bot: label | dropped_off | in_transit | out_for_delivery | delivered | exception | returned
+  upsStage       String?
+  upsEta         DateTime?
+  upsEvents      String?   // last scans (JSON)
+  upsAt          DateTime?
+  upsSrc         String?
+  upsError       String?
+  activatedAt    DateTime? // when admin marked it Active
+  cheeredAt      DateTime? // when the agent saw the congrats
   shiftDate String   @default("")
   status    String   @default("NEW") // NEW | VERIFIED (= Active) | REJECTED (= Not active)
   createdAt DateTime @default(now())

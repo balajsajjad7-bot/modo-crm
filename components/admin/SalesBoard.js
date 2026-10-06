@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePoll, api } from "./api";
 import SaleCard from "@/components/SaleCard";
+import { cheer } from "@/components/Cheers";
 import EmailComposer from "@/components/EmailComposer";
 import { useShell } from "@/components/Shell";
 import { Search, ChevronsUpDown, ChevronLeft, ChevronRight, LayoutGrid, RectangleHorizontal } from "lucide-react";
@@ -48,7 +49,13 @@ export default function SalesBoard() {
     todo.forEach((s) => tried.current.add(s.id)); pricing.current = true;
     api("/api/sales/value", "POST", { ids: todo.map((s) => s.id) }).then((r) => { pricing.current = false; if (!r.ok) setPriceErr(r.data.error || ""); else { setPriceErr(""); reload(); } });
   }, [data, list]); // eslint-disable-line
-  async function setStatus(id, status) { setLocal((l) => ({ ...l, [id]: status })); const r = await api("/api/sales", "PATCH", { id, status }); if (!r.ok) alert(r.data.error || "Couldn't update the sale."); reload(); }
+  async function setStatus(id, status) {
+    const was = list.find((x) => x.id === id);
+    setLocal((l) => ({ ...l, [id]: status })); const r = await api("/api/sales", "PATCH", { id, status });
+    if (!r.ok) alert(r.data.error || "Couldn't update the sale.");
+    else if (status === "VERIFIED" && was?.status !== "VERIFIED") cheer({ title: `Well done! #${was?.orderNumber || ""} is Active 🎉`, body: `${(was?.user?.name || "The agent").split(" ")[0]} just got a congrats.`, device: was?.device, color: was?.deviceColor });
+    reload();
+  }
   async function remove(s) {
     if (!confirm(`Delete sale #${s.orderNumber || s.receipt} for ${s.customer || "this customer"}? This can't be undone.`)) return;
     setGone((g) => ({ ...g, [s.id]: true })); const r = await api("/api/sales?id=" + s.id, "DELETE"); if (!r.ok) alert("Couldn't delete the sale."); reload();

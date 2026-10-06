@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 const SaleMap = dynamic(() => import("@/components/SaleMap"), { ssr: false, loading: () => <div className="sm-loading muted small">Loading map…</div> });
 import { nearestLine, dropLine } from "@/lib/nearest";
 import DeviceArt from "@/components/DeviceArt";
+import UpsTrack from "@/components/UpsTrack";
 import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard, Maximize2, Minimize2, X, Store } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
@@ -214,6 +215,8 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
         <span className="muted"><Clock size={12} /> {preview ? pkTime(new Date()) : pkTime(s.createdAt)}</span>
         {!preview && dropLine(s) ? <span className="sale-ups dropped"><Store size={12} /> Dropped at {dropLine(s)}</span> : !preview && nearestLine(s) ? <span className="sale-ups"><Store size={12} /> Nearest UPS: {nearestLine(s)}</span> : null}
       </div>
+
+      {!preview && <UpsTrack s={s} />}
 
       {sibs.length > 0 && (
         <div className="sibs">

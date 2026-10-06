@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendPush } from "@/lib/push";
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { requireRole, clientIp } from "@/lib/auth";
@@ -114,7 +115,14 @@ export async function PATCH(req) {
   if (error) return error;
   const { id, status } = await req.json();
   if (!["NEW", "VERIFIED", "REJECTED"].includes(status)) return NextResponse.json({ error: "Unknown status." }, { status: 400 });
-  let s = await db.sale.update({ where: { id }, data: { status }, include: { user: { select: { name: true } } } });
+  const before = await db.sale.findUnique({ where: { id }, select: { status: true } });
+  const turnedActive = status === "VERIFIED" && before?.status !== "VERIFIED";
+  let s = await db.sale.update({ where: { id }, data: { status, ...(turnedActive ? { activatedAt: new Date(), cheeredAt: null } : {}) }, include: { user: { select: { name: true } } } });
+  // Congrats: the agent gets a phone alert now and a celebration in Modo the next time it's open.
+  if (turnedActive) {
+    const first = String(s.user?.name || "").split(" ")[0];
+    sendPush(s.userId, { title: `🎉 Congrats ${first}! Sale approved`, body: `Well done! #${s.orderNumber || s.receipt}${s.customer ? " for " + s.customer : ""}${s.device ? " (" + s.device + ")" : ""} is now Active.`, url: "/agent", tag: "cheer-" + s.id, urgent: true }).catch(() => {});
+  }
   // Automatic return label: when a sale turns Active and "Make a label automatically" is on in Connectors.
   if (status === "VERIFIED" && !s.returnLabelUrl) {
     try {
