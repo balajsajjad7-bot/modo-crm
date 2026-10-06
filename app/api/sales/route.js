@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { feed, tag, money as usd } from "@/lib/salesFeed";
 import { sendPush } from "@/lib/push";
 import crypto from "crypto";
 import { db } from "@/lib/db";
@@ -79,6 +80,7 @@ export async function POST(req) {
     if (!contact) contact = await db.contact.create({ data: { name: f.customer, phone: f.phone, email: f.email, address: [f.address, f.zip].filter(Boolean).join(" ") || null, tags: "sale", source: "Sale", ownerId: user.id } });
     await log(user.id, { contactId: contact.id, kind: "note", text: `Sale submitted · order #${f.orderNumber}${product ? " · " + product : ""}${f.billAfter != null ? ` · $${f.billAfter}/mo` : ""}${f.notes ? "\n" + f.notes : ""}` });
   } catch {}
+  await feed(`🆕 New sale #${f.orderNumber} · ${f.customer}${product ? " · " + product : ""}${f.billAfter != null ? ` · ${usd(f.billAfter)}/mo` : ""}${f.discountPct != null ? ` (${f.discountPct}% off)` : ""} · by ${user.name}${closer && closer.id !== user.id ? `, closed by ${closer.name}` : ""}${flags.length ? `\n⚠ ${flags.join(", ")}` : ""}`);
   await emit("sale.created", { order: f.orderNumber, receipt, customer: f.customer, device: product, billAfter: f.billAfter, discount: f.discountPct != null ? f.discountPct + "%" : null, office: f.office, sentBy: user.name, closedBy: closer?.name, flags: flags.join(", ") });
   return NextResponse.json({ receipt });
 }
@@ -101,17 +103,18 @@ export async function GET() {
 
 // Admin deletes a sale permanently
 export async function DELETE(req) {
-  const { error } = await requireRole("ADMIN");
+  const { error, session } = await requireRole("ADMIN");
   if (error) return error;
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Which sale?" }, { status: 400 });
-  await db.sale.delete({ where: { id } }).catch(() => null);
+  const gone = await db.sale.delete({ where: { id } }).catch(() => null);
+  if (gone) await feed(`🗑 ${tag(gone)} deleted by ${session.name}`);
   return NextResponse.json({ ok: true });
 }
 
 // Admin marks a sale Active (VERIFIED) or Not active (REJECTED), or back to NEW
 export async function PATCH(req) {
-  const { error } = await requireRole("ADMIN");
+  const { error, session } = await requireRole("ADMIN");
   if (error) return error;
   const { id, status } = await req.json();
   if (!["NEW", "VERIFIED", "REJECTED"].includes(status)) return NextResponse.json({ error: "Unknown status." }, { status: 400 });
@@ -130,6 +133,7 @@ export async function PATCH(req) {
       if (cfg?.auto) { const r = await makeLabel(s, { cfg }); if (r.sale) s = { ...s, ...r.sale }; }
     } catch {}
   }
+  if (before?.status !== status) await feed(`${status === "VERIFIED" ? "✅" : status === "REJECTED" ? "❌" : "↩️"} ${tag(s)} → ${status === "VERIFIED" ? "Active" : status === "REJECTED" ? "Not active" : "New"} by ${session.name}${turnedActive ? ` · ${String(s.user?.name || "").split(" ")[0]} got a congrats 🎉` : ""}${s.returnLabelUrl && turnedActive ? " · return label made" : ""}`);
   await emit("sale.status", { order: s.orderNumber, receipt: s.receipt, status: status === "VERIFIED" ? "Active" : status === "REJECTED" ? "Not active" : "New", agent: s.user.name, customer: s.customer });
   return NextResponse.json(s);
 }

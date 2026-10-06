@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { feed, tag } from "@/lib/salesFeed";
 import { db } from "@/lib/db";
 import { requireManager } from "@/lib/auth";
 import { ORDER_STATUSES, normalizeOrderStatus } from "@/lib/orderFill";
@@ -9,7 +10,7 @@ const NAMES = { verizon: "Verizon", att: "AT&T", tmobile: "T-Mobile" };
 // Admins, and supervisors with Sales access. Stored in the sale's tracking fields so it shows on
 // the sale card and the Order tracking page.
 export async function POST(req) {
-  const { error } = await requireManager("sales");
+  const { error, session } = await requireManager("sales");
   if (error) return error;
   const b = await req.json().catch(() => ({}));
   const status = ORDER_STATUSES.find((x) => x.toLowerCase() === String(b.status || "").toLowerCase());
@@ -26,5 +27,6 @@ export async function POST(req) {
     ...(!sale.trackingNo ? { carrier: b.carrier && NAMES[b.carrier] ? b.carrier : "verizon" } : {}),
   };
   const updated = await db.sale.update({ where: { id: sale.id }, data, select: { id: true, trackStatus: true, trackStage: true, trackUpdatedAt: true, orderNumber: true, customer: true } });
+  await feed(`📋 ${tag(updated)} ${who} order status: ${status}${note ? " — " + note : ""} (by ${session.name})`);
   return NextResponse.json({ ok: true, sale: updated });
 }

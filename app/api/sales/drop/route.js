@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { feed, tag } from "@/lib/salesFeed";
 import { db } from "@/lib/db";
 import { requireManager } from "@/lib/auth";
 import { trackingConfig, track } from "@/lib/tracking";
@@ -10,10 +11,10 @@ const DROP = /drop.?off|dropped|received by ups|received at|origin scan|access p
 // { id, check: true } → read it from the return label's UPS tracking (AfterShip)
 // { id, store: { name, addr, lat, lng } } → mark it by hand ("Dropped here");  { id, clear: true } → remove
 export async function POST(req) {
-  const { error } = await requireManager("sales");
+  const { error, session } = await requireManager("sales");
   if (error) return error;
   const b = await req.json().catch(() => ({}));
-  const s = await db.sale.findUnique({ where: { id: String(b.id || "") }, select: { id: true, returnTracking: true, trackingNo: true, carrier: true } });
+  const s = await db.sale.findUnique({ where: { id: String(b.id || "") }, select: { id: true, returnTracking: true, trackingNo: true, carrier: true, orderNumber: true, customer: true, receipt: true, dropStore: true } });
   if (!s) return NextResponse.json({ error: "That sale doesn't exist any more." }, { status: 404 });
   let drop = null;
   if (b.clear) drop = null;
@@ -31,5 +32,7 @@ export async function POST(req) {
     drop = { name: named || "UPS drop-off", addr: cp.loc || "", at: cp.at || new Date().toISOString(), how: "tracking", msg: (cp.msg || "").slice(0, 160) };
   }
   await db.sale.update({ where: { id: s.id }, data: { dropStore: drop ? JSON.stringify(drop) : null } });
+  if (drop && (!s.dropStore || b.store)) await feed(`🏪 ${tag(s)} package dropped at ${drop.name}${drop.addr ? ", " + drop.addr : ""} (${drop.how === "tracking" ? "from UPS tracking" : "marked by " + session.name})`);
+  else if (!drop && s.dropStore) await feed(`↩️ ${tag(s)} drop-off removed by ${session.name}`);
   return NextResponse.json({ ok: true, drop });
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { feed, tag, money } from "@/lib/salesFeed";
 import { db } from "@/lib/db";
 import { requireManager } from "@/lib/auth";
 import { lookupDeviceValue, deviceName } from "@/lib/deviceValue";
@@ -11,20 +12,21 @@ const WEEK = 7 * 24 * 3600 * 1000;
 // Look up what each sale's device is worth today (searches the web through the AI connector).
 // { ids: [...] } prices up to 4 sales per call; { id, refresh: true } re-checks one; { id, value } sets it by hand.
 export async function POST(req) {
-  const { error } = await requireManager("sales");
+  const { error, session } = await requireManager("sales");
   if (error) return error;
   const b = await req.json().catch(() => ({}));
 
   if (b.id && b.value !== undefined) {
     const v = b.value === "" || b.value == null ? null : Number(b.value);
     if (v != null && (!isFinite(v) || v < 0)) return NextResponse.json({ error: "Enter a price in dollars." }, { status: 400 });
-    const s = await db.sale.update({ where: { id: String(b.id) }, data: { deviceValue: v, deviceValueSrc: v == null ? null : "Set by admin", deviceValueAt: new Date() }, select: FIELDS });
+    const s = await db.sale.update({ where: { id: String(b.id) }, data: { deviceValue: v, deviceValueSrc: v == null ? null : "Set by admin", deviceValueAt: new Date() }, select: { ...FIELDS, orderNumber: true, customer: true, receipt: true } });
+    await feed(`💲 ${tag(s)} device value ${v == null ? "cleared" : "set to " + money(v)} by ${session.name}`);
     return NextResponse.json({ sales: [s] });
   }
 
   const ids = (b.ids || (b.id ? [b.id] : [])).map(String).slice(0, 4);
   if (!ids.length) return NextResponse.json({ error: "Which sales?" }, { status: 400 });
-  const sales = await db.sale.findMany({ where: { id: { in: ids } }, select: { id: true, device: true, storage: true, deviceValue: true } });
+  const sales = await db.sale.findMany({ where: { id: { in: ids } }, select: { id: true, device: true, storage: true, deviceValue: true, orderNumber: true, customer: true, receipt: true } });
   const out = [], errors = [];
   const seen = {}; // same device in this batch → one search
   for (const s of sales) {
@@ -41,6 +43,7 @@ export async function POST(req) {
       if (!price) price = await lookupDeviceValue(name);
       seen[name.toLowerCase()] = price;
       out.push(await db.sale.update({ where: { id: s.id }, data: { deviceValue: price.value, deviceValueUsed: price.used ?? null, deviceValueSrc: String(price.source || "web").slice(0, 80), deviceValueAt: new Date() }, select: FIELDS }));
+      if (s.deviceValue !== price.value) await feed(`💲 ${tag(s)} ${name} is worth ${money(price.value)} new${price.used != null ? `, ${money(price.used)} used` : ""} (looked up online)`);
     } catch (e) { errors.push({ id: s.id, error: e.message }); }
   }
   if (!out.length && errors.length) return NextResponse.json({ error: friendlyError(new Error(errors[0].error)), errors }, { status: 502 });

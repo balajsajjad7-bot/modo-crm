@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { feed, tag } from "@/lib/salesFeed";
 import { currentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { runBot, sources } from "@/lib/upsBot";
@@ -26,6 +27,8 @@ export async function POST(req) {
       const n = String(b.trackingNo || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 40);
       if (n && n.length < 8) return NextResponse.json({ error: "That doesn't look like a tracking number." }, { status: 400 });
       const carrier = !n ? null : /^1Z/.test(n) ? "ups" : /^(94|93|92|95)\d{18,20}$|^[A-Z]{2}\d{9}US$/.test(n) ? "usps" : /^\d{12}$|^\d{15}$/.test(n) ? "fedex" : "ups";
+      const prev = await db.sale.findUnique({ where: { id: String(b.id) }, select: { orderNumber: true, customer: true, receipt: true, trackingNo: true } });
+      if (prev && prev.trackingNo !== (n || null)) await feed(n ? `🚚 ${tag(prev)} tracking ${prev.trackingNo ? "changed to" : "added:"} ${n} (by ${s.name}) — Modo bot is tracking it` : `🚚 ${tag(prev)} tracking number removed by ${s.name}`);
       await db.sale.update({ where: { id: String(b.id) }, data: { trackingNo: n || null, carrier, upsStatus: null, upsStage: null, upsEta: null, upsEvents: null, upsAt: null, upsError: null } });
       if (!n) return NextResponse.json({ ok: true, sale: { trackingNo: null } });
     }

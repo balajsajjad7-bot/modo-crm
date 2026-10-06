@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { feed, tag } from "@/lib/salesFeed";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { track, trackingConfig } from "@/lib/tracking";
@@ -26,7 +27,7 @@ export async function POST(req) {
   const b = await req.json().catch(() => ({}));
   // Refresh ones not yet delivered — new and old. Track by tracking number, or fall back to the order number.
   const where = b.id ? { id: b.id } : { status: { not: "REJECTED" }, OR: [{ trackingNo: { not: null } }, { orderNumber: { not: null } }], AND: [{ OR: [{ trackStatus: null }, { trackStatus: { notIn: ["delivered", "returned"] } }] }] };
-  const sales = await db.sale.findMany({ where, orderBy: { createdAt: "desc" }, take: b.id ? 1 : 120, select: { id: true, trackingNo: true, orderNumber: true, carrier: true } });
+  const sales = await db.sale.findMany({ where, orderBy: { createdAt: "desc" }, take: b.id ? 1 : 120, select: { id: true, trackingNo: true, orderNumber: true, carrier: true, customer: true, receipt: true, trackStatus: true } });
   let ok = 0, fail = 0;
   for (const s of sales) {
     const number = s.trackingNo || s.orderNumber;
@@ -35,6 +36,7 @@ export async function POST(req) {
     if (!s.trackingNo && ["verizon", "att", "tmobile"].includes(String(s.carrier || "").toLowerCase())) continue;
     try {
       const r = await track(cfg.apiKey, number, s.carrier);
+      if (r.status !== s.trackStatus) await feed(`📦 ${tag(s)} shipment: ${r.stage || r.status}`);
       await db.sale.update({ where: { id: s.id }, data: { trackStatus: r.status, trackStage: r.stage?.slice(0, 300) || null, trackUpdatedAt: new Date(), deliveredAt: r.deliveredAt ? new Date(r.deliveredAt) : null } });
       ok++;
     } catch (e) {
