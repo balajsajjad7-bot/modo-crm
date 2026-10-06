@@ -17,6 +17,23 @@ if(!raw.startsWith(P)&&!AUTO){try{raw=(await navigator.clipboard.readText()||'')
 if(!raw.startsWith(P))raw=(prompt('Modo Fill: paste the order code from Modo (Ctrl+V)')||'').trim();}
 if(!raw.startsWith(P)){if(!AUTO)alert('Modo Fill: no order code found. In Modo press "Check order" first, then click this bookmark on the carrier page.');return}
 let d;try{d=JSON.parse(decodeURIComponent(escape(atob(raw.slice(P.length)))))}catch(e){alert('Modo Fill: that code is damaged. Press "Check order" in Modo again.');return}
+if(d.k==='ups'){
+const UB=document.createElement('div');UB.id='modo-fill';document.getElementById('modo-fill')?.remove();
+UB.style.cssText='position:fixed;top:16px;right:16px;z-index:2147483647;width:290px;font:13px/1.45 system-ui,sans-serif;color:#eef0fa;background:#10111e;border:1px solid rgba(139,92,246,.5);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.5);padding:14px';
+document.body.appendChild(UB);
+const ST=[['label','Label made'],['dropped_off','Dropped off'],['in_transit','On the way'],['out_for_delivery','Out for delivery'],['delivered','Delivered'],['exception','Problem'],['returned','Returned']];
+const PH=[[/\bout for delivery\b/i,'out_for_delivery'],[/\bdelivered\b(?! by)/i,'delivered'],[/\bon the way\b/i,'in_transit'],[/\bin transit\b/i,'in_transit'],[/\bwe have your package\b/i,'dropped_off'],[/\bdrop-?off\b|\bdropped off\b/i,'dropped_off'],[/\breturned to sender\b/i,'returned'],[/\bdelivery attempted\b|\bexception\b|\baction required\b/i,'exception'],[/\blabel created\b|\bshipper created a label\b/i,'label']];
+const txt=()=>[...document.body.children].filter(n=>n!==UB&&n.tagName!=='SCRIPT').map(n=>n.innerText||'').join('\n');
+const scanU=()=>{const b=txt();const at=b.toUpperCase().indexOf(d.o);if(at<0)return null;const z=b.slice(Math.max(0,at-400));let best=null;for(const[re,st]of PH){const m=z.match(re);if(m&&(!best||m.index<best.i))best={i:m.index,st}}if(!best)return null;return{st:best.st,snip:z.slice(best.i,best.i+150).split('\n').slice(0,2).join(' · ').replace(/\s+/g,' ').trim()}};
+const btnS='background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff;border:0;border-radius:999px;padding:7px 12px;font-weight:700;cursor:pointer';
+const save=(st,sn)=>{try{sessionStorage.removeItem('modo-code')}catch(e){}window.open(d.u+'/order-status?k=ups&i='+encodeURIComponent(d.id)+'&s='+encodeURIComponent(st)+'&n='+encodeURIComponent((sn||'').slice(0,200)),'_blank');UB.querySelector('#mu-save').textContent='Sent ✓'};
+const drawU=(r,msg)=>{UB.innerHTML='<b style="font-size:14px">Modo · UPS '+d.o+'</b><div style="opacity:.7;margin:2px 0 8px">'+msg+'</div><select id="mu-s" style="width:100%;margin:0 0 8px;padding:6px;border-radius:8px;background:#1b1c2e;color:#fff;border:1px solid #333">'+ST.map(([k,l])=>'<option value="'+k+'"'+(r&&r.st===k?' selected':'')+'>'+l+'</option>').join('')+'</select><div style="display:flex;gap:6px"><button id="mu-save" style="'+btnS+'">Save to Modo</button><button id="mu-x" style="margin-left:auto;background:none;border:0;color:#aaa;cursor:pointer;font-size:16px">✕</button></div>';
+UB.querySelector('#mu-x').onclick=()=>UB.remove();UB.querySelector('#mu-s').onfocus=()=>{UB.dataset.stop='1'};
+UB.querySelector('#mu-save').onclick=()=>save(UB.querySelector('#mu-s').value,r?r.snip:'');
+if(r&&AUTO){let k=3;const b=UB.querySelector('#mu-save');const tick=()=>{if(!UB.isConnected||UB.dataset.stop)return;if(k===0){b.click();return}b.textContent='Saving in '+k--+'…';setTimeout(tick,1000)};tick()}};
+drawU(null,'Reading UPS…');let tr=0;const iv=setInterval(()=>{const r=scanU();if(r||++tr>30){clearInterval(iv);r?drawU(r,'UPS says this — '+(AUTO?'saving it to Modo…':'check it and save.')):drawU(null,'Couldn\'t read the status. If UPS asks you to verify, do that — or pick the step and save.')}},1000);
+return}
+
 const all=(sel,root=document,out=[])=>{root.querySelectorAll(sel).forEach(x=>out.push(x));root.querySelectorAll('*').forEach(x=>x.shadowRoot&&all(sel,x.shadowRoot,out));return out};
 const vis=el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(el).visibility!=='hidden'};
 const txt=el=>[el.name,el.id,el.placeholder,el.getAttribute('aria-label'),el.getAttribute('data-testid'),el.autocomplete,el.labels?[...el.labels].map(l=>l.textContent).join(' '):'',(el.closest('label,div,fieldset')||{}).textContent?.slice(0,80)].join(' ').toLowerCase();

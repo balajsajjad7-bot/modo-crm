@@ -1,7 +1,9 @@
 "use client";
 // UPS package on a sale card: tracking link + a live progress graphic kept up to date by the Modo bot.
-import { useEffect, useState } from "react";
-import { Tag, Store, Truck, Navigation, PackageCheck, ExternalLink, RefreshCw, Bot, AlertTriangle, ChevronDown, Copy, Check, Pencil } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { detectUps } from "@/lib/upsText";
+import { encodeUps } from "@/lib/orderFill";
+import { Tag, Store, Truck, Navigation, PackageCheck, ExternalLink, RefreshCw, Bot, AlertTriangle, ChevronDown, Copy, Check, Pencil, ClipboardPaste, Camera, X } from "lucide-react";
 
 const STEPS = [["label", "Label", Tag], ["dropped_off", "Dropped off", Store], ["in_transit", "On the way", Truck], ["out_for_delivery", "Out for delivery", Navigation], ["delivered", "Delivered", PackageCheck]];
 const LABEL = { label: "Label made — waiting for the customer to drop it off", dropped_off: "Dropped off at UPS", in_transit: "On the way", out_for_delivery: "Out for delivery", delivered: "Delivered", exception: "Problem with the package — check UPS", returned: "Returned to sender", unknown: "Waiting for UPS's first scan" };
@@ -39,6 +41,41 @@ export default function UpsTrack({ s: s0, compact }) {
     if (d.sale) setT(pick(d.sale));
   }
   useEffect(() => { if (found && !compact && /^1Z[0-9A-Z]{16}$/.test(found)) saveNo(found); }, [found]); // eslint-disable-line
+  // ── Checked on UPS by hand → push the answer back into Modo ──
+  const [pick2, setPick2] = useState(null); const [back, setBack] = useState(false); const [paste, setPaste] = useState(""); const [hint, setHint] = useState(""); const shot = useRef(null);
+  async function setManual(status, stage) {
+    setBusy(true); setErr("");
+    const r = await fetch("/api/sales/ups-status", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: s.id, status, stage }) });
+    const d = await r.json().catch(() => ({})); setBusy(false);
+    if (!r.ok) return setErr(d.error || "Couldn't save.");
+    setT(pick(d.sale || {})); setPick2(null); setBack(false); setPaste(""); setHint(""); setSaved(`Saved: ${LABEL[status] || status} ✓`); setTimeout(() => setSaved(""), 4000);
+  }
+  const readText = (text) => { setPaste(text); const r = detectUps(text, num); if (r) { setPick2({ status: r.status, stage: r.stage }); setHint(`UPS says “${LABEL[r.status] || r.status}” — press Save.`); } else if (text.trim().length > 15) setHint("Couldn't find the status in that text — tap the step on the line above instead."); };
+  async function pasteNow() { try { const t = await navigator.clipboard.readText(); if (t) return readText(t); } catch {} setHint("Long-press the box below and choose Paste."); }
+  async function readShot(e) {
+    const file = e.target.files?.[0]; e.target.value = ""; if (!file) return;
+    setHint("Reading the screenshot…"); const fd = new FormData(); fd.set("image", file); fd.set("kind", "ups");
+    const r = await fetch("/api/sales/order-status/read", { method: "POST", body: fd }); const d = await r.json().catch(() => ({}));
+    if (!r.ok) return setHint(d.error || "Couldn't read the screenshot.");
+    if (d.upsStatus) { setPick2({ status: d.upsStatus, stage: d.detail || "" }); setHint(`Screenshot says “${LABEL[d.upsStatus] || d.upsStatus}” — press Save.`); } else setHint("No status found in the screenshot — tap the step above instead.");
+  }
+  // "Track on UPS": the Modo app / Modo Fill add-on read UPS's page and save by themselves; otherwise when you
+  // come back to Modo, the card asks what UPS said.
+  function goUps(e) {
+    const url = trackLink(num, service);
+    const isUpsPkg = !/^(usps|fedex)/i.test(service || "");
+    if (!isUpsPkg) return; // other carriers: plain link
+    const code = encodeUps({ id: s.id, num }, location.origin);
+    if (/Android/i.test(navigator.userAgent)) { e.preventDefault(); location.href = `intent://check?d=${encodeURIComponent(code)}&u=${encodeURIComponent(url)}#Intent;scheme=modo;package=com.modo.crm;S.browser_fallback_url=${encodeURIComponent(url)};end`; }
+    else if (document.documentElement.dataset.modoFill === "1") { e.preventDefault(); window.open(url + "#modo=" + encodeURIComponent(code), "_blank"); }
+    try { sessionStorage.setItem("modo-ups-went", s.id); } catch {}
+  }
+  useEffect(() => {
+    const on = () => { if (document.hidden) return; let w = ""; try { w = sessionStorage.getItem("modo-ups-went") || ""; } catch {} if (w === s.id) { try { sessionStorage.removeItem("modo-ups-went"); } catch {} setBack(true); setTimeout(() => document.getElementById("ups-" + s.id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 200); } };
+    const st = (e) => { if (e.key === "modo-order-status" && e.newValue) { try { const d = JSON.parse(e.newValue); if (d.id === s.id && d.upsStatus) { setT(pick(d)); setBack(false); } } catch {} } };
+    document.addEventListener("visibilitychange", on); window.addEventListener("focus", on); window.addEventListener("storage", st);
+    return () => { document.removeEventListener("visibilitychange", on); window.removeEventListener("focus", on); window.removeEventListener("storage", st); };
+  }, [s.id]);
   // Never checked yet → let the bot look right away
   useEffect(() => { if (num && !s.upsAt && !compact && !edit) check(); }, [s.id, num]); // eslint-disable-line
   if (!num || edit) return (
@@ -72,15 +109,16 @@ export default function UpsTrack({ s: s0, compact }) {
         <span style={{ flex: 1 }} />
         {!s.returnTracking && <button className="ghost sm icon-btn" title="Change tracking number" aria-label="Change tracking number" onClick={() => { setVal(num); setEdit(true); }}><Pencil size={13} /></button>}
         <button className="ghost sm icon-btn" title="Copy tracking number" aria-label="Copy tracking number" onClick={() => { navigator.clipboard?.writeText(num); setCopied(true); setTimeout(() => setCopied(false), 1300); }}>{copied ? <Check size={13} /> : <Copy size={13} />}</button>
-        <a className="btn-link ups-go" href={trackLink(num, service)} target="_blank" rel="noreferrer"><Truck size={13} /> Track on {isUps ? "UPS" : "carrier"}</a>
+        <a className="btn-link ups-go" href={trackLink(num, service)} target="_blank" rel="noreferrer" onClick={goUps}><Truck size={13} /> Track on {isUps ? "UPS" : "carrier"}</a>
       </div>
 
-      <div className="ups-rail" role="img" aria-label={`Package status: ${LABEL[st] || st}`}>
+      <div className="ups-rail" role="group" aria-label={`Package status: ${LABEL[st] || st}. Tap a step to set it.`}>
         <div className="ups-line"><i style={{ width: pct + "%" }} /></div>
         {STEPS.map(([k, l, Icon], n) => (
-          <div key={k} className={"ups-step" + (!bad && n < i ? " done" : "") + (!bad && n === i ? " now" : "")} style={{ left: (n / (STEPS.length - 1)) * 100 + "%" }}>
+          <button type="button" key={k} title={`Set to “${l}” (what UPS shows)`} onClick={() => setPick2({ status: k, stage: "" })}
+            className={"ups-step" + (!bad && n < i ? " done" : "") + (!bad && n === i ? " now" : "") + (pick2?.status === k ? " pick" : "")} style={{ left: (n / (STEPS.length - 1)) * 100 + "%" }}>
             <span className="ups-dot"><Icon size={13} /></span><span className="ups-sl">{l}</span>
-          </div>
+          </button>
         ))}
         {!bad && i > 0 && i < 4 && <span className="ups-truck" style={{ left: `calc(${pct}% - 2px)` }}>🚚</span>}
       </div>
@@ -96,8 +134,27 @@ export default function UpsTrack({ s: s0, compact }) {
         <button className="ghost sm icon-btn" aria-label="Check UPS now" title="Check UPS now" onClick={check} disabled={busy}><RefreshCw size={13} className={busy ? "spin" : ""} /></button>
         {events.length > 0 && <button className="ghost sm icon-btn" aria-label="Show scans" title="Show UPS scans" onClick={() => setOpen(!open)}><ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "", transition: ".2s" }} /></button>}
       </div>
+      {pick2 && (
+        <div className="ups-confirm">
+          <span>Set to <b>{LABEL[pick2.status] || pick2.status}</b>{pick2.stage ? <span className="small muted"> — {pick2.stage}</span> : null}?</span>
+          <span className="row" style={{ gap: 6 }}><button className="sm" disabled={busy} onClick={() => setManual(pick2.status, pick2.stage)}>{busy ? "Saving…" : "Save"}</button><button className="ghost sm" onClick={() => { setPick2(null); setHint(""); }}>Cancel</button></span>
+        </div>
+      )}
+      {back && !pick2 && (
+        <div className="ups-back">
+          <div className="row" style={{ justifyContent: "space-between" }}><b className="small">What did UPS show? Update Modo</b><button className="ghost sm icon-btn" aria-label="Close" onClick={() => { setBack(false); setHint(""); }}><X size={13} /></button></div>
+          <span className="small muted">Tap the step on the line above — or bring UPS's page back:</span>
+          <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+            <button className="ghost sm" onClick={pasteNow}><ClipboardPaste size={13} /> Paste UPS page</button>
+            <button className="ghost sm" onClick={() => shot.current?.click()}><Camera size={13} /> Read screenshot</button>
+            <input ref={shot} type="file" accept="image/*" hidden onChange={readShot} />
+          </div>
+          <textarea rows={2} value={paste} onChange={(e) => readText(e.target.value)} placeholder="…or paste UPS's tracking text here" />
+        </div>
+      )}
+      {hint && <p className="small ups-saved">{hint}</p>}
       {saved && <p className="small ups-saved">{saved}</p>}
-      {(err || t.upsError) && <p className="small ups-err">{err || (/NO_SOURCE/.test(t.upsError) ? "Connect UPS tracking in Connectors so the bot can follow this package." : t.upsError)}</p>}
+      {(err || t.upsError) && <p className="small ups-err">{err || (/SHIPPO_TEST|not a valid test tracking carrier/i.test(t.upsError) ? "Your Shippo key is a test key, which can't track real UPS packages. Add your Shippo Live token in Connectors → Return labels (Shippo) → “Live token for tracking”. Meanwhile, tap the step UPS shows on the line above." : /NO_SOURCE/.test(t.upsError) ? "Connect UPS tracking in Connectors so the bot can follow this package — or tap the step UPS shows." : t.upsError)}</p>}
       {open && <ol className="ups-scans">{events.map((e, n) => <li key={n}><b>{e.msg}</b><span className="small muted">{[e.loc, when(e.at)].filter(Boolean).join(" · ")}</span></li>)}</ol>}
     </div>
   );

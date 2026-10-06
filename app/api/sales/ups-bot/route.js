@@ -34,7 +34,7 @@ export async function POST(req) {
     }
     const r = await runBot({ id: String(b.id) });
     if (r.needsSetup && "trackingNo" in b) { const sale = await db.sale.findUnique({ where: { id: String(b.id) }, select: { trackingNo: true, carrier: true } }); return NextResponse.json({ ok: true, needsSetup: true, sale }); }
-    if (r.needsSetup) return NextResponse.json({ error: "Connect UPS tracking in Connectors (UPS API, or your Shippo token) so the bot can read UPS scans." }, { status: 400 });
+    if (r.needsSetup) return NextResponse.json({ error: r.shippoTest ? "Your Shippo key is a test key — it can't track real UPS packages. In Connectors → Return labels (Shippo), paste your Live token into “Live token for tracking”. Meanwhile, tap the step UPS shows on the line above." : "Connect UPS tracking in Connectors (UPS API, or your Shippo Live token) so the bot can read UPS scans. Meanwhile, tap the step UPS shows on the line above." }, { status: 400 });
     const sale = await db.sale.findUnique({ where: { id: String(b.id) }, select: { trackingNo: true, carrier: true, returnTracking: true, upsStatus: true, upsStage: true, upsEta: true, upsEvents: true, upsAt: true, upsSrc: true, upsError: true, dropStore: true, deliveredAt: true } });
     return NextResponse.json({ ...r, sale });
   }

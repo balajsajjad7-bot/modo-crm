@@ -27,11 +27,11 @@ ${FILL_SRC}
 `;
 writeFileSync("extension/content.js", content);
 const manifest = {
-  manifest_version: 3, name: "Modo Fill", version: "1.1.0",
-  description: "Fills Verizon, AT&T and T-Mobile order-status pages from Modo and saves the status back to the sale.",
+  manifest_version: 3, name: "Modo Fill", version: "1.2.0",
+  description: "Fills Verizon, AT&T and T-Mobile order-status pages and reads UPS tracking from Modo, and saves the status back to the sale.",
   icons: { "48": "icon-48.png", "128": "icon-128.png" },
   content_scripts: [
-    { matches: ["https://www.verizon.com/*", "https://www.att.com/*", "https://www.t-mobile.com/*"], js: ["content.js"], run_at: "document_start" },
+    { matches: ["https://www.verizon.com/*", "https://www.att.com/*", "https://www.t-mobile.com/*", "https://www.ups.com/*"], js: ["content.js"], run_at: "document_start" },
     { matches: ["https://modo-crm1.vercel.app/*"], js: ["content.js"], run_at: "document_start" },
   ],
 };

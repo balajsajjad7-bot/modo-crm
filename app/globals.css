@@ -1581,7 +1581,7 @@ body:has(.mic-banner) .chat-fab{bottom:calc(60px + env(safe-area-inset-bottom,0p
 /* Primary buttons: ember gradient, subtle shine, tactile press */
 button:not(.ghost):not(.toggle):not(.pn-item):not(.pn-user):not(.chip-btn):not(.seg button):not(.appear2 button):not(.search-item):not(.lk-tool):not(.conn-tile):not(.dock-item):not(.danger):not(.icon-btn):not(.np-item):not(.sl-item):not(:is(
   .sl-tools button,.sl-actions button,.sl-picker button,.sl-mentions button,.sl-icon,.sl-fold,.sl-add,.sl-members,.sl-topic,.sl-react,.sl-replies,.sl-huddle,
-  .fl-btn,.fl-fab,.fl-grip,.fl-conv,.ft-tabs button,.ft-keys button,.oc-f,.copy-cell,.pal-btn,.pal-menu button,.tb-item,.tb-icon,.tb-user,.tb-act,.ad-item,.ad-status button,.pn-burger,.pn-menu button,.days button,.status-switch button,.appear button,.maplibregl-ctrl button,.sm-mark,[role="tab"],[role="menuitem"])){
+  .fl-btn,.fl-fab,.fl-grip,.fl-conv,.ft-tabs button,.ft-keys button,.oc-f,.copy-cell,.ups-step,.pal-btn,.pal-menu button,.tb-item,.tb-icon,.tb-user,.tb-act,.ad-item,.ad-status button,.pn-burger,.pn-menu button,.days button,.status-switch button,.appear button,.maplibregl-ctrl button,.sm-mark,[role="tab"],[role="menuitem"])){
   background:var(--grad-ember)!important;border:none!important;color:#fff!important;
   box-shadow:0 6px 18px rgba(var(--p),.30),inset 0 1px 0 rgba(255,255,255,.28)!important;letter-spacing:.005em;
 }
@@ -2424,3 +2424,10 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 .ups-saved{margin:0;color:var(--green)}
 .cpw{width:min(400px,100%)}
 [data-appearance="light"] .seq-badge.camp.b3d{color:var(--bcd,var(--bc))!important;-webkit-text-fill-color:var(--bcd,var(--bc))}
+
+/* UPS box: steps are tappable (set what UPS shows) */
+.ups-step{background:none!important;border:none!important;box-shadow:none!important;padding:0!important;cursor:pointer;color:inherit!important;font:inherit!important}
+.ups-step:hover .ups-dot{outline:2px solid rgba(var(--s),.6);outline-offset:2px}
+.ups-step.pick .ups-dot{outline:2px solid rgb(var(--s));outline-offset:3px;box-shadow:0 0 16px rgba(var(--s),.6)}
+.ups-confirm{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(var(--s),.10);border:1px solid rgba(var(--s),.35)}
+.ups-back{display:grid;gap:8px;margin-top:8px;padding:12px;border-radius:12px;background:rgba(var(--p),.08);border:1px dashed rgba(var(--p),.45)}

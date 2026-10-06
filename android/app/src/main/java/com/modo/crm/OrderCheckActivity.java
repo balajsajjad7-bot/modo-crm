@@ -40,7 +40,7 @@ public class OrderCheckActivity extends Activity {
     if (host == null) return false;
     host = host.toLowerCase();
     return host.equals("verizon.com") || host.endsWith(".verizon.com") || host.equals("att.com") || host.endsWith(".att.com")
-        || host.equals("t-mobile.com") || host.endsWith(".t-mobile.com");
+        || host.equals("t-mobile.com") || host.endsWith(".t-mobile.com") || host.equals("ups.com") || host.endsWith(".ups.com");
   }
 
   @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
@@ -75,7 +75,7 @@ public class OrderCheckActivity extends Activity {
     LinearLayout texts = new LinearLayout(this);
     texts.setOrientation(LinearLayout.VERTICAL);
     TextView title = new TextView(this);
-    title.setText("Modo · Check order");
+    title.setText(code != null && url != null && url.contains("ups.com") ? "Modo · UPS tracking" : "Modo · Check order");
     title.setTextColor(Color.WHITE);
     title.setTypeface(Typeface.DEFAULT_BOLD);
     title.setTextSize(16);
@@ -112,7 +112,7 @@ public class OrderCheckActivity extends Activity {
       }
       @Override public void onPageFinished(WebView view, String url) {
         if (fillJs.isEmpty() || !carrierHost(Uri.parse(url).getHost())) return;
-        status.setText("Filling in the order details…");
+        status.setText(url.contains("ups.com") ? "Reading UPS…" : "Filling in the order details…");
         // Same script as the bookmark, with the order code passed in and auto-save on.
         String boot = "window.__MODO_CODE='" + code + "';window.__MODO_AUTO=1;"
             + "window.open=function(u){try{ModoApp.openModo(String(u))}catch(e){}return null};";
