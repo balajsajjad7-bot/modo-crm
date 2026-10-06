@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import DownloadLink from "@/components/DownloadLink";
+import PhonesSetup from "./PhonesSetup";
 import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download, Headset, MonitorSmartphone } from "lucide-react";
 
 // Office relay: gets Modo past the dialer's IP firewall by sending requests through a PC in the office.
@@ -177,6 +178,7 @@ export default function DialerSetup() {
         </section>
       )}
 
+      {d.provider === "vicidial" && d.vicidial && <PhonesSetup />}
       {d.provider === "vicidial" && d.vicidial && <Relay />}
       {d.provider === "vicidial" && <Health />}
       {d.provider === "vicidial" && d.vicidial && <EmbedSettings d={d} save={save} />}

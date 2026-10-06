@@ -2314,3 +2314,14 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 .vs-hint{position:absolute;left:12px;right:12px;bottom:12px;display:grid;gap:4px;padding:12px 14px;border-radius:12px;background:rgba(14,15,24,.92);color:#fff;font-size:13.5px}
 .vs-side{display:grid;gap:12px;min-width:0}
 @media (max-width:1100px){.vs{grid-template-columns:1fr}.vs-frame-wrap{height:78vh;min-height:520px}}
+
+/* Dialer setup → Phones */
+.ph-box{display:grid;gap:8px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:rgba(var(--fg),.03)}
+.ph-box>b{display:flex;align-items:center;gap:6px}
+.ph-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.ph-list{display:grid;gap:6px}
+.ph-row{display:grid;grid-template-columns:minmax(140px,1.2fr) repeat(3,minmax(90px,.8fr)) auto;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;border:1px solid var(--border)}
+.ph-who{display:grid;min-width:0}.ph-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-row input{min-width:0;padding:7px 9px}
+.ph-acts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:900px){.ph-row{grid-template-columns:1fr 1fr}.ph-who,.ph-acts{grid-column:1/-1}.ph-acts{justify-content:flex-start}}
