@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import TopBar from "./TopBar";
 import { useHuddle } from "./useHuddle";
-import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee, Settings as SettingsIcon, LayoutDashboard } from "lucide-react";
+import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee, Settings as SettingsIcon, LayoutDashboard, KeyRound } from "lucide-react";
 import { guideForRole } from "@/lib/guide";
 import { startChunkSend } from "@/components/chunklisten";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -19,6 +19,7 @@ export const useShell = () => useContext(ShellCtx);
 import { SoftphoneProvider } from "./Softphone";
 import { WhatsNewBanner } from "./WhatsNew";
 import Cheers from "./Cheers";
+import ChangePassword from "./ChangePassword";
 
 // Subscribe this device for web push so alerts reach a locked/closed phone.
 const b64ToU8 = (b64) => { const pad = "=".repeat((4 - (b64.length % 4)) % 4); const s = (b64 + pad).replace(/-/g, "+").replace(/_/g, "/"); const raw = atob(s); return Uint8Array.from([...raw].map((c) => c.charCodeAt(0))); };
@@ -67,6 +68,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   useEffect(() => { if (me?.status) setMyStatus(me.status); }, [me]);
   useEffect(() => { if (!locked) return; const t = setInterval(async () => { const st = await fetch("/api/status").then((x) => x.json()).catch(() => ({})); if (!st.lockdown) location.reload(); }, 15000); return () => clearInterval(t); }, [locked]);
   const setStatus = async (st) => { setMyStatus(st); await fetch("/api/me/status", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: st }) }); };
+  const [pwOpen, setPwOpen] = useState(false);
   const [lockOn, setLockOn] = useState(false); const [seWaiting, setSeWaiting] = useState(0);
   useEffect(() => { if (me?.role !== "ADMIN") return; const l = () => fetch("/api/shift-end").then((r) => r.json()).then((d) => setSeWaiting((d.requests || []).filter((x) => x.status === "pending").length)).catch(() => {}); l(); const i = setInterval(l, 20000); return () => clearInterval(i); }, [me]);
   // Modo bot: while management has Modo open, keep UPS package statuses fresh (the bot skips anything checked recently).
@@ -246,6 +248,7 @@ me?.role === "AGENT" ? (
         userMenu={[
           ...(me?.role === "AGENT" ? [["available", "Available", "🟢"], ["away", "Away", "⚪"], ["busy", "Busy", "🟠"]].map(([k, l, e]) => ({ label: `${e} ${l}${myStatus === k ? "  ✓" : ""}`, onClick: () => setStatus(k) })) : []),
           ...userMenu,
+          ...(me?.role === "ADMIN" ? [{ label: "Change my password", icon: <KeyRound size={16} />, onClick: () => setPwOpen(true) }] : []),
           ...(me?.role === "ADMIN" ? [{ label: lockOn ? "Turn CRM back on" : "Emergency stop (lock agents out)", icon: <Power size={16} />, danger: !lockOn, onClick: toggleLock }] : []),
           { label: signOutLabel, icon: <LogOut size={16} />, danger: true, onClick: () => onSignOut(huddle.leave) }]} />
       {micWatched && <div className="mic-banner" role="status"><Mic size={14} /> A supervisor is listening to your microphone.</div>}
@@ -295,6 +298,7 @@ me?.role === "AGENT" ? (
       {me?.role === "AGENT" && presence?.shiftEnded && <div className="toast" role="status"><AlarmClock size={20} style={{ color: "var(--amber)", flexShrink: 0 }} /><div><b>Your shift has ended</b><div className="small">You were clocked out automatically. Thanks for today!</div></div></div>}
       {seWaiting > 0 && typeof window !== "undefined" && !location.pathname.startsWith("/admin/attendance") && location.pathname !== "/admin" && <a className="toast se-toast" href="/admin/attendance"><Clock size={18} /><div><b>{seWaiting} agent{seWaiting > 1 ? "s want" : " wants"} to end their shift early</b><div className="small">Tap to approve or deny</div></div></a>}
       <ErrorBoundary resetKey="cheers"><Cheers me={me} /></ErrorBoundary>
+      {pwOpen && <ChangePassword onClose={() => setPwOpen(false)} />}
       {notif !== "granted" && <button className="notif-ask ghost" onClick={askNotif}><Phone size={14} /> Turn on phone alerts</button>}
       {huddle.error && <div className="call-banner warn" role="alert"><div>{huddle.error}</div><button className="ghost" onClick={huddle.clearError}><X size={16} /></button></div>}
       {huddle.call && <CallPanel huddle={huddle} me={me} conv={chat.conversations.find((c) => c.id === huddle.call.conversationId)} />}

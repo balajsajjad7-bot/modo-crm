@@ -27,7 +27,12 @@ export default function SalesBoard() {
   const offices = [...new Set(list.map((s) => s.office).filter(Boolean))];
   const active = list.filter((s) => s.status === "VERIFIED");
   const cur = Math.min(idx, Math.max(0, shown.length - 1));
-  const go = (d) => { setIdx((i) => Math.max(0, Math.min(shown.length - 1, Math.min(i, shown.length - 1) + d))); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const go = (d) => {
+    const to = Math.max(0, Math.min(shown.length - 1, cur + d));
+    if (to === cur) return; // nothing to move to: don't touch the scroll position
+    setIdx(to);
+    const el = document.querySelector(".sale-one"); if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   useEffect(() => { setIdx(0); }, [tab, q, office, camp]);
   useEffect(() => {
     if (!one) return;
@@ -89,7 +94,12 @@ export default function SalesBoard() {
       </div>
       {!data ? <p className="muted">Loading sales…</p> : !shown.length ? <p className="muted">No {tab === "ALL" ? "" : TABS.find((t) => t[0] === tab)[1].toLowerCase() + " "}sales{q ? " match your search" : " yet"}.</p> : (
         one ? (
-          <div className="sale-one" onTouchStart={(e) => (touch.current = e.touches[0].clientX)} onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touch.current ?? 0); if (Math.abs(dx) > 80 && !e.target.closest(".sm-map-wrap")) go(dx < 0 ? 1 : -1); }}>
+          <div className="sale-one" onTouchStart={(e) => (touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() })} onTouchEnd={(e) => {
+            // A real sideways swipe only: mostly horizontal, quick, not on the map or a text box. Scrolling up/down never changes the sale.
+            const st = touch.current; touch.current = null; if (!st) return;
+            const dx = e.changedTouches[0].clientX - st.x, dy = e.changedTouches[0].clientY - st.y;
+            if (Math.abs(dx) > 90 && Math.abs(dx) > 2.5 * Math.abs(dy) && Date.now() - st.t < 700 && !e.target.closest(".sm-map-wrap, input, textarea, select, .ups-rail")) go(dx < 0 ? 1 : -1);
+          }}>
             <div className="sale-pager">
               <button className="ghost" onClick={() => go(-1)} disabled={cur === 0}><ChevronLeft size={16} /> Previous</button>
               <span className="sale-pos"><b>{cur + 1}</b> of {shown.length}</span>

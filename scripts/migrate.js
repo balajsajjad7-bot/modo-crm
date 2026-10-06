@@ -245,9 +245,11 @@ const CORE = [
   const id = require("crypto").randomUUID();
   await pool.query(
     `INSERT INTO "User" ("id","agentId","passwordHash","role","name","active") VALUES ($1,$2,$3,'ADMIN','Admin',true)
-     ON CONFLICT ("agentId") DO UPDATE SET "passwordHash"=EXCLUDED."passwordHash", "role"='ADMIN', "active"=true`,
+     ON CONFLICT ("agentId") DO UPDATE SET "role"='ADMIN', "active"=true${process.env.ADMIN_PASSWORD_RESET === "1" ? `, "passwordHash"=EXCLUDED."passwordHash"` : ""}`,
     [id, agentId, hash]
   );
+  // The admin password is only set when the account is first created (or when ADMIN_PASSWORD_RESET=1),
+  // so a password changed inside Modo (profile menu → Change my password) survives every deploy.
   console.log("Admin ready:", agentId);
   // The bootstrap admin is the CEO (the only account that can open the encrypted Secure line).
   await pool.query(`UPDATE "User" SET "ceo"=true WHERE "agentId"=$1`, [agentId]);

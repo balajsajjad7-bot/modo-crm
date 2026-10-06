@@ -27,6 +27,9 @@ const cityOf = (addr) => {
 };
 const ORD = (n) => n + (["th", "st", "nd", "rd"][((n % 100) - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
 const BRAND_COLORS = [[/verizon/i, "#cd040b"], [/at&t|\batt\b/i, "#009fdb"], [/t-?mobile|metro/i, "#e20074"], [/spectrum/i, "#0099d8"], [/xfinity|comcast/i, "#6138f5"], [/cricket/i, "#2a8c3c"], [/boost/i, "#f7931e"], [/mint/i, "#3fa34d"]];
+const tint = (hex) => { const h = String(hex || "").replace("#", ""); const n = parseInt(h.length === 3 ? h.split("").map((x) => x + x).join("") : h.slice(0, 6), 16); if (isNaN(n)) return undefined; const r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  const lift = (v) => Math.round(v + (255 - v) * 0.35); // a little lighter so it reads on the dark card
+  return { "--bc": `rgb(${lift(r)},${lift(g)},${lift(b)})`, "--bcd": `rgb(${r},${g},${b})`, "--bt": `rgba(${r},${g},${b},.16)` }; };
 const brandColor = (n) => (BRAND_COLORS.find(([re]) => re.test(n || "")) || [, "#7c3aed"])[1];
 export const STATUS = [["NEW", "New"], ["VERIFIED", "Active"], ["REJECTED", "Not active"]];
 const cls = { NEW: "new", VERIFIED: "active", REJECTED: "inactive" };
@@ -186,7 +189,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
             <span className="sf-l">Order</span>
             {s.seqTotal > 1 && <span className="seq-badge b3d"><Layers size={11} /> {ORD(s.seq)} sale of {s.seqTotal}</span>}
             {s.saleType === "addon" && <span className="seq-badge addon b3d"><PackagePlus size={11} /> Add-on device</span>}
-            {s.campaignName && <span className="seq-badge camp b3d" style={{ "--bc": s.campaignColor || brandColor(s.campaignName) }}>{brandDomain(s.campaignName) && <span className="b3d-logo"><BrandLogo name={s.campaignName} size={14} round={4} /></span>}{s.campaignName}</span>}
+            {s.campaignName && <span className="seq-badge camp b3d" style={tint(s.campaignColor || brandColor(s.campaignName))}>{brandDomain(s.campaignName) && <span className="b3d-logo"><BrandLogo name={s.campaignName} size={14} round={4} /></span>}{s.campaignName}</span>}
           </div>
           <div className="order-no">#{v(s.orderNumber)}</div>
           <div className="row" style={{ gap: 6, marginTop: 2 }}>
