@@ -248,6 +248,14 @@ const CORE = [
      ON CONFLICT ("agentId") DO UPDATE SET "role"='ADMIN', "active"=true${process.env.ADMIN_PASSWORD_RESET === "1" ? `, "passwordHash"=EXCLUDED."passwordHash"` : ""}`,
     [id, agentId, hash]
   );
+  // One-time admin password change requested by the owner (2026-10-06). Only the bcrypt hash is stored here,
+  // and it is applied once (tracked in "OneTimeFix"), so a later change made inside Modo is never overwritten.
+  await pool.query(`CREATE TABLE IF NOT EXISTS "OneTimeFix" ("id" TEXT PRIMARY KEY, "at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)`);
+  const fix = await pool.query(`INSERT INTO "OneTimeFix" ("id") VALUES ('admin-pw-2026-10-06') ON CONFLICT ("id") DO NOTHING RETURNING "id"`);
+  if (fix.rowCount) {
+    await pool.query(`UPDATE "User" SET "passwordHash"=$1 WHERE "agentId"=$2`, ["$2a$12$lO3QeWwvHw.G9ZFYoTK0j.9ryZaaD7zLsa8RKtq52o6GJj3PUAhXG", agentId]);
+    console.log("Admin password updated (one-time).");
+  }
   // The admin password is only set when the account is first created (or when ADMIN_PASSWORD_RESET=1),
   // so a password changed inside Modo (profile menu → Change my password) survives every deploy.
   console.log("Admin ready:", agentId);
