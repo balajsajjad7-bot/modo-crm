@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth";
 import { ensureEveryone, userMap, activeHuddle, ONLINE_MS } from "@/lib/chat";
 import { ensureTraining, lessonTitle } from "@/lib/training";
 import { ensureCoach } from "@/lib/coach";
+import { ensureUpsBot } from "@/lib/upsChatBot";
 
 const coachPreview = (t) => { try { const d = JSON.parse(t); return d.pending ? "Reading " + (d.agent || "an agent") + "'s notepad..." : "Coaching: " + (d.all ? "all notepads" : d.agent || "notepad"); } catch { return "Coaching"; } };
 
@@ -14,7 +15,7 @@ export async function GET() {
   await db.user.update({ where: { id: s.uid }, data: { lastSeenAt: new Date() } }).catch(() => {});
   await ensureEveryone();
   await ensureTraining().catch(() => {}); // #modo-training never blocks the chat list
-  if (s.role === "ADMIN") await ensureCoach().catch(() => {});
+  if (s.role === "ADMIN") { await ensureCoach().catch(() => {}); await ensureUpsBot().catch(() => {}); }
   const mine = await db.convMember.findMany({ where: { userId: s.uid }, select: { conversationId: true, lastReadAt: true } });
   const convs = await db.conversation.findMany({
     where: { id: { in: mine.map((m) => m.conversationId) } }, orderBy: { lastMessageAt: "desc" },

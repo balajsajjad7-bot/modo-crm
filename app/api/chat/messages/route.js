@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth";
 import { isMember, MAX_FILE, shapeAll } from "@/lib/chat";
 import { sendPush } from "@/lib/push";
 import { TRAINING_ID, postLesson, cleanLesson } from "@/lib/training";
+import { UPSBOT, handleUpsBot } from "@/lib/upsChatBot";
 
 // ?c=<conversation>  [&thread=<parent id>]  [&since=<ISO>]  (since = anything created or changed after)
 export async function GET(req) {
@@ -21,6 +22,8 @@ export async function GET(req) {
 }
 
 // multipart form: c, text?, parentId?, file? (voice=1 for a voice note)
+export const maxDuration = 45;
+
 export async function POST(req) {
   const s = await currentUser();
   if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
@@ -72,5 +75,13 @@ export async function POST(req) {
     const others = (await db.convMember.findMany({ where: { conversationId: c, userId: { not: s.uid } }, select: { userId: true } })).map((x) => x.userId);
     if (others.length) sendPush(others, { title, body: preview, url: "/", tag: "chat-" + c });
   } catch {}
+  // #ups-bot: the Modo bot answers every admin message (saves tracking on the sale, checks UPS).
+  if (c === UPSBOT && !parentId && text && s.role === "ADMIN") {
+    let reply;
+    try { reply = await handleUpsBot(text, s); } catch (e) { reply = "Sorry, something went wrong: " + (e.message || "unknown error"); }
+    const bot = await db.message.create({ data: { conversationId: c, userId: "modo-bot", kind: "TEXT", text: String(reply).slice(0, 3900) } });
+    await db.conversation.update({ where: { id: c }, data: { lastMessageAt: bot.createdAt } });
+    await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: bot.createdAt } });
+  }
   return NextResponse.json((await shapeAll([m], s.uid))[0]);
 }
