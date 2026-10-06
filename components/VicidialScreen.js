@@ -13,8 +13,32 @@ export default function VicidialScreen() {
   const [e, setE] = useState(null); const [key, setKey] = useState(0); const [loaded, setLoaded] = useState(false);
   const [phone, setPhone] = useState(""); const [name, setName] = useState(""); const [note, setNote] = useState(""); const [res, setRes] = useState("");
   const [msg, setMsg] = useState(null); const [k, setK] = useState(0); const frame = useRef(null);
-  useEffect(() => { fetch("/api/dialer/embed", { cache: "no-store" }).then((r) => r.json()).then(setE).catch(() => setE({ error: "Couldn't load the dialer." })); }, []);
-  useEffect(() => { setLoaded(false); const t = setTimeout(() => setLoaded((x) => x || "slow"), 12000); return () => clearTimeout(t); }, [key, e?.url]);
+  const [ready, setReady] = useState(false); const [fwState, setFwState] = useState(""); const lastFw = useRef(0);
+  // Sign this device in on the dialer's firewall page, invisibly (a hidden form posted into a hidden frame).
+  const firewallIn = (d) => new Promise((done) => {
+    const f = d?.fw; if (!f?.action) return done(false);
+    setFwState("signing");
+    const name = "modo-fw-" + Date.now();
+    const fr = document.createElement("iframe"); fr.name = name; fr.style.display = "none"; fr.setAttribute("aria-hidden", "true");
+    const form = document.createElement("form"); form.method = f.method || "POST"; form.action = f.action; form.target = name; form.style.display = "none";
+    Object.entries(f.fields || {}).forEach(([k, v]) => { const i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = v; form.appendChild(i); });
+    let fin = false; const end = (ok) => { if (fin) return; fin = true; lastFw.current = Date.now(); setFwState(ok ? "ok" : "slow"); setTimeout(() => { fr.remove(); form.remove(); }, 2000); done(ok); };
+    fr.onload = () => setTimeout(() => end(true), 400); setTimeout(() => end(false), 6000);
+    document.body.appendChild(fr); document.body.appendChild(form); form.submit();
+  });
+  // Full sign-in: firewall first, then VICIdial with the saved login (agent, phone, campaign) — so a refresh is all it takes.
+  async function signIn(d = e) { setReady(false); setLoaded(false); await firewallIn(d); setReady(true); setKey((x) => x + 1); }
+  useEffect(() => {
+    fetch("/api/dialer/embed", { cache: "no-store" }).then((r) => r.json()).then((d) => { setE(d); if (!d.error) signIn(d); }).catch(() => setE({ error: "Couldn't load the dialer." }));
+  }, []); // eslint-disable-line
+  // Stay signed in: renew the firewall pass every 20 minutes and when you come back to the tab (VICIdial itself isn't touched, so calls aren't cut).
+  useEffect(() => {
+    if (!e?.fw) return;
+    const renew = () => { if (Date.now() - lastFw.current > 18 * 60000) firewallIn(e); };
+    const t = setInterval(renew, 20 * 60000); const vis = () => !document.hidden && renew();
+    document.addEventListener("visibilitychange", vis); return () => { clearInterval(t); document.removeEventListener("visibilitychange", vis); };
+  }, [e]); // eslint-disable-line
+  useEffect(() => { if (!ready) return; setLoaded(false); const t = setTimeout(() => setLoaded((x) => x || "slow"), 12000); return () => clearTimeout(t); }, [key, e?.url, ready]);
   const say = (ok, text) => { setMsg({ ok, text }); setTimeout(() => setMsg(null), 4000); };
 
   async function save() {
@@ -32,24 +56,25 @@ export default function VicidialScreen() {
       <div className="vs-main">
         <div className="vs-bar">
           <b>VICIdial{e.user ? ` · ${e.user}` : ""}</b>
-          <span className="muted small">{e.autoLogin ? "signs you in automatically" : "sign in once inside the screen"}</span>
+          <span className={"small vs-state " + (fwState === "signing" ? "busy" : e.autoLogin ? "ok" : "")}>{fwState === "signing" ? "Signing you in…" : e.autoLogin ? "● Signed in automatically" : "sign in once inside the screen"}</span>
           <span style={{ flex: 1 }} />
           {e.firewall && <a className="btn-link" href={e.firewall} target="_blank" rel="noreferrer"><ShieldCheck size={13} /> Firewall sign-in</a>}
-          <button className="ghost sm" onClick={() => setKey((x) => x + 1)}><RefreshCw size={13} /> Reload</button>
+          <button className="ghost sm" onClick={() => signIn()} disabled={fwState === "signing"}><RefreshCw size={13} className={fwState === "signing" ? "spin" : ""} /> Sign in again</button>
           <button className="ghost sm" onClick={() => window.open(e.url, "vicidial", "width=1100,height=800")}><ExternalLink size={13} /> Open in window</button>
         </div>
         <div className="vs-frame-wrap">
-          <iframe key={key} ref={frame} className="vs-frame" src={e.url} title="VICIdial agent screen" allow="microphone; autoplay; clipboard-read; clipboard-write" onLoad={() => setLoaded(true)} />
+          {ready && <iframe key={key} ref={frame} className="vs-frame" src={e.url} title="VICIdial agent screen" allow="microphone; autoplay; clipboard-read; clipboard-write" onLoad={() => setLoaded(true)} />}
           {loaded !== true && (
             <div className="vs-hint">
-              {loaded === "slow" ? (
+              {!ready ? <span className="muted">Signing you in to the dialer…</span> : loaded === "slow" ? (
                 <><b>Dialer not showing?</b>
-                  <span>1. Tap <b>Firewall sign-in</b> and sign in (dialerlab lets your device in), then <b>Reload</b>.</span>
+                  <span>1. Tap <b>Sign in again</b>. If it's still blank, tap <b>Firewall sign-in</b>, sign in there once, then <b>Sign in again</b>.</span>
                   <span>2. Still blank? Your dialer may not allow being shown inside other sites: use <b>Open in window</b>.</span></>
               ) : <span className="muted">Loading VICIdial…</span>}
             </div>
           )}
         </div>
+        {e.missing?.length > 0 && <div className="vs-missing small"><b>To skip the VICIdial login screen{e.role === "AGENT" ? ", ask admin to fix" : ""}:</b><ul>{e.missing.map((m) => <li key={m}>{m}</li>)}</ul></div>}
         <p className="muted small" style={{ margin: 0 }}>Calls, auto-dial, pause and results all work right inside this screen. If your phone login is a webphone, VICIdial's phone rings here; allow the microphone when asked.</p>
       </div>
       <div className="vs-side">

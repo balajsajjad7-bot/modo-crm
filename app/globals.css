@@ -2419,3 +2419,6 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 [data-appearance="light"] .b3d,[data-appearance="light"] .ord-chip.b3d,[data-appearance="light"] .seq-badge.b3d{color:#fff!important;-webkit-text-fill-color:#fff}
 .ups-empty{background:linear-gradient(135deg,rgba(53,28,18,.22),rgba(var(--fg),.02));border-style:dashed}
 .ups-add{display:flex;gap:8px;flex-wrap:wrap}.ups-add input{flex:1 1 200px;min-width:0;font-family:ui-monospace,Menlo,monospace;letter-spacing:.04em;text-transform:uppercase}
+.vs-state.ok{color:var(--green)}.vs-state.busy{color:var(--amber)}
+.vs-missing{padding:10px 12px;border-radius:12px;border:1px dashed rgba(245,181,68,.45);background:var(--amber-soft)}.vs-missing ul{margin:4px 0 0;padding-left:18px}
+.ups-jump{margin-top:8px;padding:4px 10px!important;border-radius:10px!important;font-size:12px!important;font-weight:700;background:linear-gradient(180deg,#5a3a22,#351c12)!important;color:#ffb500!important;border:1px solid rgba(255,181,0,.45)!important;box-shadow:0 3px 0 #1d0f09,0 6px 12px rgba(0,0,0,.2)}

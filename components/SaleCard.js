@@ -189,7 +189,10 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
             {s.campaignName && <span className="seq-badge camp b3d" style={{ "--bc": s.campaignColor || brandColor(s.campaignName) }}>{brandDomain(s.campaignName) && <span className="b3d-logo"><BrandLogo name={s.campaignName} size={14} round={4} /></span>}{s.campaignName}</span>}
           </div>
           <div className="order-no">#{v(s.orderNumber)}</div>
-          {!preview && <OrderStatusChip s={s} />}
+          <div className="row" style={{ gap: 6, marginTop: 2 }}>
+            {!preview && <OrderStatusChip s={s} />}
+            {!preview && <button className="ghost sm ups-jump" onClick={() => document.getElementById("ups-" + s.id)?.scrollIntoView({ behavior: "smooth", block: "center" })}>🚚 UPS{s.upsStatus ? " · " + ({ label: "label made", dropped_off: "dropped off", in_transit: "on the way", out_for_delivery: "out for delivery", delivered: "delivered", exception: "problem", returned: "returned" }[s.upsStatus] || "") : (s.returnTracking || s.trackingNo) ? "" : " · add tracking"}</button>}
+          </div>
         </div>
         {onStatus ? <StatusSwitch value={status} onChange={(k) => onStatus(s.id, k)} /> : <span className={"sale-status " + cls[status]}>{STATUS.find(([k]) => k === status)[1]}</span>}
       </header>
@@ -213,14 +216,13 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
           </div>
         </div>
       </div>
+      {!preview && <div id={"ups-" + s.id}><UpsTrack s={s} /></div>}
       <div className="sale-meta">
         <span><Receipt size={12} /> <b>{$(s.billAfter)}</b>/mo <span className="muted">was {$(s.billBefore)}{s.discountPct != null && s.discountPct !== "" ? ` · ${s.discountPct}% off` : ""}</span></span>
         <span><Building2 size={12} /> {v(s.closer)}</span>
         <span className="muted"><Clock size={12} /> {preview ? pkTime(new Date()) : pkTime(s.createdAt)}</span>
         {!preview && dropLine(s) ? <span className="sale-ups dropped"><Store size={12} /> Dropped at {dropLine(s)}</span> : !preview && nearestLine(s) ? <span className="sale-ups"><Store size={12} /> Nearest UPS: {nearestLine(s)}</span> : null}
       </div>
-
-      {!preview && <UpsTrack s={s} />}
 
       {sibs.length > 0 && (
         <div className="sibs">
