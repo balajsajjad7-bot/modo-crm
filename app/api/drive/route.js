@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/auth";
 import { driveConnector, listFolder, makeFolder, removeItem, renameItem, uploadTarget, PROVIDERS } from "@/lib/drive";
 
 export const maxDuration = 30;
-const fail = (e) => NextResponse.json({ error: e.message || "Drive request failed." }, { status: 502 });
+const fail = (e) => NextResponse.json({ error: e.message || "Drive request failed.", reconnect: !!e.reconnect }, { status: 502 });
 
 // List a folder: ?folder=<path or id>
 export async function GET(req) {
@@ -14,7 +14,7 @@ export async function GET(req) {
   const info = { provider: conn.type, label: PROVIDERS[conn.type].label, account: conn.cfg.account || "", connected: !!conn.cfg.refreshToken, lastBackupAt: conn.cfg.lastBackupAt || null, clientId: conn.cfg.clientId || "" };
   if (!info.connected) return NextResponse.json({ ...info, items: [] });
   try { return NextResponse.json({ ...info, items: await listFolder(conn, new URL(req.url).searchParams.get("folder") || "") }); }
-  catch (e) { return NextResponse.json({ ...info, items: [], error: e.message }); }
+  catch (e) { return NextResponse.json({ ...info, items: [], error: e.message, reconnect: !!e.reconnect }); }
 }
 
 // { action: "mkdir", parent, name } | { action: "upload", parent, name, size, type } → direct upload URL

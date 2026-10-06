@@ -2303,3 +2303,4 @@ html[data-look="minimal"] .tb .search-trigger{background:var(--card)!important}
 .sm-tools button,.sm-tools button.ghost{background:#fff!important;color:#14151c!important;border:1px solid rgba(0,0,0,.12)!important;box-shadow:0 2px 8px rgba(0,0,0,.18)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;font-weight:600!important}
 .sm-tools button svg{color:#14151c!important}
 .sm-tools button:hover{background:#f1f1f5!important}
+.drive-err{border-color:rgba(255,107,122,.45)!important}

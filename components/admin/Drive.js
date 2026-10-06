@@ -72,7 +72,7 @@ export default function Drive() {
   const file = useRef(null);
   const folder = path[path.length - 1].id;
   const say = (ok, text) => { setMsg({ ok, text }); setTimeout(() => setMsg(null), 5000); };
-  const load = async (f = folder) => { setBusy(true); const r = await api("/api/drive?folder=" + encodeURIComponent(f)); setBusy(false); setInfo(r.data); if (r.data.error) say(false, r.data.error); };
+  const load = async (f = folder) => { setBusy(true); const r = await api("/api/drive?folder=" + encodeURIComponent(f)); setBusy(false); setInfo(r.data); };
   useEffect(() => {
     const q = new URLSearchParams(location.search);
     if (q.get("connected")) say(true, "Connected! Your files now live in your own cloud.");
@@ -120,6 +120,13 @@ export default function Drive() {
         </div>
       </section>
       {msg && <div className={"receipt" + (msg.ok ? "" : " err")}>{msg.text}</div>}
+      {info.error && (
+        <section className="panel stack drive-err">
+          <b>{info.reconnect ? "Drive needs to be reconnected" : "Couldn't open your files"}</b>
+          <p className="small" style={{ margin: 0 }}>{info.error}</p>
+          <div className="row" style={{ gap: 6 }}><button className="sm" onClick={() => setSetup(true)}>Reconnect</button><button className="ghost sm" onClick={() => load()}>Try again</button></div>
+        </section>
+      )}
       <section className={"panel stack drive-files" + (drag ? " drag" : "")}>
         <div className="row drive-bar">
           <nav className="drive-crumbs">{path.map((p, i) => <span key={p.id + i}>{i > 0 && <ChevronRight size={13} />}<button className="ghost sm" onClick={() => goto(i)} disabled={i === path.length - 1}>{p.name}</button></span>)}</nav>
