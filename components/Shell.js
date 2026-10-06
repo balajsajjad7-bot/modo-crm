@@ -72,7 +72,9 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   const [lockOn, setLockOn] = useState(false); const [seWaiting, setSeWaiting] = useState(0);
   useEffect(() => { if (me?.role !== "ADMIN") return; const l = () => fetch("/api/shift-end").then((r) => r.json()).then((d) => setSeWaiting((d.requests || []).filter((x) => x.status === "pending").length)).catch(() => {}); l(); const i = setInterval(l, 20000); return () => clearInterval(i); }, [me]);
   // Modo bot: while management has Modo open, keep UPS package statuses fresh (the bot skips anything checked recently).
-  useEffect(() => { if (me?.role !== "ADMIN" && me?.role !== "SUPERVISOR") return; const run = () => !document.hidden && fetch("/api/sales/ups-bot", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }).catch(() => {}); const f = setTimeout(run, 15000); const t = setInterval(run, 10 * 60000); return () => { clearTimeout(f); clearInterval(t); }; }, [me?.role]);
+  // Keep the Modo bot (UPS tracking) going from every open Modo screen — admins and agents. The server only
+  // re-checks packages not checked in the last 25 minutes, so this is cheap and never double-checks.
+  useEffect(() => { if (!me?.role) return; const run = () => fetch("/api/sales/ups-bot", { cache: "no-store" }).catch(() => {}); const f = setTimeout(run, 20000 + Math.random() * 20000); const t = setInterval(run, 5 * 60000 + Math.random() * 60000); return () => { clearTimeout(f); clearInterval(t); }; }, [me?.role]);
   useEffect(() => { if (me?.role === "ADMIN") fetch("/api/status").then((x) => x.json()).then((d) => setLockOn(!!d.lockdown)).catch(() => {}); }, [me]);
   const toggleLock = async () => {
     if (!lockOn) { const msg = prompt("EMERGENCY STOP\n\nAll agents will be locked out of Modo right away (calls end too). Only admins keep access.\n\nMessage for agents (optional):", "Modo is paused by admin."); if (msg === null) return;
