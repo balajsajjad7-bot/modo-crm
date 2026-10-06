@@ -8,7 +8,7 @@ import { useShell } from "./Shell";
 import {
   Hash, Lock, Plus, ChevronDown, ChevronRight, Search, SquarePen, Headphones, Users, X, ArrowLeft,
   Paperclip, Mic, Send, Smile, AtSign, Trash2, Pencil, MessageSquareReply, FileText, Download, Compass, LogOut as Leave,
-  GraduationCap, CheckCircle2, Circle, AlertTriangle, BookOpen, Brain, Sparkles, Truck,
+  GraduationCap, CheckCircle2, Circle, AlertTriangle, BookOpen, Brain, Sparkles, Truck, Bot, Smartphone,
 } from "lucide-react";
 
 const EMOJIS = ["👍", "❤️", "😂", "🎉", "👀", "✅", "🙏", "🔥", "💯", "😮"];
@@ -16,6 +16,8 @@ const MAX = 4 * 1024 * 1024;
 const TRAINING = "modo-training";
 const COACH = "notepad-coach";
 const UPSBOT = "ups-bot";
+const BOT = "modo-bot";
+const BOTCHANS = [TRAINING, COACH, UPSBOT, BOT];
 const GOT_IT = "✅";
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const t = (d) => new Date(d).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -34,7 +36,7 @@ export function Avatar({ name, size = 36, online, square = true }) {
     </span>
   );
 }
-export const ConvIcon = ({ c, size = 16 }) => c.id === TRAINING ? <GraduationCap size={size} /> : c.id === COACH ? <Brain size={size} /> : c.id === UPSBOT ? <Truck size={size} /> : c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
+export const ConvIcon = ({ c, size = 16 }) => c.id === TRAINING ? <GraduationCap size={size} /> : c.id === COACH ? <Brain size={size} /> : c.id === UPSBOT ? <Truck size={size} /> : c.id === BOT || c.id?.startsWith("botdm-") ? <Bot size={size} /> : c.id?.startsWith("wa-") ? <Smartphone size={size - 1} /> : c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
 
 // Turns text into React nodes: links and @mentions highlighted.
 function RichText({ text, names, meName }) {
@@ -65,8 +67,8 @@ export default function Chat() {
   useEffect(() => { setThread(null); }, [openId]);
 
   const match = (c) => !q || c.title.toLowerCase().includes(q.toLowerCase());
-  const channels = convs.filter((c) => c.kind === "channel" && match(c)).sort((a, b) => (b.id === TRAINING) - (a.id === TRAINING) || (b.id === COACH) - (a.id === COACH) || (b.id === UPSBOT) - (a.id === UPSBOT) || a.title.localeCompare(b.title));
-  const dms = convs.filter((c) => c.kind !== "channel" && match(c));
+  const channels = convs.filter((c) => c.kind === "channel" && match(c)).sort((a, b) => (b.id === TRAINING) - (a.id === TRAINING) || (b.id === COACH) - (a.id === COACH) || (b.id === BOT) - (a.id === BOT) || (b.id === UPSBOT) - (a.id === UPSBOT) || a.title.localeCompare(b.title));
+  const dms = convs.filter((c) => c.kind !== "channel" && match(c)).sort((a, b) => (b.id?.startsWith("botdm-") - a.id?.startsWith("botdm-")) || 0);
   const open = (id) => { setOpenId(id); setModal(null); reloadChat(); };
 
   const Item = ({ c }) => (
@@ -74,7 +76,7 @@ export default function Chat() {
       {c.kind === "dm" ? <Avatar name={c.title} size={20} online={c.online} /> : <span className="sl-ico"><ConvIcon c={c} /></span>}
       <span className="ellipsis">{c.title}</span>
       {c.huddle && <Headphones size={14} className="sl-huddle-ico" aria-label="Huddle in progress" />}
-      {(c.mentions > 0 || ((c.kind !== "channel" || c.id === TRAINING || c.id === COACH || c.id === UPSBOT) && c.unread > 0)) && <span className="sl-badge">{c.kind === "channel" && c.id !== TRAINING && c.id !== COACH && c.id !== UPSBOT ? c.mentions : c.unread}</span>}
+      {(c.mentions > 0 || ((c.kind !== "channel" || BOTCHANS.includes(c.id)) && c.unread > 0)) && <span className="sl-badge">{c.kind === "channel" && !BOTCHANS.includes(c.id) ? c.mentions : c.unread}</span>}
     </button>
   );
   const Section = ({ id, label, children, onAdd, addLabel }) => (
@@ -166,7 +168,7 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
         <div className="sl-head-actions">
           {training && isAdmin && <button className="sl-huddle" onClick={() => setLessonEdit({})}><BookOpen size={16} /> New lesson</button>}
           {coach && isAdmin && <button className="sl-huddle" onClick={coachNow} disabled={coachBusy}><Sparkles size={16} /> {coachBusy ? "Reading notepads…" : "Coach everyone now"}</button>}
-          {!training && !coach && conv.id !== UPSBOT && <AiButton task="summarize_chat" payload={{ conversationId: conv.id }} label="Catch me up" />}
+          {!training && !coach && conv.id !== UPSBOT && conv.id !== BOT && !conv.id.startsWith("botdm-") && <AiButton task="summarize_chat" payload={{ conversationId: conv.id }} label="Catch me up" />}
           <button className="sl-members" onClick={onMembers} aria-label="Members">
             <span className="stack-av">{conv.members.slice(0, 3).map((m) => <Avatar key={m.id} name={m.name} size={22} />)}</span>{conv.members.length}
           </button>
@@ -182,7 +184,7 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
             <div className="sl-intro">
               {conv.kind === "dm" ? <Avatar name={conv.title} size={64} /> : <span className="sl-intro-ico"><ConvIcon c={conv} size={30} /></span>}
               <h2>{conv.kind === "channel" ? "#" + conv.title : conv.title}</h2>
-              <p className="muted">{conv.id === UPSBOT ? "Only admins can see this. Send a tracking number with the order number or customer name (e.g. 1Z999AA10123456784 #12345) and the Modo bot adds it to the sale and checks UPS. Type help for everything it can do." : coach ? "Only admins can see this. Whenever an agent's notepad changes, the Modo bot posts a summary here with what to say to each customer and how to engage them." : training ? "Lessons and call guides from management. Read each one, tap Got it, and ask questions in the lesson's thread." : conv.kind === "channel" ? `This is the start of #${conv.title}. ${conv.topic || ""}` : conv.kind === "dm" ? `This is your conversation with ${conv.title}.` : `Group with ${names.join(", ")}.`}</p>
+              <p className="muted">{conv.id === BOT ? "Only admins can see this. The Modo bots post here by themselves: start- and end-of-shift briefings, callbacks, sale checks and attendance alerts (also sent to your WhatsApp). Ask anything: sales, online, late, callbacks, brief, coach — or type help." : conv.id?.startsWith("botdm-") ? "Your personal Modo bot: callback reminders, sale fixes and shift notices land here." : conv.id?.startsWith("wa-") ? "Customer WhatsApp chat. What you type here is sent to the customer on WhatsApp (text only; WhatsApp allows free replies within 24 hours of their last message). Add agents with the members button." : conv.id === UPSBOT ? "Only admins can see this. Send a tracking number with the order number or customer name (e.g. 1Z999AA10123456784 #12345) and the Modo bot adds it to the sale and checks UPS. Type help for everything it can do." : coach ? "Only admins can see this. Whenever an agent's notepad changes, the Modo bot posts a summary here with what to say to each customer and how to engage them." : training ? "Lessons and call guides from management. Read each one, tap Got it, and ask questions in the lesson's thread." : conv.kind === "channel" ? `This is the start of #${conv.title}. ${conv.topic || ""}` : conv.kind === "dm" ? `This is your conversation with ${conv.title}.` : `Group with ${names.join(", ")}.`}</p>
             </div>
             <MessageList msgs={msgs} me={me} names={names} onThread={onThread} reload={reload} activeThread={thread} conv={conv} onEditLesson={setLessonEdit} />
           </>
@@ -193,7 +195,7 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
       {training && !isAdmin
         ? <div className="sl-composer-wrap"><div className="tr-readonly"><GraduationCap size={16} /> Only admins post here. Have a question? Open a lesson's thread and ask.</div></div>
         : <Composer conv={conv} names={names} members={conv.members} me={me} onSent={reload}
-            placeholder={conv.id === UPSBOT ? "Tracking number + order # or customer name (e.g. 1Z999AA10123456784 #12345) · help · list" : training ? "Post a short note to everyone (use New lesson for a full guide)" : `Message ${conv.kind === "channel" ? "#" + conv.title : conv.title}`} />}
+            placeholder={conv.id === BOT ? "Ask the bot: sales · online · late · callbacks · brief · coach · help" : conv.id?.startsWith("wa-") ? "Reply on WhatsApp…" : conv.id === UPSBOT ? "Tracking number + order # or customer name (e.g. 1Z999AA10123456784 #12345) · help · list" : training ? "Post a short note to everyone (use New lesson for a full guide)" : `Message ${conv.kind === "channel" ? "#" + conv.title : conv.title}`} />}
       {lessonEdit && <LessonEditor lesson={lessonEdit} onClose={() => setLessonEdit(null)} onDone={() => { setLessonEdit(null); reload(); reloadChat(); }} />}
     </>
   );

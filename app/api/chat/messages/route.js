@@ -5,6 +5,10 @@ import { isMember, MAX_FILE, shapeAll } from "@/lib/chat";
 import { sendPush } from "@/lib/push";
 import { TRAINING_ID, postLesson, cleanLesson } from "@/lib/training";
 import { UPSBOT, handleUpsBot } from "@/lib/upsChatBot";
+import { BOT } from "@/lib/bots";
+import { handleCommand } from "@/lib/botCommands";
+import { sendWA } from "@/lib/whatsapp";
+import { askAI } from "@/lib/ai";
 
 // ?c=<conversation>  [&thread=<parent id>]  [&since=<ISO>]  (since = anything created or changed after)
 export async function GET(req) {
@@ -76,12 +80,27 @@ export async function POST(req) {
     if (others.length) sendPush(others, { title, body: preview, url: "/", tag: "chat-" + c });
   } catch {}
   // #ups-bot: the Modo bot answers every admin message (saves tracking on the sale, checks UPS).
-  if (c === UPSBOT && !parentId && text && s.role === "ADMIN") {
+  if ((c === UPSBOT || c === BOT) && !parentId && text && s.role === "ADMIN") {
     let reply;
-    try { reply = await handleUpsBot(text, s); } catch (e) { reply = "Sorry, something went wrong: " + (e.message || "unknown error"); }
+    try { reply = c === BOT ? await handleCommand(text, s) : await handleUpsBot(text, s); } catch (e) { reply = "Sorry, something went wrong: " + (e.message || "unknown error"); }
     const bot = await db.message.create({ data: { conversationId: c, userId: "modo-bot", kind: "TEXT", text: String(reply).slice(0, 3900) } });
     await db.conversation.update({ where: { id: c }, data: { lastMessageAt: bot.createdAt } });
     await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: bot.createdAt } });
+  }
+  // Agent's own Modo bot inbox: Modo AI answers as their sales coach.
+  if (c === "botdm-" + s.uid && !parentId && text) {
+    let reply = "";
+    try { reply = await askAI("You are the Modo bot, a friendly sales coach for a US call-center agent. Answer briefly and practically: scripts, objections, product facts, American English phrases. Follow the call guide: honest, no pressure, never claim to be the customer's provider, never ask for passwords, PINs, one-time codes, card numbers or SSNs.", text, { maxTokens: 600 }); }
+    catch (e) { reply = "I couldn't answer right now: " + (e.message || "AI error"); }
+    const bot = await db.message.create({ data: { conversationId: c, userId: "modo-bot", kind: "TEXT", text: String(reply).slice(0, 3900) } });
+    await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: bot.createdAt } });
+  }
+  // WhatsApp customer conversation: send what was typed to the customer's WhatsApp.
+  if (c.startsWith("wa-") && !parentId && data.kind !== "TEXT") {
+    await db.message.create({ data: { conversationId: c, userId: "system", kind: "SYSTEM", text: "Files and voice notes stay in Modo — only text messages are sent to WhatsApp." } });
+  } else if (c.startsWith("wa-") && !parentId && text) {
+    const r = await sendWA(c.slice(3), text).catch((e) => ({ ok: false, error: e.message }));
+    if (!r.ok) await db.message.create({ data: { conversationId: c, userId: "system", kind: "SYSTEM", text: `⚠️ Not delivered on WhatsApp: ${r.error}${r.pinged ? " (we sent them a ping so they can reply)" : ""}` } });
   }
   return NextResponse.json((await shapeAll([m], s.uid))[0]);
 }
