@@ -5,7 +5,8 @@ export const api = (url, method = "GET", body) => fetch(url, { method, headers: 
 
 export function usePoll(url, ms) {
   const [state, set] = useState({ data: null, error: null });
-  const load = useCallback(() => url && api(url).then(({ ok, data }) => set(ok ? { data, error: null } : { data: null, error: data.error })).catch(() => {}), [url]);
+  // A failed refresh (weak signal, server busy) keeps what's already on screen; the error only shows if nothing ever loaded.
+  const load = useCallback(() => url && api(url).then(({ ok, data }) => set((prev) => (ok ? { data, error: null } : prev.data != null ? prev : { data: null, error: data?.error || "Couldn't load. Retrying…" }))).catch(() => {}), [url]);
   useEffect(() => {
     if (!url) return;
     load();

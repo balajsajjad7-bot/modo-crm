@@ -1,7 +1,7 @@
 "use client";
 // UPS package on a sale card: tracking link + a live progress graphic kept up to date by the Modo bot.
 import { useEffect, useState } from "react";
-import { Tag, Store, Truck, Navigation, PackageCheck, ExternalLink, RefreshCw, Bot, AlertTriangle, ChevronDown, Copy, Check } from "lucide-react";
+import { Tag, Store, Truck, Navigation, PackageCheck, ExternalLink, RefreshCw, Bot, AlertTriangle, ChevronDown, Copy, Check, Pencil } from "lucide-react";
 
 const STEPS = [["label", "Label", Tag], ["dropped_off", "Dropped off", Store], ["in_transit", "On the way", Truck], ["out_for_delivery", "Out for delivery", Navigation], ["delivered", "Delivered", PackageCheck]];
 const LABEL = { label: "Label made — waiting for the customer to drop it off", dropped_off: "Dropped off at UPS", in_transit: "On the way", out_for_delivery: "Out for delivery", delivered: "Delivered", exception: "Problem with the package — check UPS", returned: "Returned to sender", unknown: "Waiting for UPS's first scan" };
@@ -12,9 +12,21 @@ const when = (d) => (d ? new Date(d).toLocaleString([], { month: "short", day: "
 export const trackLink = (n, service) => /^usps/i.test(service || "") ? `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(n)}`
   : /^fedex/i.test(service || "") ? `https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(n)}` : `https://www.ups.com/track?loc=en_US&tracknum=${encodeURIComponent(String(n).replace(/\s/g, ""))}`;
 
-export default function UpsTrack({ s, compact }) {
-  const num = s.returnTracking || (!/^(verizon|att|tmobile)$/i.test(s.carrier || "") ? s.trackingNo : null);
-  const service = s.returnTracking ? s.returnService : s.carrier;
+const isUpsNo = (n) => /^1Z[0-9A-Z]{16}$/i.test(String(n || "").replace(/\s/g, ""));
+export default function UpsTrack({ s: s0, compact }) {
+  const [own, setOwn] = useState(null); // tracking number added/changed here
+  const s = own ? { ...s0, ...own } : s0;
+  const num = s.returnTracking || (s.trackingNo && (isUpsNo(s.trackingNo) || !/^(verizon|att|tmobile)$/i.test(s.carrier || "")) ? s.trackingNo : null);
+  const service = s.returnTracking ? s.returnService : isUpsNo(s.trackingNo) ? "ups" : s.carrier;
+  const [edit, setEdit] = useState(false); const [val, setVal] = useState("");
+  async function saveNo(v) {
+    setBusy(true); setErr("");
+    const r = await fetch("/api/sales/ups-bot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: s.id, trackingNo: v }) });
+    const d = await r.json().catch(() => ({})); setBusy(false);
+    if (!r.ok) return setErr(d.error || "Couldn't save.");
+    setOwn({ trackingNo: d.sale?.trackingNo ?? null, carrier: d.sale?.carrier ?? null, upsAt: null }); setT(pick(d.sale || {})); setEdit(false); setVal("");
+    if (d.needsSetup) setErr("Saved. Connect UPS tracking in Connectors so the bot can follow it.");
+  }
   const [t, setT] = useState(() => pick(s)); const [busy, setBusy] = useState(false); const [err, setErr] = useState(""); const [open, setOpen] = useState(false); const [copied, setCopied] = useState(false);
   useEffect(() => { setT((x) => (new Date(s.upsAt || 0) >= new Date(x.upsAt || 0) ? pick(s) : x)); }, [s.upsAt, s.upsStatus]); // eslint-disable-line
   async function check() {
@@ -25,8 +37,22 @@ export default function UpsTrack({ s, compact }) {
     if (d.sale) setT(pick(d.sale));
   }
   // Never checked yet → let the bot look right away
-  useEffect(() => { if (num && !s.upsAt && !compact) check(); }, [s.id]); // eslint-disable-line
-  if (!num) return null;
+  useEffect(() => { if (num && !s.upsAt && !compact && !edit) check(); }, [s.id, num]); // eslint-disable-line
+  if (!num || edit) return (
+    <div className="ups-t ups-empty">
+      <div className="ups-top">
+        <span className="ups-badge" aria-hidden>UPS</span>
+        <div className="ups-num"><span className="sf-l">UPS tracking</span><span className="small muted">{num ? "Change the tracking number" : "No package yet — add the tracking number and the Modo bot follows it"}</span></div>
+      </div>
+      <form className="ups-add" onSubmit={(e) => { e.preventDefault(); if (val.trim()) saveNo(val); }}>
+        <input value={val} onChange={(e) => setVal(e.target.value)} placeholder="1Z… tracking number" autoCapitalize="characters" spellCheck={false} aria-label="Tracking number" />
+        <button type="submit" disabled={busy || !val.trim()}><Truck size={14} /> {busy ? "Saving…" : "Track"}</button>
+        {edit && <button type="button" className="ghost" onClick={() => { setEdit(false); setVal(""); }}>Cancel</button>}
+      </form>
+      {edit && s.trackingNo && !s.returnTracking && <button className="ghost sm" style={{ justifySelf: "start" }} onClick={() => saveNo("")} disabled={busy}>Remove tracking number</button>}
+      {err && <p className="small ups-err">{err}</p>}
+    </div>
+  );
 
   const st = t.upsStatus || "unknown"; const i = idxOf(st); const bad = i < 0;
   const pct = bad ? 100 : (Math.max(0, i) / (STEPS.length - 1)) * 100;
@@ -41,6 +67,7 @@ export default function UpsTrack({ s, compact }) {
           <a href={trackLink(num, service)} target="_blank" rel="noreferrer" className="num">{num} <ExternalLink size={11} /></a>
         </div>
         <span style={{ flex: 1 }} />
+        {!s.returnTracking && <button className="ghost sm icon-btn" title="Change tracking number" aria-label="Change tracking number" onClick={() => { setVal(num); setEdit(true); }}><Pencil size={13} /></button>}
         <button className="ghost sm icon-btn" title="Copy tracking number" aria-label="Copy tracking number" onClick={() => { navigator.clipboard?.writeText(num); setCopied(true); setTimeout(() => setCopied(false), 1300); }}>{copied ? <Check size={13} /> : <Copy size={13} />}</button>
         <a className="btn-link ups-go" href={trackLink(num, service)} target="_blank" rel="noreferrer"><Truck size={13} /> Track on {isUps ? "UPS" : "carrier"}</a>
       </div>
