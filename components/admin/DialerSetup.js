@@ -2,6 +2,7 @@
 // Admin → Tools → Dialer setup: pick the dialer, connect it, link agents, set results and pause codes. All in one place.
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import DownloadLink from "@/components/DownloadLink";
 import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download, Headset } from "lucide-react";
 
 // Office relay: gets Modo past the dialer's IP firewall by sending requests through a PC in the office.
@@ -29,7 +30,7 @@ function Relay() {
         </div>
         <div className="relay-opt">
           <b>Or: Office relay on a PC</b>
-          <p className="muted small" style={{ margin: 0 }}>On an office PC that opens the dialer, <a href="/api/relay/bat">download Modo Relay</a>, double-click it and leave the window open.</p>
+          <p className="muted small" style={{ margin: 0 }}>On an office PC that opens the dialer, <DownloadLink api="/api/relay/bat" className="">download Modo Relay</DownloadLink>, double-click it and leave the window open.</p>
         </div>
       </div>
       {r.lastSeen && <span className="small muted">Last check-in {new Date(r.lastSeen).toLocaleString()}{r.url ? " · " + r.url.replace("https://", "") : ""}</span>}

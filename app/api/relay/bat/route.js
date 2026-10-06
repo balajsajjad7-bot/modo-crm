@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { viciConnector, ensureRelayKey } from "@/lib/relay";
+import { signParams, checkSigned } from "@/lib/signedUrl";
 
 // Admin downloads "Modo Relay.bat" with this Modo's address and relay key built in.
-export async function GET(req) {
+export async function POST() {
   const { error } = await requireRole("ADMIN");
   if (error) return error;
+  return NextResponse.json({ url: signParams("/api/relay/bat", {}) });
+}
+export async function GET(req) {
+  if (!checkSigned(req, "/api/relay/bat")) { const { error } = await requireRole("ADMIN"); if (error) return error; }
   const conn = await viciConnector();
   if (!conn) return NextResponse.json({ error: "Save the VICIdial connection first." }, { status: 400 });
   const key = await ensureRelayKey(conn);

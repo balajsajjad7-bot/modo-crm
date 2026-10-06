@@ -1,6 +1,7 @@
 "use client";
 // Modo Drive: private files and daily backups, stored only in your Google Drive or Dropbox.
 import { useEffect, useRef, useState } from "react";
+import DownloadLink from "@/components/DownloadLink";
 import { HardDrive, Folder, FileText, Upload, FolderPlus, Download, Trash2, Pencil, ChevronRight, RefreshCw, DatabaseBackup, Unplug, Copy, Check, Cloud, ExternalLink } from "lucide-react";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
@@ -101,6 +102,11 @@ export default function Drive() {
     load();
   }
   async function act(body, ok) { setBusy(true); const r = await api("/api/drive", "POST", body); setBusy(false); if (!r.ok) return say(false, r.data.error); if (ok) say(true, ok); load(); }
+  async function downloadFile(id) {
+    const r = await api("/api/drive/file", "POST", { id });
+    if (!r.ok || !r.data.url) return say(false, r.data.error || "Couldn't start the download.");
+    const el = document.createElement("a"); el.href = r.data.url; el.download = ""; el.rel = "noopener"; document.body.appendChild(el); el.click(); el.remove();
+  }
   async function backup() { setBusy(true); const r = await api("/api/drive/backup", "POST"); setBusy(false); r.ok ? say(true, `Backup saved: ${r.data.name}`) : say(false, r.data.error); load(); }
   async function disconnect() { if (!confirm(`Disconnect ${info.label}? Your files stay in ${info.label}; Modo just stops using it.`)) return; await api("/api/drive/setup", "DELETE"); setPath([{ id: "", name: "Modo" }]); load(""); }
 
@@ -141,12 +147,12 @@ export default function Drive() {
         {!items.length ? <div className="drive-empty muted"><Upload size={22} /><span>Empty folder. Drop files here or press Upload.</span></div> : (
           <div className="drive-list">{items.map((it) => (
             <div key={it.id} className="drive-row">
-              <button className="ghost drive-name" onClick={() => (it.folder ? open(it) : window.open("/api/drive/file?id=" + encodeURIComponent(it.id), "_blank"))}>
+              <button className="ghost drive-name" onClick={() => (it.folder ? open(it) : downloadFile(it.id))}>
                 {it.folder ? <Folder size={18} className="drive-f" /> : <FileText size={18} />}<span className="ellipsis">{it.name}</span></button>
               <span className="small muted drive-meta">{it.folder ? "Folder" : size(it.size)}</span>
               <span className="small muted drive-meta">{when(it.modified)}</span>
               <span className="row drive-acts" style={{ gap: 4 }}>
-                {!it.folder && <a className="ghost sm icon-btn btn-link" href={"/api/drive/file?id=" + encodeURIComponent(it.id)} aria-label="Download"><Download size={13} /></a>}
+                {!it.folder && <DownloadLink className="ghost sm icon-btn btn-link" api="/api/drive/file" body={{ id: it.id }} title="Download" onError={(msg) => say(false, msg)}><Download size={13} /></DownloadLink>}
                 <button className="ghost sm icon-btn" aria-label="Rename" onClick={() => { const n = prompt("New name:", it.name); if (n?.trim() && n !== it.name) act({ action: "rename", id: it.id, name: n.trim() }, "Renamed."); }}><Pencil size={13} /></button>
                 <button className="ghost sm icon-btn del" aria-label="Delete" onClick={() => confirm(`Delete “${it.name}”?${info.provider === "gdrive" ? " (It goes to your Google Drive trash.)" : ""}`) && act({ action: "delete", id: it.id }, "Deleted.")}><Trash2 size={13} /></button>
               </span>
