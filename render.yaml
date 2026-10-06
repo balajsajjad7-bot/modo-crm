@@ -1,11 +1,11 @@
-# "Deploy to Render" for Modo Cloud Relay (free). Modo → Dialer setup → Relay has the button and your key.
+# "Deploy to Render" for Modo Cloud Relay (free): dialer relay + Modo WhatsApp. Modo → Dialer setup → Relay has the button and your key.
 services:
   - type: web
     name: modo-relay
     runtime: node
     plan: free
     rootDir: relay
-    buildCommand: echo "no build needed"
+    buildCommand: npm install --omit=dev
     startCommand: node server.js
     healthCheckPath: /ping
     envVars:

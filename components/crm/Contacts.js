@@ -1,4 +1,5 @@
 "use client";
+import WaButton from "@/components/WaButton";
 import AiButton from "@/components/AiButton";
 // Customers list with search, tags, owner filter, CSV import; and the customer 360 page.
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -106,7 +107,7 @@ export function ContactDetail({ id }) {
         <div style={{ minWidth: 0 }}>
           <h1 style={{ fontSize: 24 }}>{c.name}</h1>
           <div className="row small muted" style={{ gap: 12 }}>
-            {c.phone && <span className="row" style={{ gap: 4 }}><Phone size={13} />{c.phone}<button className="ghost sm icon-btn" aria-label="Copy phone" onClick={() => navigator.clipboard?.writeText(c.phone)}><Copy size={12} /></button></span>}
+            {c.phone && <span className="row" style={{ gap: 4 }}><Phone size={13} />{c.phone}<button className="ghost sm icon-btn" aria-label="Copy phone" onClick={() => navigator.clipboard?.writeText(c.phone)}><Copy size={12} /></button><WaButton phone={c.phone} text={`Hi ${String(c.name || "").split(" ")[0] || "there"}, `} iconOnly /></span>}
             {c.email && <a href={`mailto:${c.email}`} className="row" style={{ gap: 4 }}><Mail size={13} />{c.email}</a>}
             {(c.address || c.city) && <span className="row" style={{ gap: 4 }}><MapPin size={13} />{[c.address, c.city].filter(Boolean).join(", ")}</span>}
             {c.company && <span className="row" style={{ gap: 4 }}><Building2 size={13} />{c.company}</span>}

@@ -1,6 +1,7 @@
 "use client";
 import AiButton from "@/components/AiButton";
 import CoachResult from "@/components/CoachResult";
+import WaButton from "@/components/WaButton";
 // Slack-style team chat: #channels, direct & group messages, threads, reactions, @mentions,
 // voice notes, attachments, edit/delete, presence and huddles/calls.
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -264,6 +265,7 @@ function Message({ m, me, names, grouped, onThread, reload, active, inThread, is
           {!inThread && <button onClick={() => onThread(m.id)} aria-label="Reply in thread" title="Reply in thread"><MessageSquareReply size={16} /></button>}
           {mine && m.text && <button onClick={() => { setText(m.text); setEditing(true); }} aria-label="Edit" title="Edit"><Pencil size={15} /></button>}
           {canDelete && <button onClick={del} aria-label="Delete" title="Delete"><Trash2 size={15} /></button>}
+          {m.userId === "modo-bot" && m.text && <WaButton text={m.text} iconOnly title="Share on WhatsApp" />}
         </div>
       )}
     </div>

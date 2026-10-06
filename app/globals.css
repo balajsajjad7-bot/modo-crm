@@ -2486,3 +2486,16 @@ mark.kb-hit{background:rgba(var(--s),.3);color:inherit;border-radius:3px}
 .coach-cst{display:grid;gap:6px;padding:10px 12px;border-radius:12px;background:var(--background)}
 .coach-engage{margin:0;color:var(--muted-fg)}
 .coach.compact .coach-out{padding:10px}
+/* Modo WhatsApp link page */
+.wa-link{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start}
+.wa-qr{width:280px;height:280px;border-radius:16px;background:#fff;display:grid;place-items:center;overflow:hidden;padding:8px}
+.wa-qr img{width:100%;height:100%}
+.wa-qr-wait{display:grid;gap:8px;place-items:center;text-align:center;color:#333;padding:20px}
+.wa-code{font-size:15px;padding:12px 14px;border-radius:12px;background:var(--accent-soft)}
+.wa-code b{font-size:22px;letter-spacing:.18em;font-variant-numeric:tabular-nums}
+.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+@media (max-width:700px){.wa-link{grid-template-columns:1fr}.wa-qr{width:min(280px,100%);height:auto;aspect-ratio:1}}
+/* "Message on WhatsApp" button */
+.wa-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600;text-decoration:none;color:#fff!important;background:#25d366;line-height:1.4;white-space:nowrap}
+.wa-btn:hover{background:#1ebe5a}
+.wa-btn.icon{padding:5px}

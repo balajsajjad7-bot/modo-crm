@@ -2,6 +2,7 @@
 // Modo sends its VICIdial requests here; this server passes them to your dialer and signs itself in on the
 // dialer's firewall page, so the dialer always sees the same allowed IP. Only your dialer's host is allowed.
 // Env: MODO_URL (e.g. https://modo-crm1.vercel.app), RELAY_KEY (from Modo → Dialer setup → Relay).
+// It also runs Modo WhatsApp (a linked WhatsApp number, like WhatsApp Web) — see whatsapp.js.
 "use strict";
 const http = require("http");
 const https = require("https");
@@ -13,8 +14,18 @@ const SELF = String(process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL ||
 let allowed = [];
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
+let wa = null; try { wa = require("./whatsapp"); } catch (e) { log("WhatsApp module not loaded:", e.message); }
+
 function forward(req, res) {
   if (req.url === "/" || req.url === "/ping") { res.writeHead(200, { "content-type": "text/plain" }); return res.end("modo-relay ok"); }
+  // Modo WhatsApp (linked number): /wa/status, /wa/send, /wa/pair, /wa/logout, /wa/flush
+  if (req.url.startsWith("/wa/")) {
+    if (!wa) { res.writeHead(503); return res.end("whatsapp module missing"); }
+    if (!KEY || req.headers["x-relay-key"] !== KEY) { res.writeHead(401); return res.end("bad key"); }
+    let raw = ""; req.on("data", (c) => { raw += c; if (raw.length > 1e5) req.destroy(); });
+    req.on("end", () => wa.handle(req, res, raw).catch((e) => { res.writeHead(500); res.end(e.message); }));
+    return;
+  }
   if (req.method !== "POST" || req.url !== "/fwd") { res.writeHead(404); return res.end(); }
   if (!KEY || req.headers["x-relay-key"] !== KEY) { res.writeHead(401); return res.end("bad key"); }
   let raw = "";
@@ -48,7 +59,7 @@ async function register() {
     log("Connected to Modo. Dialer:", allowed.join(", "));
   } catch (e) { log("Couldn't reach Modo:", e.message); }
 }
-http.createServer(forward).listen(PORT, () => { log("Modo Cloud Relay on port", PORT, SELF); register(); });
+http.createServer(forward).listen(PORT, () => { log("Modo Cloud Relay on port", PORT, SELF); register(); if (wa) wa.start(); });
 setInterval(register, 4 * 60 * 1000);
 // Free hosts sleep after ~15 minutes without visitors: visit ourselves so the relay stays awake.
 if (SELF) setInterval(() => fetch(SELF + "/ping").catch(() => {}), 10 * 60 * 1000);

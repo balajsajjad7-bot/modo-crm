@@ -1,4 +1,5 @@
 "use client";
+import WaButton from "@/components/WaButton";
 import AiButton from "@/components/AiButton";
 // Everything about one agent in one place: edit details, pay, attendance, sales, notes, and quick actions.
 import { useCallback, useEffect, useState } from "react";
@@ -81,7 +82,7 @@ export default function AgentProfile({ id }) {
           <div className="form">
             <label>Full name<input value={form.name || ""} onChange={set("name")} /></label>
             <label>Email<input type="email" value={form.email || ""} onChange={set("email")} /></label>
-            <label>Phone<input value={form.phone || ""} onChange={set("phone")} /></label>
+            <label>Phone<span className="row" style={{ gap: 6, flexWrap: "nowrap" }}><input value={form.phone || ""} onChange={set("phone")} style={{ flex: 1 }} />{form.phone ? <WaButton phone={form.phone} text={`Hi ${String(form.name || "").split(" ")[0]}, `} iconOnly /> : null}</span></label>
             <label>CNIC<input value={form.cnic || ""} onChange={set("cnic")} /></label>
             <label>VICIdial user<input value={form.vicidialUser || ""} onChange={set("vicidialUser")} /></label>
             <label>Monthly salary (Rs)<input type="number" min="0" value={form.baseSalary} onChange={set("baseSalary")} /></label>

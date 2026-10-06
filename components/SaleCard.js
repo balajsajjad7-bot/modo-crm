@@ -11,6 +11,7 @@ import DeviceArt from "@/components/DeviceArt";
 import UpsTrack from "@/components/UpsTrack";
 import BrandLogo from "@/components/BrandLogo";
 import { brandDomain } from "@/lib/brands";
+import WaButton from "./WaButton";
 import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard, Maximize2, Minimize2, X, Store } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
@@ -243,6 +244,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
           {!preview && (
             <div className="sale-actions">
               {s.phone && <a className="btn-link" href={`tel:+1${String(s.phone).replace(/\D/g, "").slice(-10)}`}><Phone size={13} /> Call</a>}
+              {s.phone && <WaButton phone={String(s.phone).replace(/\D/g, "").slice(-10)} text={`Hi ${String(s.customer || "").split(" ")[0] || "there"}, `} />}
               {onEmail && s.email && <button className="ghost sm" onClick={() => onEmail(s)}><Send size={13} /> Email</button>}
               {s.address && <button className="ghost sm" onClick={() => navigator.clipboard?.writeText([s.customer, s.address, s.zip].filter(Boolean).join("\n"))}><Copy size={13} /> Copy address</button>}
               {onStatus && s.id && s.orderNumber && <OrderCheck s={s} onSaved={(d) => d && setLive(d)} />}

@@ -19,7 +19,7 @@ export async function middleware(req) {
   // A supervisor may only open the sections the admin granted (Overview "/admin" is always allowed).
   if (p.startsWith("/admin") && s?.role === "SUPERVISOR") {
     // Admin-only areas are never open to supervisors — redirect cleanly instead of showing an error.
-    const adminOnly = ["/admin/settings", "/admin/users", "/admin/access", "/admin/org", "/admin/payroll"];
+    const adminOnly = ["/admin/settings", "/admin/users", "/admin/access", "/admin/org", "/admin/payroll", "/admin/whatsapp"];
     if (adminOnly.some((a) => p === a || p.startsWith(a + "/"))) return NextResponse.redirect(new URL("/admin", req.url));
     const key = sectionForPath(p);
     const allowed = Array.isArray(s.sup) ? s.sup : [];
