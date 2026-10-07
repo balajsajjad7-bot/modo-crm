@@ -2,9 +2,29 @@ import { NextResponse } from "next/server";
 import { COOKIE, SESSION_MAX, readSession, signSession } from "./lib/session";
 import { sectionForPath } from "./lib/supaccess";
 
+// Flood guard (per server instance): a signed-in person gets 600 API calls a minute, a stranger 120 per
+// network address. Normal use is far below that; scripts hammering Modo get "slow down" instead of service.
+const hits = new Map();
+function flooded(key, limit) {
+  const now = Date.now(); const h = hits.get(key);
+  if (!h || now - h.at > 60000) { hits.set(key, { at: now, n: 1 }); if (hits.size > 5000) hits.clear(); return false; }
+  return ++h.n > limit;
+}
+const ipOf = (req) => (req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "?";
+
 export async function middleware(req) {
   const s = await readSession(req.cookies.get(COOKIE)?.value);
   const p = req.nextUrl.pathname;
+  if (p.startsWith("/api")) {
+    if (flooded(s ? "u:" + s.uid : "ip:" + ipOf(req), s ? 600 : 120)) return NextResponse.json({ error: "Too many requests — slow down." }, { status: 429, headers: { "retry-after": "60" } });
+    // Cross-site request forgery: a signed-in browser may only change things from Modo's own pages.
+    if (s && !["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+      const origin = req.headers.get("origin"); const site = req.headers.get("sec-fetch-site");
+      let foreign = site === "cross-site";
+      if (origin) { try { foreign = foreign || new URL(origin).host !== req.headers.get("host"); } catch { foreign = true; } }
+      if (foreign) return NextResponse.json({ error: "Blocked: this request didn't come from Modo." }, { status: 403 });
+    }
+  }
   // Supervisors are view-only: they may read (GET) but never change anything. Block every write
   // to any API, so no edit/save/delete button anywhere works for them (logging out is allowed).
   if (p.startsWith("/api") && s?.role === "SUPERVISOR") {

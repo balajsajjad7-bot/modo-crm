@@ -3,6 +3,7 @@ import { feed, tag } from "@/lib/salesFeed";
 import { currentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { runBot, sources } from "@/lib/upsBot";
+import { once } from "@/lib/throttle";
 
 export const maxDuration = 45;
 
@@ -10,7 +11,8 @@ export const maxDuration = 45;
 // it only refreshes packages not checked in the last 25 minutes and returns counts, never sale data.
 export async function GET(req) {
   const secret = process.env.CRON_SECRET;
-  const big = (secret && req.headers.get("authorization") === `Bearer ${secret}`) || /vercel-cron/i.test(req.headers.get("user-agent") || "");
+  const big = !!(secret && req.headers.get("authorization") === `Bearer ${secret}`);
+  if (!big && !(await currentUser()) && !(await once("ups-tick", 5 * 60000))) return NextResponse.json({ ok: true, checked: 0, changed: 0 });
   const r = await runBot({ limit: big ? 40 : 20, staleMin: 25 });
   return NextResponse.json({ ok: r.ok, checked: r.checked, changed: r.changed || 0, needsSetup: !!r.needsSetup });
 }

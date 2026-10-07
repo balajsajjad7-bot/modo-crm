@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireAdminOnly } from "@/lib/auth";
+import { waBlocked } from "@/lib/waLock";
 import { listDrafts, dropDraft, sendToCustomer, replySettings, DEFAULT_DONT } from "@/lib/waReply";
 import { saveSettings, getStatus } from "@/lib/walink";
 
@@ -9,8 +10,9 @@ import { saveSettings, getStatus } from "@/lib/walink";
 const who = (id) => (id === "wa-me" ? "me" : id.startsWith("wa:") ? "them" : id === "system" ? "system" : id === "modo-bot" ? "bot" : "team");
 
 export async function GET(req) {
-  const { error } = await requireRole("ADMIN");
+  const { error, session } = await requireAdminOnly();
   if (error) return error;
+  const lk = await waBlocked(session); if (lk) return NextResponse.json(lk.body, { status: lk.status });
   const c = new URL(req.url).searchParams.get("c");
   if (c) {
     if (!c.startsWith("wa-")) return NextResponse.json({ error: "Not a WhatsApp chat." }, { status: 400 });
@@ -31,8 +33,9 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const { error, session } = await requireRole("ADMIN");
+  const { error, session } = await requireAdminOnly();
   if (error) return error;
+  const lk = await waBlocked(session); if (lk) return NextResponse.json(lk.body, { status: lk.status });
   const b = await req.json().catch(() => ({}));
   const text = String(b.text || "").trim().slice(0, 4000);
   try {

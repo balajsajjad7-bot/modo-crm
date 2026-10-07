@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireAdminOnly } from "@/lib/auth";
+import { waBlocked } from "@/lib/waLock";
 import { getStatus, setStatus, getSettings, saveSettings, relayCall, relayTarget, wipeAuth } from "@/lib/walink";
 import { viciConnector, relayOnline, ensureRelayKey } from "@/lib/relay";
 
 // Admin: Modo WhatsApp (linked number) status, QR, settings, pairing code and unlink.
 export async function GET() {
-  const { error, session } = await requireRole("ADMIN");
+  const { error, session } = await requireAdminOnly();
   if (error) return error;
+  const lk = await waBlocked(session); if (lk) return NextResponse.json(lk.body, { status: lk.status });
   const conn = await viciConnector();
   const st = await getStatus();
   const fresh = st.at && Date.now() - new Date(st.at) < 2 * 60000;
@@ -17,8 +19,9 @@ export async function GET() {
   });
 }
 export async function POST(req) {
-  const { error } = await requireRole("ADMIN");
+  const { error, session } = await requireAdminOnly();
   if (error) return error;
+  const lk = await waBlocked(session); if (lk) return NextResponse.json(lk.body, { status: lk.status });
   const b = await req.json().catch(() => ({}));
   try {
     if (b.action === "settings") {

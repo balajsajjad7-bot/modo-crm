@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { tick, coachAllNow } from "@/lib/coach";
+import { once } from "@/lib/throttle";
 
 export const maxDuration = 60;
 
 // Automatic tick: any open Modo (and the GitHub heartbeat) calls this every few minutes. It only coaches
 // agents whose notepad changed, posts into the admins-only #notepad-coach channel, and returns counts only.
 export async function GET() {
+  if (!(await currentUser()) && !(await once("coach-tick", 120000))) return NextResponse.json({ ok: true, coached: 0 });
   try { const r = await tick({ limit: 2 }); return NextResponse.json({ ok: r.ok, coached: r.coached || 0 }); }
   catch { return NextResponse.json({ ok: false, coached: 0 }); }
 }

@@ -35,7 +35,7 @@ export async function POST(req) {
   const digits = String(b.phone || "").replace(/\D/g, "");
   if (digits.length >= 10) {
     const dup = await db.contact.findFirst({ where: { phone: { contains: digits.slice(-10) } } });
-    if (dup && !b.force) return NextResponse.json({ error: `A customer with this phone already exists: ${dup.name}.`, duplicateId: dup.id }, { status: 409 });
+    if (dup && !b.force) return NextResponse.json(s.role === "ADMIN" || dup.ownerId === s.uid ? { error: `A customer with this phone already exists: ${dup.name}.`, duplicateId: dup.id } : { error: "This phone number already belongs to another agent's customer. Ask your admin." }, { status: 409 });
   }
   const c = await db.contact.create({ data: {
     name: b.name.trim().slice(0, 120), phone: b.phone || null, email: b.email || null, address: b.address || null, city: b.city || null,

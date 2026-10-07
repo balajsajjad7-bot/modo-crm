@@ -19,7 +19,7 @@ async function run() {
 export async function GET(req) {
   const secret = process.env.CRON_SECRET;
   const authed = secret && req.headers.get("authorization") === `Bearer ${secret}`;
-  if (!authed && !/vercel-cron/i.test(req.headers.get("user-agent") || "")) return NextResponse.json({ error: "Not allowed." }, { status: 403 });
+  if (!authed && (secret || !/vercel-cron/i.test(req.headers.get("user-agent") || ""))) return NextResponse.json({ error: "Not allowed." }, { status: 403 });
   const conn = await driveConnector();
   if (!conn?.cfg.refreshToken) return NextResponse.json({ skipped: "Drive not connected." });
   if (!authed && conn.cfg.lastBackupAt && Date.now() - new Date(conn.cfg.lastBackupAt) < 20 * 3600000) return NextResponse.json({ skipped: "Backed up recently." });

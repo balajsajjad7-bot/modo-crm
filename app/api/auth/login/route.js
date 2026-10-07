@@ -10,10 +10,11 @@ import { lockState } from "@/lib/lock";
 import { newSecret, otpauth } from "@/lib/totp";
 import { enc } from "@/lib/crypto";
 
-// Simple brute-force protection: 8 wrong passwords per ID per 15 minutes.
-const fails = new Map();
-const blocked = (id) => { const f = fails.get(id); return f && f.n >= 8 && Date.now() - f.at < 15 * 60000; };
-const fail = (id) => { const f = fails.get(id) || { n: 0, at: Date.now() }; if (Date.now() - f.at > 15 * 60000) { f.n = 0; f.at = Date.now(); } f.n++; fails.set(id, f); };
+import { isBlocked, failed, cleared, waitText } from "@/lib/throttle";
+
+// Brute-force protection (kept in the database, so it works on every server): 6 wrong passwords per ID, or
+// 20 per network address, in 15 minutes locks that ID / address — 15 min, then 30, 60… for repeat offenders.
+const BAD = { error: "Agent ID or password is wrong." };
 
 export async function POST(req) {
   try { return await login(req); }
@@ -22,11 +23,21 @@ export async function POST(req) {
 
 async function login(req) {
   const body = await req.json();
-  const id = String(body.agentId || "").trim().toUpperCase();
-  if (blocked(id)) return NextResponse.json({ error: "Too many wrong tries. Wait 15 minutes and try again." }, { status: 429 });
-  const user = await db.user.findUnique({ where: { agentId: id } });
-  if (!user || !user.active || !(await bcrypt.compare(body.password || "", user.passwordHash))) { fail(id); return NextResponse.json({ error: "Agent ID or password is wrong." }, { status: 401 }); }
-  fails.delete(id);
+  const id = String(body.agentId || "").trim().toUpperCase().slice(0, 40);
+  const pw = typeof body.password === "string" ? body.password.slice(0, 200) : "";
+  const ip = clientIp() || "unknown";
+  for (const k of ["login-id:" + id, "login-ip:" + ip]) {
+    const b = await isBlocked(k);
+    if (b.blocked) return NextResponse.json({ error: `Too many wrong tries. Try again in ${waitText(b.wait)}.` }, { status: 429 });
+  }
+  const user = id ? await db.user.findUnique({ where: { agentId: id } }) : null;
+  // Always run bcrypt (even for an unknown ID) so the response time doesn't reveal which IDs exist.
+  const ok = await bcrypt.compare(pw, user?.passwordHash || "$2a$10$CwTycUXWue0Thq9StjUM0uJ8DmRKWwVSOBtYOGqeHRIRwnD0eC0Ku");
+  if (!user || !user.active || !ok) {
+    await failed("login-id:" + id, { max: 6 }); await failed("login-ip:" + ip, { max: 20 });
+    return NextResponse.json(BAD, { status: 401 });
+  }
+  await cleared("login-id:" + id);
   const settings = await getSettings();
   if (user.role !== "ADMIN") {
     const lock = await lockState();

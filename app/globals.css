@@ -2809,3 +2809,22 @@ html[data-appearance] .mp-learn{background:rgba(245,179,1,.1);color:var(--foregr
   .sv-say.big .sv-bubble p,.sv-items.big .sv-ask p,.sv-items.big .sv-obj-a p{font-size:18px}
   .sv-call-t{display:none}
 }
+
+/* ── WhatsApp lock ── */
+.wl{max-width:420px;margin:30px auto;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:28px 24px;border-radius:22px;border:1px solid var(--border);
+  background:radial-gradient(90% 70% at 50% 0%,rgba(37,211,102,.14),transparent 65%),var(--card)}
+.wl.compact{margin:16px auto;padding:20px 16px;box-shadow:none}
+.wl h2{margin:0;font-size:20px}
+.wl p{margin:0;line-height:1.5}
+.wl-ic{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#25d366,#128c7e);box-shadow:0 10px 30px -8px rgba(37,211,102,.6)}
+.wl.compact .wl-ic{width:46px;height:46px;border-radius:14px}
+.wl-pw{position:relative;width:100%;display:block}
+.wl-pw input{width:100%;padding-right:42px!important}
+.wl-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;padding:0;display:grid;place-items:center;background:transparent!important;border:0;color:var(--muted-fg);cursor:pointer;min-height:0;box-shadow:none!important}
+.wl > button[type=submit]{width:100%;justify-content:center;display:inline-flex;align-items:center;gap:6px}
+.wl-meter{width:100%;height:6px;border-radius:9px;background:var(--accent-soft);overflow:hidden;display:block}
+.wl-meter i{display:block;height:100%;border-radius:9px;transition:width .2s,background .2s}
+.wl-bar{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.wl-bar .chip{display:inline-flex;align-items:center;gap:4px}
+.wl-chg{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center}
+.wl-chg .wl-pw{width:170px}

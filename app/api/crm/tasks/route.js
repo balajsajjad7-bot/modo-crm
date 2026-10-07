@@ -26,6 +26,12 @@ export async function POST(req) {
   if (!(await can(s, "scheduleCallbacks"))) return NextResponse.json({ error: "Admin has turned this off for agents." }, { status: 403 });
   const b = await req.json();
   if (!String(b.title || "").trim()) return NextResponse.json({ error: "Give the task a title." }, { status: 400 });
+  // Agents may only attach things to their own customers and deals.
+  if (s.role !== "ADMIN") {
+    if (b.contactId && (await db.contact.findUnique({ where: { id: String(b.contactId) }, select: { ownerId: true } }))?.ownerId !== s.uid) return NextResponse.json({ error: "That customer isn't yours." }, { status: 403 });
+    if (b.dealId && (await db.deal.findUnique({ where: { id: String(b.dealId) }, select: { ownerId: true } }))?.ownerId !== s.uid) return NextResponse.json({ error: "That deal isn't yours." }, { status: 403 });
+  }
+
   const t = await db.task.create({ data: {
     title: b.title.trim().slice(0, 200), type: ["callback", "task", "email", "meeting"].includes(b.type) ? b.type : "task",
     dueAt: b.dueAt ? new Date(b.dueAt) : null, contactId: b.contactId || null, dealId: b.dealId || null, notes: b.notes || null,

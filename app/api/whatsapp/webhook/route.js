@@ -26,8 +26,10 @@ export async function POST(req) {
   try { body = JSON.parse(raw); } catch { return NextResponse.json({ ok: true }); }
   try {
     // With the App secret set, only messages genuinely signed by Meta are accepted (stops fake admin commands).
+    // Without the App secret nothing is accepted: anyone could otherwise post fake "admin" commands here.
     const sec = (await waConfig())?.appSecret;
-    if (sec) {
+    if (!sec) return NextResponse.json({ ok: true, ignored: "Set the App secret in Connectors → WhatsApp." });
+    {
       const sig = req.headers.get("x-hub-signature-256") || "";
       const want = "sha256=" + crypto.createHmac("sha256", sec).update(raw).digest("hex");
       if (sig.length !== want.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want))) return NextResponse.json({ ok: true });

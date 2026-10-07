@@ -9,6 +9,9 @@ const security = [
   { key: "X-DNS-Prefetch-Control", value: "off" },
   { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
   { key: "Origin-Agent-Cluster", value: "?1" },
+  // No plugins, no <base> tricks, no framing by other sites, forms only post to Modo, always HTTPS.
+  { key: "Content-Security-Policy", value: "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
 ];
 module.exports = {
   reactStrictMode: true,

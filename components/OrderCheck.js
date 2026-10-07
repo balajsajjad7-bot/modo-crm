@@ -1,4 +1,5 @@
 "use client";
+import { markCheck } from "@/lib/checkIntent";
 // "Check order" on a sale: copies the order details for the Modo Fill bookmark, opens the carrier's
 // order-status page (Verizon by default), and shows the last status saved back from it.
 import { useEffect, useRef, useState } from "react";
@@ -30,7 +31,7 @@ export default function OrderCheck({ s, onSaved }) {
   const copy = async (text, k) => { try { await navigator.clipboard.writeText(text); setCopied(k); setTimeout(() => setCopied(""), 1400); return true; } catch { return false; } };
 
   async function go() {
-    setMsg("");
+    setMsg(""); markCheck(s.id);
     const url = CARRIER_ORDER_PAGES[carrier];
     const code = encodeFill(s, location.origin, carrier);
     // 1) Android: the Modo app opens the carrier page itself, fills it, reads the status and saves it.

@@ -4,12 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import Link from "next/link";
 import WaCommands from "@/components/WaCommands";
+import WaLockGate, { WaLockBar } from "@/components/WaLockGate";
 import { Smartphone, CheckCircle2, RefreshCw, LogOut, AlertTriangle, KeyRound, Save, Copy, Inbox } from "lucide-react";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const LABEL = { installing: "Installing on the relay…", open: "Connected", qr: "Waiting for you to scan", reconnecting: "Reconnecting…", starting: "Starting…", logged_out: "Not linked", not_set_up: "Not linked", error: "Problem" };
 
-export default function WhatsAppPage() {
+export default function WhatsAppSetupPage() { return <WaLockGate><WhatsAppPage /></WaLockGate>; }
+
+function WhatsAppPage() {
   const [d, setD] = useState(null);
   const [img, setImg] = useState("");
   const [admins, setAdmins] = useState(""); const [saved, setSaved] = useState("");
@@ -38,6 +41,7 @@ export default function WhatsAppPage() {
       <section className="panel stack">
         <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
           <h2 className="row" style={{ gap: 8 }}><Smartphone size={18} /> WhatsApp</h2>
+          <WaLockBar />
           <span className={"chip " + (state === "open" ? "ok" : state === "qr" ? "" : "late")}>{LABEL[state] || state}{state === "open" && st.me ? " · +" + st.me : ""}</span>
         </div>
         <p className="muted small" style={{ margin: 0 }}>Link a normal WhatsApp number to Modo the same way as WhatsApp Web — no Meta account and no API key. Then the bots send you alerts, you can text Modo commands from your phone, and customer WhatsApp chats show up in Chat.</p>

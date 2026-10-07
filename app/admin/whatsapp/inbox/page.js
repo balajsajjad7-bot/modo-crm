@@ -4,13 +4,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import WaCommands from "@/components/WaCommands";
+import WaLockGate, { WaLockBar } from "@/components/WaLockGate";
 import { waLabel, initialsOf } from "@/lib/waName";
 import { MessageCircle, Send, Search, Plus, Check, X, Pencil, Users, ShieldCheck, ArrowLeft, Sparkles, Phone, BookOpen, Ban, Link2, Clock, Settings2 } from "lucide-react";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const ago = (d) => { const s = (Date.now() - new Date(d)) / 1000; return s < 60 ? "now" : s < 3600 ? Math.floor(s / 60) + "m" : s < 86400 ? Math.floor(s / 3600) + "h" : new Date(d).toLocaleDateString([], { month: "short", day: "numeric" }); };
 
-export default function WhatsAppInbox() {
+export default function WhatsAppInboxPage() { return <WaLockGate><WhatsAppInbox /></WaLockGate>; }
+
+function WhatsAppInbox() {
   const [d, setD] = useState(null);
   const [tab, setTab] = useState("inbox");
   const [cur, setCur] = useState(null); const [msgs, setMsgs] = useState([]);
@@ -48,6 +51,7 @@ export default function WhatsAppInbox() {
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
           <span className={"chip " + (d.linked ? "ok" : "late")}>{d.linked ? "Linked · +" + d.me : "Not linked"}</span>
           {d.drafts.length > 0 && <span className="chip wai-wait"><Clock size={12} /> {d.drafts.length} waiting for your OK</span>}
+          <WaLockBar />
           <button className="sm wai-text" onClick={() => { setTab("inbox"); setCur(null); setNewChat({ to: "", name: "", text: "" }); }}><Send size={13} /> Text a number</button>
         </div>
         <div className="wai-tabs" role="tablist">

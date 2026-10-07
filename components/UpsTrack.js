@@ -1,4 +1,5 @@
 "use client";
+import { markCheck } from "@/lib/checkIntent";
 // UPS package on a sale card: tracking link + a live progress graphic kept up to date by the Modo bot.
 import { useEffect, useRef, useState } from "react";
 import { detectUps } from "@/lib/upsText";
@@ -65,7 +66,7 @@ export default function UpsTrack({ s: s0, compact }) {
     const url = trackLink(num, service);
     const isUpsPkg = !/^(usps|fedex)/i.test(service || "");
     if (!isUpsPkg) return; // other carriers: plain link
-    const code = encodeUps({ id: s.id, num }, location.origin);
+    const code = encodeUps({ id: s.id, num }, location.origin); markCheck(s.id);
     if (/Android/i.test(navigator.userAgent)) { e.preventDefault(); location.href = `intent://check?d=${encodeURIComponent(code)}&u=${encodeURIComponent(url)}#Intent;scheme=modo;package=com.modo.crm;S.browser_fallback_url=${encodeURIComponent(url)};end`; }
     else if (document.documentElement.dataset.modoFill === "1") { e.preventDefault(); window.open(url + "#modo=" + encodeURIComponent(code), "_blank"); }
     try { sessionStorage.setItem("modo-ups-went", s.id); } catch {}

@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { waLabel, initialsOf } from "@/lib/waName";
+import WaLockGate from "@/components/WaLockGate";
+// After the WhatsApp password is entered, refresh the chat list so names and messages appear.
+function Reloader({ onOpen }) { useEffect(() => { onOpen?.(); }, []); return <p className="sl-empty">Opening…</p>; }
 
 const EMOJIS = ["👍", "❤️", "😂", "🎉", "👀", "✅", "🙏", "🔥", "💯", "😮"];
 const MAX = 4 * 1024 * 1024;
@@ -79,7 +82,7 @@ export default function Chat() {
   const Item = ({ c }) => (
     <button className={"sl-item" + (c.id === openId ? " on" : "") + (c.unread ? " unread" : "")} onClick={() => setOpenId(c.id)}>
       {c.kind === "dm" ? <Avatar name={c.title} size={20} online={c.online} /> : <span className="sl-ico"><ConvIcon c={c} /></span>}
-      {isWa(c) ? (() => { const w = waLabel(c.id, c.title); return <span className="sl-wa"><span className="ellipsis">{w.name}</span>{w.number && <small>{w.number}</small>}</span>; })() : <span className="ellipsis">{c.title}</span>}
+      {isWa(c) ? (() => { const w = c.locked ? { name: c.title, number: "" } : waLabel(c.id, c.title); return <span className="sl-wa"><span className="ellipsis">{w.name}</span>{w.number && <small>{w.number}</small>}</span>; })() : <span className="ellipsis">{c.title}</span>}
       {c.huddle && <Headphones size={14} className="sl-huddle-ico" aria-label="Huddle in progress" />}
       {(c.mentions > 0 || ((c.kind !== "channel" || BOTCHANS.includes(c.id)) && c.unread > 0)) && <span className="sl-badge">{c.kind === "channel" && !BOTCHANS.includes(c.id) ? c.mentions : c.unread}</span>}
     </button>
@@ -163,7 +166,7 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
   const h = conv.huddle; const inThis = huddle.call && huddle.call.conversationId === conv.id;
   const isAdmin = me?.role === "ADMIN";
   const other = conv.kind === "dm" ? conv.members.find((m) => m.id !== me?.uid) : null;
-  const wa = conv.id.startsWith("wa-") ? waLabel(conv.id, conv.title) : null;
+  const wa = !conv.id.startsWith("wa-") ? null : conv.locked ? { name: conv.title, number: "", digits: "", group: conv.id.startsWith("wa-g-"), us: false } : waLabel(conv.id, conv.title);
   async function saveTopic() { await api("/api/chat/conversations", "PATCH", { id: conv.id, topic }); setEditTopic(false); reloadChat(); reload(); }
 
   return (
@@ -193,6 +196,7 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
         </div>
       </header>
 
+      {conv.locked ? <div className="sl-msgs"><WaLockGate compact><Reloader onOpen={reloadChat} /></WaLockGate></div> : (<>
       <div className="sl-msgs">
         {msgs === null ? <p className="sl-empty">Loading…</p> : (
           <>
@@ -212,6 +216,7 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
         : <Composer conv={conv} names={names} members={conv.members} me={me} onSent={reload}
             placeholder={conv.id === BOT ? "Ask the bot: sales · online · late · callbacks · brief · coach · help" : conv.id?.startsWith("wa-") ? "Reply on WhatsApp…" : conv.id === UPSBOT ? "Tracking number + order # or customer name (e.g. 1Z999AA10123456784 #12345) · help · list" : training ? "Post a short note to everyone (use New lesson for a full guide)" : `Message ${conv.kind === "channel" ? "#" + conv.title : conv.title}`} />}
       {lessonEdit && <LessonEditor lesson={lessonEdit} onClose={() => setLessonEdit(null)} onDone={() => { setLessonEdit(null); reload(); reloadChat(); }} />}
+      </>)}
     </>
   );
 }

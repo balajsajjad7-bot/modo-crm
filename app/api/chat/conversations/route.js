@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { waBlocked } from "@/lib/waLock";
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { ensureEveryone, userMap, activeHuddle, ONLINE_MS } from "@/lib/chat";
@@ -46,6 +47,10 @@ export async function GET() {
       huddle: h ? { id: h.id, startedById: h.startedById, startedBy: U[h.startedById]?.name || (await userMap([h.startedById]))[h.startedById]?.name, count: h.participants.length, inIt: h.participants.some((p) => p.userId === s.uid) } : null,
     };
   }));
+  // WhatsApp locked → hide customer names and messages in the chat list too.
+  if (out.some((c) => c.id.startsWith("wa-")) && (await waBlocked(s))) {
+    for (const c of out) if (c.id.startsWith("wa-")) { c.title = c.id.startsWith("wa-g-") ? "WhatsApp group 🔒" : "WhatsApp chat 🔒"; c.topic = ""; c.locked = true; if (c.last) c.last = { ...c.last, text: "🔒 Locked — enter your WhatsApp password", by: "" }; }
+  }
   return NextResponse.json({ me: s.uid, conversations: out });
 }
 
@@ -98,6 +103,9 @@ export async function PATCH(req) {
     await db.message.create({ data: { conversationId: c.id, userId: "system", kind: "SYSTEM", text: `${s.name} set the topic: ${b.topic || "(cleared)"}` } });
   }
   if (Array.isArray(b.addUserIds) && b.addUserIds.length && c.isGroup) {
+    // WhatsApp chats and private channels: only an admin adds people. Only real, active users can be added.
+    if ((c.id.startsWith("wa-") || c.isPrivate) && s.role !== "ADMIN") return NextResponse.json({ error: "Only an admin can add people here." }, { status: 403 });
+    b.addUserIds = (await db.user.findMany({ where: { id: { in: b.addUserIds.map(String).slice(0, 50) }, active: true }, select: { id: true } })).map((u) => u.id);
     await db.convMember.createMany({ data: b.addUserIds.map((userId) => ({ conversationId: c.id, userId })), skipDuplicates: true });
     const names = await userMap(b.addUserIds);
     await db.message.create({ data: { conversationId: c.id, userId: "system", kind: "SYSTEM", text: `${s.name} added ${b.addUserIds.map((id) => names[id]?.name).filter(Boolean).join(", ")}` } });

@@ -8,6 +8,7 @@ import { UPSBOT, handleUpsBot } from "@/lib/upsChatBot";
 import { BOT } from "@/lib/bots";
 import { handleCommand } from "@/lib/botCommands";
 import { sendWA } from "@/lib/whatsapp";
+import { waBlocked } from "@/lib/waLock";
 import { askAI } from "@/lib/ai";
 
 // ?c=<conversation>  [&thread=<parent id>]  [&since=<ISO>]  (since = anything created or changed after)
@@ -17,6 +18,7 @@ export async function GET(req) {
   const q = new URL(req.url).searchParams;
   const c = q.get("c"), thread = q.get("thread");
   if (!c || !(await isMember(c, s.uid))) return NextResponse.json({ error: "You're not in this conversation." }, { status: 403 });
+  if (c.startsWith("wa-")) { const lk = await waBlocked(s); if (lk) return NextResponse.json(lk.body, { status: lk.status }); }
   const where = thread ? { conversationId: c, OR: [{ id: thread }, { parentId: thread }] } : { conversationId: c, parentId: null };
   const list = thread
     ? await db.message.findMany({ where, orderBy: { createdAt: "asc" }, take: 300 })
@@ -34,6 +36,7 @@ export async function POST(req) {
   const form = await req.formData();
   const c = String(form.get("c") || "");
   if (!c || !(await isMember(c, s.uid))) return NextResponse.json({ error: "You're not in this conversation." }, { status: 403 });
+  if (c.startsWith("wa-")) { const lk = await waBlocked(s); if (lk) return NextResponse.json(lk.body, { status: lk.status }); }
   const text = String(form.get("text") || "").trim().slice(0, 4000);
   const parentId = String(form.get("parentId") || "") || null;
   if (parentId) {
