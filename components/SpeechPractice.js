@@ -4,17 +4,17 @@ import { useState } from "react";
 import { Sparkles, ThumbsUp, Wrench, MessageSquareQuote } from "lucide-react";
 import VoiceRecord from "./VoiceRecord";
 
-export default function SpeechPractice({ speech }) {
+export default function SpeechPractice({ speech, onScore }) {
   const [text, setText] = useState(""); const [res, setRes] = useState(null); const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
   const check = async (t = text) => {
     setBusy(true); setErr(""); setRes(null);
     const r = await fetch("/api/ai/speeches", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: speech.id, text: t }) }).then(async (x) => ({ ok: x.ok, d: await x.json().catch(() => ({})) })).catch(() => ({ ok: false, d: { error: "Network problem" } }));
-    setBusy(false); if (r.ok) setRes(r.d); else setErr(r.d.error);
+    setBusy(false); if (r.ok) { setRes(r.d); onScore?.(r.d.score); } else setErr(r.d.error);
   };
   const tone = res ? (res.score >= 80 ? "ok" : res.score >= 55 ? "late" : "red") : "";
   return (
     <div className="sp-prac">
-      <p className="small muted" style={{ margin: 0 }}>Say the pitch out loud like you're on a call (or type it). Modo compares it with the official speech.</p>
+      <p className="small muted" style={{ margin: 0 }}>Say it out loud like you're on a call, or type it — the whole call or one part (opening, pitch, one objection, the close). Modo scores you against the official speech.</p>
       <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Hi, this is … calling about …" style={{ minHeight: 90 }} />
       <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
         <VoiceRecord label="Say it" className="sm" onText={(t) => { const v = (text ? text + " " : "") + t; setText(v); check(v); }} />

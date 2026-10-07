@@ -5,7 +5,7 @@
 // Plus "My speech": the admin's speech for the agent's campaign, with practice.
 // Saved to the account (padText) as plain text with "=== Page ===" headers, so admins and the coach can still read it.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Clock, Copy, Check, Download, Type, Trash2, Plus, Search, SquareCheck, UserRound, Megaphone, X, ChevronDown, ChevronUp, Phone, Mail, MapPin, Package, Hash, Cloud, CloudOff } from "lucide-react";
+import { Clock, Copy, Check, Download, Type, Trash2, Plus, Search, SquareCheck, UserRound, Megaphone, Star, X, ChevronDown, ChevronUp, Phone, Mail, MapPin, Package, Hash, Cloud, CloudOff } from "lucide-react";
 import SpeechPractice from "./SpeechPractice";
 
 const COLORS = ["#8b5cf6", "#22d3ee", "#f59e0b", "#10b981", "#f43f5e", "#3b82f6", "#eab308", "#ec4899"];
@@ -144,17 +144,21 @@ export default function ModoPad({ compact = false }) {
       {showSpeech ? (
         <div className="mp-speeches">
           {speeches.map((s) => (
-            <article key={s.id} className="mp-sp">
-              <header><b>{s.title}</b><small>{s.campaign || "All campaigns"}</small><button className="ghost sm" onClick={() => copy(s.text, "sp" + s.id)}>{copied === "sp" + s.id ? <Check size={13} /> : <Copy size={13} />} Copy</button></header>
+            <article key={s.id} className={"mp-sp" + (s.priority ? " top" : "")}>
+              <header>{s.priority && <span className="mp-top"><Star size={11} /> Top priority</span>}<b>{s.title}</b><small>{s.campaign || "All campaigns"}{s.myBest != null ? ` · your best ${s.myBest}/100` : ""}</small><button className="ghost sm" onClick={() => copy(s.text, "sp" + s.id)}>{copied === "sp" + s.id ? <Check size={13} /> : <Copy size={13} />} Copy</button></header>
               <div className="mp-sp-text">{s.text}</div>
               {(s.dos || s.donts) && <div className="mp-sp-rules">{s.dos && <p><b>✅ Always:</b> {s.dos}</p>}{s.donts && <p><b>⛔ Never:</b> {s.donts}</p>}</div>}
               <button className="ghost sm" onClick={() => setOpenSp(openSp === s.id ? null : s.id)}>🎯 {openSp === s.id ? "Close practice" : "Practise it — Modo scores you"}</button>
-              {openSp === s.id && <SpeechPractice speech={s} />}
+              {openSp === s.id && <SpeechPractice speech={s} onScore={(n) => setSpeeches((l) => l.map((x) => (x.id === s.id ? { ...x, myBest: Math.max(x.myBest ?? 0, n) } : x)))} />}
             </article>
           ))}
         </div>
       ) : (
         <>
+          {(() => { const t = speeches.find((x) => x.priority && (x.myBest == null || x.myBest < 80)); return t ? (
+            <button className="mp-learn" data-plain onClick={() => { setShowSpeech(true); setOpenSp(t.id); }}>
+              <Star size={16} className="sp-star" /><span style={{ flex: 1 }}>Learn the <b>{t.campaign || "top"} speech</b> — {t.myBest == null ? "you haven't practised it yet" : `your best is ${t.myBest}/100, get it to 80`}.</span><b>Practise now →</b>
+            </button>) : null; })()}
           <div className="mp-bar">
             <button className="ghost sm" onClick={stamp} title="Insert date & time (Ctrl+D)"><Clock size={13} />{!compact && " Time"}</button>
             <button className="ghost sm" onClick={() => toggleCheck()} title="Checklist line (Ctrl+Enter)"><SquareCheck size={13} />{!compact && " Checklist"}</button>

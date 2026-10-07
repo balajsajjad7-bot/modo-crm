@@ -2690,3 +2690,22 @@ html[data-appearance] .mp-speech.on{background:linear-gradient(135deg,rgb(var(--
 .sl-intro-num{margin:-4px 0 0;font-variant-numeric:tabular-nums;color:var(--muted-fg);font-weight:600}
 @media (max-width:900px){.sl-intro h2{font-size:20px;word-break:break-word}.sl-intro{padding-top:10px}}
 .sl-head-title .sl-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-prio{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:10px 12px;border-radius:12px;border:1px dashed var(--border);background:transparent;color:var(--foreground);cursor:pointer;min-height:0}
+.sp-prio span{display:flex;flex-direction:column;gap:2px}.sp-prio small{color:var(--muted-fg);font-weight:400}
+.sp-prio.on{border:1px solid #f5b301;background:rgba(245,179,1,.1)}
+.sp-prio.on svg,.sp-star{color:#f5b301;fill:#f5b301}
+html[data-appearance] .sp-prio{background:transparent;color:var(--foreground);box-shadow:none}
+html[data-appearance] .sp-prio.on{background:rgba(245,179,1,.1)}
+.sp-progress{border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.sp-progress summary{cursor:pointer;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sp-prog-list{display:grid;gap:6px;margin-top:10px;max-height:260px;overflow:auto}
+.sp-prog{display:grid;grid-template-columns:minmax(0,1fr) 120px 32px 28px;align-items:center;gap:8px;font-size:13px}
+.sp-prog em{grid-column:2/5;color:var(--muted-fg);font-size:12px}
+.sp-prog small{color:var(--muted-fg)}
+.sp-meter{display:block;height:7px;border-radius:9px;background:var(--accent-soft);overflow:hidden}
+.sp-meter i{display:block;height:100%;border-radius:9px}
+.mp-sp.top{border-color:#f5b301;background:linear-gradient(160deg,rgba(245,179,1,.12),transparent 60%)}
+.mp-top{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#b88400;background:rgba(245,179,1,.16);padding:2px 8px;border-radius:99px}
+.mp-learn{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;border:1px solid #f5b301;background:rgba(245,179,1,.1);font-size:13.5px;cursor:pointer;color:var(--foreground);text-align:left;min-height:0}
+html[data-appearance] .mp-learn{background:rgba(245,179,1,.1);color:var(--foreground);box-shadow:none}
+.mp-learn b{white-space:nowrap}
