@@ -2846,3 +2846,25 @@ html[data-appearance] .mp-learn{background:rgba(245,179,1,.1);color:var(--foregr
 .fl-dock.sleep:has(.fl-badge) .fl-peek{opacity:.95}
 @keyframes flPeek{from{transform:scale(.6);opacity:0}}
 @media (hover:none){.fl-peek{opacity:.7}}
+
+/* Go to launcher: columns can never be pushed wider than the screen by a long name or a "New" badge */
+.ln-grid{grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr))}
+.ln-tile,.ln-go,.ln-t{min-width:0}
+.ln-t b{min-width:0}
+.ln-t b>span.ln-l{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.launcher{min-width:0;max-width:100%;overflow:hidden}
+@media (max-width:600px){
+  .launcher{padding:14px!important;gap:10px}
+  .ln-head h2{font-size:16px}
+  .ln-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .ln-go{position:relative;flex-direction:row;align-items:center;gap:9px;padding:9px 14px 9px 9px}
+  .ln-ic{width:32px;height:32px;border-radius:10px}
+  .ln-ic svg{width:17px;height:17px}
+  .ln-t b{font-size:13.5px;line-height:1.2;flex-wrap:nowrap}
+  .ln-t b .wn-chip{position:absolute;left:35px;top:6px;font-size:0;width:9px;height:9px;min-width:9px;padding:0;border-radius:50%;border:2px solid var(--card-solid,#fff);box-sizing:content-box}
+  .ln-tile{border-radius:13px}
+  .ln-pin{top:2px!important;right:2px!important;width:20px!important;height:20px!important;opacity:.45}
+  .ln-pin.on{opacity:1}
+  .ln-pin svg{width:12px;height:12px}
+  .ln-sub{font-size:10.5px}
+}

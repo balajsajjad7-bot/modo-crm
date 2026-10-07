@@ -25,10 +25,10 @@ export default function Launcher({ title = "Go to" }) {
   // Without pins, show the most useful first 8 so the home screen is never bare
   const PREF = ["/admin/autodial", "/agent/dialer", "/admin/phone", "/agent/phone", "/admin/sales", "/agent/sale", "/agent/budgetease", "/admin/agents", "/admin/attendance", "/admin/chat", "/agent/chat", "/admin/ai", "/agent/ai", "/admin/drive", "/agent/contacts", "/agent/notepad", "/admin/reports"];
   const rank = (h) => { const i = PREF.indexOf(h); return i < 0 ? 99 : i; };
-  const quick = [...(pinned.length ? pinned : [...flat].sort((a, b) => rank(a.href) - rank(b.href)).slice(0, 8)), ...flat.filter((x) => isNew(x.href) && !pins.includes(x.href))].filter((x, i, arr) => arr.findIndex((y) => y.href === x.href) === i);
+  const quick = [...(pinned.length ? pinned : [...flat].sort((a, b) => rank(a.href) - rank(b.href)).slice(0, 8)), ...flat.filter((x) => isNew(x.href) && !pins.includes(x.href)).slice(0, 4)].filter((x, i, arr) => arr.findIndex((y) => y.href === x.href) === i);
   const Tile = ({ it }) => (
     <div className="ln-tile">
-      <Link href={it.href} className="ln-go" onClick={() => isNew(it.href) && markSeen(it.href)}><span className="ln-ic">{it.icon}</span><span className="ln-t"><b>{it.label}{it.badge ? <em className="ln-badge">{it.badge}</em> : null}{isNew(it.href) && <em className="wn-chip">NEW</em>}</b>{it.hint && <small>{it.hint}</small>}</span></Link>
+      <Link href={it.href} className="ln-go" onClick={() => isNew(it.href) && markSeen(it.href)}><span className="ln-ic">{it.icon}</span><span className="ln-t"><b><span className="ln-l">{it.label}</span>{it.badge ? <em className="ln-badge">{it.badge}</em> : null}{isNew(it.href) && <em className="wn-chip">NEW</em>}</b>{it.hint && <small>{it.hint}</small>}</span></Link>
       <button className={"ghost ln-pin" + (pins.includes(it.href) ? " on" : "")} aria-label={pins.includes(it.href) ? "Unpin" : "Pin to home"} title={pins.includes(it.href) ? "Unpin" : "Pin to home"} onClick={() => toggle(it.href)}><Star size={14} /></button>
     </div>
   );
@@ -41,7 +41,7 @@ export default function Launcher({ title = "Go to" }) {
       </div>
       {found ? (found.length ? <div className="ln-grid">{found.map((it) => <Tile key={it.href} it={it} />)}</div> : <p className="muted small" style={{ margin: 0 }}>No page matches “{q}”.</p>) : (
         <>
-          <div className="ln-sub">{pinned.length ? "Pinned" : "Quick start"} {!pinned.length && <span className="muted small">· tap ☆ on any button to pin it here</span>}</div>
+          <div className="ln-sub">{pinned.length ? "Pinned" : "Quick start"} {!pinned.length && <span className="muted small ln-hint">· tap ☆ to pin</span>}</div>
           <div className="ln-grid">{quick.map((it) => <Tile key={it.href} it={it} />)}</div>
           <button className="ghost sm ln-more" onClick={() => setOpen(!all)} aria-expanded={all}><ChevronDown size={14} style={{ transform: all ? "rotate(180deg)" : "none", transition: "transform .2s" }} /> {all ? "Hide all pages" : `All pages (${flat.length})`}</button>
           {all && groups.map((g, gi) => { const items = g.items.filter((i) => i.href && i.href !== path); if (!items.length) return null; return (
