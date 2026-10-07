@@ -58,6 +58,7 @@ export default function Login() {
             <label>Password<input type="password" value={password} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" required /></label>
             {err && <div className="err">{err}</div>}
             <button disabled={busy}><KeyRound size={15} /> {busy ? "Signing in…" : "Sign in"}</button>
+            <a href="/welcome" className="login-plans">New to Modo? <b>See plans & pricing →</b></a>
           </form>
         )}
         {step === "otp" && (

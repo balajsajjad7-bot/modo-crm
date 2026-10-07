@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic, Bot } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic, Bot, CreditCard } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 import { sectionForPath } from "@/lib/supaccess";
@@ -42,6 +42,8 @@ export default function AdminLayout({ children }) {
       { href: "/admin/whereabouts", label: "Whereabouts", hint: "Live map of who's at the office; leave/return alerts", icon: i(MapPin) },
       { href: "/admin/notepads", label: "Agent notepads", hint: "Every agent's personal notepad, read-only", icon: i(NotebookPen) },
       { href: "/admin/agents", label: "Agents", hint: "Add, edit, call and manage agents", icon: i(Users) },
+      { href: "/admin/subscriptions", label: "Subscriptions", hint: "Sell Modo: plans, customers, activate / cancel / change plan, agents' plans", icon: i(CreditCard) },
+      { href: "/admin/remote", label: "Remote control", hint: "See every agent's Modo live: message, lock, sign out, open a page", icon: i(MonitorSmartphone) },
       { href: "/admin/shifts", label: "Shifts", hint: "Edit everyone's shift times; automatic clock-out at shift end", icon: i(CalendarClock) },
       { href: "/admin/breaks", label: "Break report", hint: "Every break, per agent per day", icon: i(Coffee) },
       { href: "/admin/payroll", label: "Payroll", hint: "Monthly pay, deductions and bonuses", icon: i(Wallet) },

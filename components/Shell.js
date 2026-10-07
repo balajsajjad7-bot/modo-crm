@@ -4,6 +4,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toneStyle } from "@/lib/tones";
 import AutoFold from "./AutoFold";
+import RemoteAgent from "./RemoteAgent";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import TopBar from "./TopBar";
@@ -289,6 +290,7 @@ me?.role === "AGENT" ? (
         <ErrorBoundary resetKey={path}>{children}</ErrorBoundary>
         <AutoFold />
       </main>
+      {me?.role === "AGENT" && <RemoteAgent onSignOut={() => onSignOut(huddle.leave)} setStatus={setStatus} />}
 
       {invites.slice(0, 1).map((c) => (
         <div key={c.huddle.id} className="call-banner" role="alert">
