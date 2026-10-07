@@ -91,7 +91,7 @@ export default function AiBuilder() {
           {msgs.length === 0 && (
             <div className="ai-hello">
               <span className="ai-orb"><Wand2 size={26} /></span>
-              <h2>What should I build?</h2>
+              <h2><Wand2 size={17} /> What should I build?</h2>
               <p className="muted">Describe any app, tool, page or game. It runs live right here, and you can keep chatting to change it.</p>
               <div className="ai-prompts">{IDEAS.map((p) => <button key={p} className="ghost" onClick={() => ask(p)}>{p}</button>)}</div>
             </div>

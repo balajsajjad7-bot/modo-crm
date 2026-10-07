@@ -1,4 +1,5 @@
 "use client";
+import { Coffee, Radio, Receipt, Target, Trophy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { pkr, dur } from "@/lib/fmt";
 import { startSending } from "@/components/listen";
@@ -60,7 +61,7 @@ export function BreakBox({ me, now, toggle: doToggle }) {
   async function toggle() { setBusy(true); await doToggle(); setBusy(false); }
   return (
     <section id="break" className="panel stack">
-      <div className="row" style={{ justifyContent: "space-between" }}><h2>Breaks</h2>{b.open && <span className="chip late">on break</span>}</div>
+      <div className="row" style={{ justifyContent: "space-between" }}><h2><Coffee size={17} /> Breaks</h2>{b.open && <span className="chip late">on break</span>}</div>
       <div className="facts">
         <div><b style={{ color: left < 0 ? "var(--red)" : undefined }}>{left >= 0 ? dur(left) : "−" + dur(-left)}</b><span>{left >= 0 ? "break time left" : "over allowance"}</span></div>
         <div><b>{dur(used)}</b><span>used of {dur(b.allowance)}</span></div>
@@ -79,7 +80,7 @@ export function TargetBox({ me }) {
   const rank = board?.rows.findIndex((r) => r.agentId === me.agentId);
   return (
     <section id="target" className="panel stack">
-      <div className="row" style={{ justifyContent: "space-between" }}><h2>Today's target</h2>{rank >= 0 && <span className="chip">#{rank + 1} of {board.rows.length}</span>}</div>
+      <div className="row" style={{ justifyContent: "space-between" }}><h2><Target size={17} /> Today's target</h2>{rank >= 0 && <span className="chip">#{rank + 1} of {board.rows.length}</span>}</div>
       <div className="facts">
         <div><b>{g.verified} / {g.goal}</b><span>verified sales</span></div>
         <div><b>{g.submitted}</b><span>submitted</span></div>
@@ -102,7 +103,7 @@ export function SaleBox({ onDone }) {
   }
   return (
     <section id="sale" className="panel stack">
-      <div><h2>Submit a sale</h2><p className="muted small" style={{ margin: "4px 0 0" }}>Paste the full sale details. They go straight to admin and are removed from this screen once submitted.</p></div>
+      <div><h2><Receipt size={17} /> Submit a sale</h2><p className="muted small" style={{ margin: "4px 0 0" }}>Paste the full sale details. They go straight to admin and are removed from this screen once submitted.</p></div>
       <textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder="Customer name, phone, product, amount, payment details, notes…" autoComplete="off" spellCheck={false} />
       {err && <div className="err">{err}</div>}
       {receipt && <div className="receipt">Sale submitted. Receipt {receipt}</div>}
@@ -233,7 +234,7 @@ export function LiveAssist({ lastCall, onDone, onLive }) {
   return (
     <section id="call" className="panel stack">
       <div className="row" style={{ justifyContent: "space-between" }}>
-        <h2>Live call assist</h2>
+        <h2><Radio size={17} /> Live call assist</h2>
         {live ? <span className="row small"><span className="live-dot" /> Listening{cust ? " to both sides" : " to you"}{watched && <span className="chip late">Supervisor listening</span>}</span> : null}
       </div>
       <Spectrum active={live} getStreams={() => [mic.current, custStream.current]} label={cust ? "You + customer" : "Your voice"} />
@@ -287,7 +288,7 @@ export function Leaderboard({ me }) {
   if (!board) return <section className="panel muted">Loading leaderboard…</section>;
   return (
     <section className="panel stack">
-      <h2>Today's leaderboard</h2>
+      <h2><Trophy size={17} /> Today's leaderboard</h2>
       <div className="tablewrap"><table>
         <thead><tr><th>Rank</th><th>Agent</th><th className="r">Verified</th><th className="r">Submitted</th></tr></thead>
         <tbody>{board.rows.map((r, i) => (

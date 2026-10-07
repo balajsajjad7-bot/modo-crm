@@ -3,7 +3,7 @@
 // live call assist, QA reviews, Modo AI chat, AI buttons, Budget Ease checks…
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { Brain, Save, Plus, Trash2, Download, MessageSquare } from "lucide-react";
+import { Brain, Save, Plus, Trash2, Download, MessageSquare, MessageSquareQuote } from "lucide-react";
 
 const FIELDS = [["company", "About the company", "Who we are, what we do, which US states we cover, what Budget Ease is…"],
   ["products", "Products & plans we sell", "Every product/plan with what it includes — e.g. Verizon Unlimited Plus (5G, hotspot, 30GB premium), AT&T Fiber 500 (500 Mbps), Spectrum Internet Ultra, Budget Ease utility-bill discount…"],
@@ -30,7 +30,7 @@ export default function TrainAI() {
         <section key={f} className="panel stack"><h2 style={{ fontSize: 16 }}>{l}</h2><textarea value={k[f] || ""} onChange={(e) => setK({ ...k, [f]: e.target.value })} placeholder={ph} style={{ minHeight: f === "script" || f === "company" ? 150 : 100 }} /></section>
       ))}
       <section className="panel stack">
-        <h2 style={{ fontSize: 16 }}>Approved answers to objections</h2>
+        <h2 style={{ fontSize: 16 }}><MessageSquareQuote size={17} /> Approved answers to objections</h2>
         {k.objections.map((o, i) => (
           <div key={i} className="obj-row">
             <input value={o.q} onChange={(e) => setK({ ...k, objections: k.objections.map((x, j) => (j === i ? { ...x, q: e.target.value } : x)) })} placeholder="Customer says… e.g. It's too expensive" />

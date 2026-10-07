@@ -71,7 +71,7 @@ export default function AiAssistant({ role }) {
         {msgs.length === 0 && (
           <div className="ai-hello">
             <span className="ai-orb"><Sparkles size={26} /></span>
-            <h2>Ask Modo AI</h2>
+            <h2><Sparkles size={17} /> Ask Modo AI</h2>
             <p className="muted">{role === "ADMIN" ? "It can see live attendance, lateness, payroll and sales, so ask it anything about your team." : "Your sales coach for scripts, objections and discount maths."}</p>
             <div className="ai-prompts">{prompts.map((p) => <button key={p} className="ghost" onClick={() => p.endsWith(":") ? (setText(p + " "), box.current?.focus()) : ask(p)}>{p}</button>)}</div>
           </div>

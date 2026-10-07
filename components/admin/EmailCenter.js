@@ -4,7 +4,7 @@ import Link from "next/link";
 import { api } from "./api";
 import EmailComposer from "@/components/EmailComposer";
 import { useShell } from "@/components/Shell";
-import { Mail, Plus, CheckCircle2, XCircle } from "lucide-react";
+import { Mail, Plus, CheckCircle2, XCircle, Send } from "lucide-react";
 
 export default function EmailCenter() {
   const { me } = useShell();
@@ -25,7 +25,7 @@ export default function EmailCenter() {
         <p className="muted small" style={{ margin: 0 }}>You can also email straight from a sale card (Sales) or a customer's page.</p>
       </section>
       <section className="panel tablewrap">
-        <h2 style={{ marginBottom: 8 }}>Sent</h2>
+        <h2 style={{ marginBottom: 8 }}><Send size={17} /> Sent</h2>
         <table><thead><tr><th></th><th>To</th><th>Subject</th><th>By</th><th>When</th></tr></thead>
           <tbody>{d.logs.map((l) => <tr key={l.id} title={l.error || ""}><td>{l.status === "sent" ? <CheckCircle2 size={15} style={{ color: "var(--green)" }} /> : <XCircle size={15} style={{ color: "var(--red)" }} />}</td><td>{l.to}</td><td>{l.subject}{l.error && <div className="small" style={{ color: "var(--red)" }}>{l.error}</div>}</td><td className="small">{l.by}</td><td className="small muted">{new Date(l.createdAt).toLocaleString()}</td></tr>)}</tbody>
         </table>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import BeCard, { money } from "./BeCard";
 import BrandLogo from "@/components/BrandLogo";
-import { Sparkles, Send, Eye, EyeOff, Lock, CheckCircle2, Upload } from "lucide-react";
+import { Sparkles, Send, Eye, EyeOff, Lock, CheckCircle2, Upload, ClipboardCheck, PiggyBank } from "lucide-react";
 
 const EMPTY = { customer: "", phone: "", email: "", dob: "", ssn4: "", zip: "", serviceAddress: "", company: "", service: "electricity", accountNumber: "", billAmount: "", payAmount: "", notes: "" };
 const COMPANIES = ["Duke Energy", "Florida Power & Light (FPL)", "Georgia Power", "Pacific Gas & Electric (PG&E)", "Southern California Edison (SCE)", "Con Edison", "ComEd", "Dominion Energy", "Xcel Energy", "Entergy", "AEP", "PSE&G", "National Grid", "Eversource", "Consumers Energy", "DTE Energy", "Ameren", "CenterPoint Energy", "Oncor", "TXU Energy", "Reliant", "SoCalGas", "Atmos Energy", "Spire", "Comcast Xfinity", "Spectrum", "AT&T", "Verizon", "Cox", "T-Mobile", "Frontier", "Optimum", "American Water"];
@@ -58,7 +58,7 @@ export default function BeForm() {
       {done && (
         <section className="panel be-done">
           <CheckCircle2 size={28} />
-          <div><h2>Submitted · {done.consumerId}</h2><p className="muted small" style={{ margin: 0 }}>Give the customer this Consumer ID. {done.discountPct}% off requested.{done.flags?.length ? " Admin will check: " + done.flags.join("; ") : ""}</p></div>
+          <div><h2><ClipboardCheck size={17} /> Submitted · {done.consumerId}</h2><p className="muted small" style={{ margin: 0 }}>Give the customer this Consumer ID. {done.discountPct}% off requested.{done.flags?.length ? " Admin will check: " + done.flags.join("; ") : ""}</p></div>
           <button className="ghost sm" onClick={() => setDone(null)}>New signup</button>
         </section>
       )}
@@ -103,7 +103,7 @@ export default function BeForm() {
       </div>
       {mine.length > 0 && (
         <section className="stack">
-          <h2 className="sec-h">My Budget Ease signups <span className="muted small">{mine.length}</span></h2>
+          <h2 className="sec-h"><PiggyBank size={17} /> My Budget Ease signups <span className="muted small">{mine.length}</span></h2>
           <div className="be-list">{mine.slice(0, 30).map((r) => <BeCard key={r.id} r={r} />)}</div>
         </section>
       )}

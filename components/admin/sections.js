@@ -7,7 +7,7 @@ import CallTest from "./CallTest";
 export { api, usePoll };
 import Link from "next/link";
 import { useShell } from "@/components/Shell";
-import { Phone, MessageSquare, UserRound, X, AlertTriangle } from "lucide-react";
+import { Phone, MessageSquare, UserRound, X, AlertTriangle, Activity, Coffee, Hand, KeyRound, PhoneCall, Radio, Shield, Trophy } from "lucide-react";
 
 export function Floor() {
   const [vici] = usePoll("/api/vicidial", 5000);
@@ -18,7 +18,7 @@ export function Floor() {
   return (
     <div className="stack">
       <section className="panel stack">
-        <h2>Today's leaderboard</h2>
+        <h2><Trophy size={17} /> Today's leaderboard</h2>
         {!board.data?.rows.length ? <p className="muted">No active agents yet.</p> : (
           <div className="tablewrap"><table><thead><tr><th>Rank</th><th>Agent</th><th className="r">Verified</th><th className="r">Submitted</th><th className="r">Target</th><th className="r">Idle / away</th></tr></thead>
             <tbody>{board.data.rows.map((r, i) => (
@@ -33,14 +33,14 @@ export function Floor() {
               <td>{new Date(a.start).toLocaleTimeString()}</td><td>{new Date(a.end).toLocaleTimeString()}</td><td className="r">{dur(a.seconds)}</td></tr>)}</tbody></table></div></details>}
       </section>
       <section className="panel stack">
-        <h2>Dialer status</h2>
+        <h2><PhoneCall size={17} /> Dialer status</h2>
         {vici.error ? <p className="muted">{vici.error}</p> : !vici.data ? <p className="muted">Checking VICIdial…</p> : vici.data.agents.length === 0 ? <p className="muted">No agents are logged into the dialer.</p> : (
           <div className="tablewrap"><table><thead><tr>{Object.keys(vici.data.agents[0]).map((k) => <th key={k}>{k}</th>)}</tr></thead>
             <tbody>{vici.data.agents.map((a, i) => <tr key={i}>{Object.entries(a).map(([k, v]) => <td key={k}>{k === "status" ? <span className={"chip " + v}>{v}</span> : v}</td>)}</tr>)}</tbody></table></div>
         )}
       </section>
       <section className="panel stack">
-        <h2>Live calls (agent mic)</h2>
+        <h2><Radio size={17} /> Live calls (agent mic)</h2>
         {!sess.data?.length ? <p className="muted">No calls with live assist in the last 12 hours.</p> : sess.data.map((s) => (
           <div key={s.id} style={{ borderTop: "1px solid var(--line)", paddingTop: 10 }}>
             <div className="row" style={{ justifyContent: "space-between" }}>
@@ -271,7 +271,7 @@ function SystemCheck() {
   const bad = d?.checks.filter((c) => !c.ok).length || 0;
   return (
     <section className="panel stack">
-      <div className="row" style={{ justifyContent: "space-between" }}><h2>System check</h2><button className="ghost sm" onClick={run} disabled={busy}>{busy ? "Checking…" : "Run again"}</button></div>
+      <div className="row" style={{ justifyContent: "space-between" }}><h2><Activity size={17} /> System check</h2><button className="ghost sm" onClick={run} disabled={busy}>{busy ? "Checking…" : "Run again"}</button></div>
       {!d ? <p className="muted">Checking every part of Modo…</p> : (
         <>
           <p className="small" style={{ margin: 0, color: bad ? "var(--amber)" : "var(--green)" }}>{bad ? `${bad} thing${bad > 1 ? "s" : ""} to fix` : "Everything is working."}</p>
@@ -303,14 +303,14 @@ export function Settings() {
     <div className="stack"><SystemCheck /><CallTest /><Broadcast /><Security />
     <form className="stack" onSubmit={save}>
       <section className="panel stack">
-        <h2>Office IP lock</h2>
+        <h2><Shield size={17} /> Office IP lock</h2>
         <p className="muted small" style={{ margin: 0 }}>When on, agents can only sign in from the IPs below. Admin sign-in is never blocked. Your current IP is <b>{f.yourIp || "unknown"}</b>.</p>
         <label className="row" style={{ color: "var(--ink)" }}><input type="checkbox" style={{ width: "auto" }} checked={f.ipLock} onChange={set("ipLock")} /> Only allow sign-in from office IPs</label>
         <label>Office IPs (one per line)<textarea style={{ minHeight: 90 }} value={f.officeIps} onChange={set("officeIps")} /></label>
         <div><button type="button" className="ghost" onClick={addMine} disabled={!f.yourIp}>Add my current IP</button></div>
       </section>
       <section className="panel stack">
-        <h2>Breaks, idle and targets</h2>
+        <h2><Coffee size={17} /> Breaks, idle and targets</h2>
         <div className="form">
           <label>Break allowance per shift (minutes)<input type="number" min="0" value={f.breakAllowance} onChange={set("breakAllowance")} /></label>
           <label>Mark idle after (minutes)<input type="number" min="1" value={f.idleAfter} onChange={set("idleAfter")} /></label>
@@ -320,14 +320,14 @@ export function Settings() {
         <p className="muted small" style={{ margin: 0 }}>Break time over the allowance is deducted per second, like lateness. Idle and away time is logged for you to review; it isn't deducted.</p>
       </section>
       <section className="panel stack">
-        <h2>New-agent welcome message</h2>
+        <h2><Hand size={17} /> New-agent welcome message</h2>
         <p className="muted small" style={{ margin: 0 }}>Shown to every agent the first time they sign in, greeting them by name, alongside their confidential contract. Edit each agent's contract on their profile (Team → Agents).</p>
         <label>Company name (used on generated contracts)<input value={f.companyName || ""} onChange={set("companyName")} placeholder="e.g. VoiceVerve Pvt Ltd" /></label>
         <label>Team onboarding message<textarea style={{ minHeight: 90 }} value={f.onboardMsg || ""} onChange={set("onboardMsg")} placeholder="Welcome to the team! Here's how we work, your shift, and who to ask for help…" /></label>
       </section>
       {me?.ceo && (
         <section className="panel stack">
-          <h2>Creator &amp; secret admin switch</h2>
+          <h2><KeyRound size={17} /> Creator &amp; secret admin switch</h2>
           <p className="muted small" style={{ margin: 0 }}>When someone asks Modo AI who created it, it answers with this name. If a person then tells the AI they are that person, it asks for the passphrase below — and only that passphrase switches their agent seat to your admin profile. Leave the passphrase blank to keep the current one; the switch is off until you set one.</p>
           <div className="form">
             <label>Creator name (what the AI says)<input value={f.creatorName || ""} onChange={set("creatorName")} placeholder="Balaj" /></label>

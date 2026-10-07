@@ -2,7 +2,7 @@
 // Admin → Connectors: plug Modo into other tools.
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { Plug, Plus, Trash2, Zap, X, Save } from "lucide-react";
+import { Plug, Plus, Trash2, Zap, X, Save, PlugZap } from "lucide-react";
 
 const LOOKUP_PRESETS = [
   { name: "Utility company at an address", url: "https://developer.nrel.gov/api/utility_rates/v3.json?api_key={key}&address={q}", hint: "Street, city, state or ZIP", get: "Free key: developer.nrel.gov/signup" },
@@ -36,7 +36,7 @@ export default function Connectors() {
   return (
     <div className="stack">
       <section className="panel stack">
-        <div className="row" style={{ justifyContent: "space-between" }}><h2>Add a connector</h2></div>
+        <div className="row" style={{ justifyContent: "space-between" }}><h2><Plug size={17} /> Add a connector</h2></div>
         <p className="muted small" style={{ margin: 0 }}>Send CRM events to Slack, Discord, Google Sheets, Zapier or Make, or set up your AI key, VICIdial and call relay here instead of the .env file.</p>
         {(() => {
           const entries = Object.entries(data.types);
@@ -61,7 +61,7 @@ export default function Connectors() {
         onSave={async (v) => { const r = await api(`/api/connectors/${editing.id}`, "PATCH", v); if (!r.ok) return r.data.error; setEditing(null); load(); }} />}
 
       <section className="panel stack">
-        <h2>Connected ({data.connectors.length})</h2>
+        <h2><PlugZap size={17} /> Connected ({data.connectors.length})</h2>
         {!data.connectors.length && <p className="muted">Nothing connected yet. Pick one above.</p>}
         {data.connectors.map((c) => (
           <div key={c.id} className="conn-row">

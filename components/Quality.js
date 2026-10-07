@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useShell } from "@/components/Shell";
-import { Download, RefreshCw, ShieldCheck, Languages, Activity, Gauge, Printer } from "lucide-react";
+import { Download, RefreshCw, ShieldCheck, Languages, Activity, Gauge, Printer, BadgeCheck, Phone, Users } from "lucide-react";
 
 const LABELS = { greeting: "Greeting", pitch: "Pitch", disclosure: "Disclosure", closing: "Closing", empathy: "Empathy", clarity: "Clarity", grammar: "Grammar", confidence: "Confidence", compliance: "Compliance" };
 const iso = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -49,7 +49,7 @@ export default function Quality() {
 
       <div className="two-col">
         <section className="panel stack">
-          <h2>Quality per day</h2>
+          <h2><BadgeCheck size={17} /> Quality per day</h2>
           <div className="bars" role="img" aria-label="Average quality per day">{d.perDay.map((x) => (
             <div key={x.day} className="bar-col" title={`${x.day}: ${x.avg ?? "no calls"} avg · ${x.calls} calls`}>
               <div style={{ width: "100%", flex: 1, display: "flex", alignItems: "flex-end", gap: 2 }}>
@@ -59,7 +59,7 @@ export default function Quality() {
           <span className="small muted">▮ average score (0–100) · <span style={{ opacity: .6 }}>▮ number of calls</span></span>
         </section>
         <section className="panel stack">
-          <h2>Compliance checklist</h2>
+          <h2><ShieldCheck size={17} /> Compliance checklist</h2>
           <div className="funnel">{d.complianceItems.map((c) => (
             <div key={c.item} style={{ gridTemplateColumns: "1fr 110px 50px" }}><span className="small">{c.item}</span><div className="track"><div style={{ width: (c.passRate || 0) + "%", background: c.passRate >= 80 ? "#7fd6a0" : c.passRate >= 50 ? "#e0c27c" : "#ff4d5a" }} /></div><span className="small r num">{c.passRate == null ? "—" : c.passRate + "%"}</span></div>
           ))}</div>
@@ -68,7 +68,7 @@ export default function Quality() {
 
       {isAdmin && (
         <section className="panel tablewrap">
-          <h2 style={{ marginBottom: 8 }}>Agents</h2>
+          <h2 style={{ marginBottom: 8 }}><Users size={17} /> Agents</h2>
           <table>
             <thead><tr><th>Agent</th><th className="r">Calls</th><th className="r">Avg</th>{Object.values(LABELS).map((l) => <th key={l} className="r">{l}</th>)}<th className="r">Grammar/call</th><th className="r">Fillers/call</th><th className="r">Nervous</th><th className="r">Compliance</th><th></th></tr></thead>
             <tbody>{d.byAgent.map((a) => [
@@ -89,7 +89,7 @@ export default function Quality() {
       )}
 
       <section className="panel tablewrap">
-        <h2 style={{ marginBottom: 8 }}>Calls</h2>
+        <h2 style={{ marginBottom: 8 }}><Phone size={17} /> Calls</h2>
         <table>
           <thead><tr><th>When</th>{isAdmin && <th>Agent</th>}<th className="r">Score</th><th className="r">Grammar</th><th className="r">Fillers</th><th className="r">Agent nervous</th><th className="r">Customer nervous</th><th className="r">Compliance</th><th>Outcome</th><th>Summary</th><th></th></tr></thead>
           <tbody>{d.rows.map((r) => (

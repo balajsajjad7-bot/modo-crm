@@ -1,4 +1,5 @@
 "use client";
+import { Fingerprint, Users } from "lucide-react";
 import { ModoMark, ModoWord } from "@/components/ModoLogo";
 // Office entrance screen: rotating QR code for phone check-in, plus an ID/password pad. Keep it open on a tablet or TV.
 import { useEffect, useState } from "react";
@@ -41,7 +42,7 @@ export default function Kiosk() {
             <span className="muted small">Scan with your phone camera · code changes every 20 s</span>
           </div>
           <form className="panel stack" style={{ minWidth: 260 }} onSubmit={checkIn}>
-            <h2>No phone? Check in here</h2>
+            <h2><Fingerprint size={17} /> No phone? Check in here</h2>
             <label>Agent ID<input value={id} onChange={(e) => setId(e.target.value.toUpperCase())} autoComplete="off" required /></label>
             <label>Password<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="off" required /></label>
             <button disabled={busy}>{busy ? "Checking in…" : "Check in"}</button>
@@ -50,7 +51,7 @@ export default function Kiosk() {
         </div>
       </div>
       <section className="panel stack" style={{ maxHeight: "80vh", overflow: "auto" }}>
-        <div className="row" style={{ justifyContent: "space-between" }}><h2>In today · {inNow.length}/{d?.rows.length || 0}</h2><Link href="/admin/attendance" className="btn-link">Exit kiosk</Link></div>
+        <div className="row" style={{ justifyContent: "space-between" }}><h2><Users size={17} /> In today · {inNow.length}/{d?.rows.length || 0}</h2><Link href="/admin/attendance" className="btn-link">Exit kiosk</Link></div>
         {(d?.rows || []).map((r) => (
           <div key={r.agentId} className="row-card" style={{ padding: "10px 0" }}>
             <span className="sl-avatar" style={{ width: 36, height: 36, borderRadius: 10, background: r.in ? "var(--grad)" : "rgba(255,255,255,.08)", fontSize: 13 }}>{r.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}</span>

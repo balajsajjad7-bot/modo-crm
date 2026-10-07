@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useShell } from "@/components/Shell";
-import { ArrowLeft, Printer, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Printer, RefreshCw, CheckCircle2, XCircle, HeartPulse, ShieldCheck, SpellCheck, Star, ThumbsUp } from "lucide-react";
 import { dur } from "@/lib/fmt";
 
 const col = (v) => (v >= 8 ? "#7fd6a0" : v >= 5 ? "#e0c27c" : "#ff4d5a");
@@ -47,13 +47,13 @@ export default function QualityReport({ id }) {
 
       <div className="two-col">
         <section className="panel stack">
-          <h2>Scores</h2>
+          <h2><Star size={17} /> Scores</h2>
           <div className="qa-bars">{Object.entries(r.scores).map(([k, v]) => (
             <div key={k}><span>{r.labels[k] || k}</span><div className="nerv-track"><div style={{ width: v * 10 + "%", background: col(v) }} /></div><b>{v}/10</b></div>
           ))}</div>
         </section>
         <section className="panel stack">
-          <h2>Compliance</h2>
+          <h2><ShieldCheck size={17} /> Compliance</h2>
           <div className="qa-checks">{r.compliance.map((c, i) => (
             <div key={i}>{c.passed ? <CheckCircle2 size={16} style={{ color: "#7fd6a0" }} /> : <XCircle size={16} style={{ color: "#ff4d5a" }} />}<span><b>{c.item}</b>{c.note && <span className="muted small"> · {c.note}</span>}</span></div>
           ))}</div>
@@ -61,15 +61,15 @@ export default function QualityReport({ id }) {
       </div>
 
       <section className="panel stack">
-        <h2>Grammar & language</h2>
+        <h2><SpellCheck size={17} /> Grammar & language</h2>
         {r.grammar.length ? <div className="gram-list">{r.grammar.map((g, i) => <div key={i}><s>{g.said}</s><span>→</span><b>{g.better}</b><em>{g.why}</em></div>)}</div> : <p className="muted small" style={{ margin: 0 }}>No grammar mistakes found.</p>}
       </section>
       <section className="panel stack">
-        <h2>Nervous moments</h2>
+        <h2><HeartPulse size={17} /> Nervous moments</h2>
         {r.nervous.length ? <div className="gram-list">{r.nervous.map((n, i) => <div key={i}><q>{n.said}</q><em>{n.sign}</em></div>)}</div> : <p className="muted small" style={{ margin: 0 }}>The agent sounded steady.</p>}
       </section>
       <div className="two-col">
-        <section className="panel stack"><h2>What went well</h2><ul className="qa-ul">{(r.highlights.strengths || []).map((x, i) => <li key={i}>{x}</li>)}</ul></section>
+        <section className="panel stack"><h2><ThumbsUp size={17} /> What went well</h2><ul className="qa-ul">{(r.highlights.strengths || []).map((x, i) => <li key={i}>{x}</li>)}</ul></section>
         <section className="panel stack"><h2>Coaching</h2><ul className="qa-ul">{(r.highlights.improve || []).map((x, i) => <li key={i}>{x}</li>)}</ul></section>
       </div>
       <section className="panel stack">

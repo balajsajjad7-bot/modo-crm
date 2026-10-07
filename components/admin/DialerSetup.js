@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "./api";
 import DownloadLink from "@/components/DownloadLink";
 import PhonesSetup from "./PhonesSetup";
-import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download, Headset, MonitorSmartphone } from "lucide-react";
+import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download, Headset, MonitorSmartphone, PauseCircle } from "lucide-react";
 
 // Office relay: gets Modo past the dialer's IP firewall by sending requests through a PC in the office.
 function Relay() {
@@ -261,7 +261,7 @@ export default function DialerSetup() {
           <div className="two-col">
             <section className="panel stack"><h2><ListChecks size={17} /> Call results</h2><p className="muted small" style={{ margin: 0 }}>The buttons agents tap after a call. Codes must match your dialer's statuses.</p>
               <CodeList items={d.dispositions} onChange={(x) => setD({ ...d, dispositions: x })} /><div><button className="sm" onClick={() => save({ dispositions: d.dispositions }, "Call results saved.")}><Save size={13} /> Save results</button></div></section>
-            <section className="panel stack"><h2>Pause reasons</h2><p className="muted small" style={{ margin: 0 }}>Codes must match your dialer's pause codes.</p>
+            <section className="panel stack"><h2><PauseCircle size={17} /> Pause reasons</h2><p className="muted small" style={{ margin: 0 }}>Codes must match your dialer's pause codes.</p>
               <CodeList items={d.pauseCodes} onChange={(x) => setD({ ...d, pauseCodes: x })} /><div><button className="sm" onClick={() => save({ pauseCodes: d.pauseCodes }, "Pause reasons saved.")}><Save size={13} /> Save pause reasons</button></div></section>
           </div>
         </>

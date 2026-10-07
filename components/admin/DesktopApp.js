@@ -2,7 +2,7 @@
 // Admin → Tools → Windows app: download the installer, and set what the app does on each PC.
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { Download, Monitor, Lock, Save, ShieldAlert, Github } from "lucide-react";
+import { Download, Monitor, Lock, Save, ShieldAlert, Github, MonitorSmartphone } from "lucide-react";
 
 export default function DesktopApp() {
   const [cfg, setCfg] = useState({ url: "", kiosk: false, startWithWindows: true, adminExitPin: "", allowedHosts: "", updateFeedUrl: "" }); const [msg, setMsg] = useState("");
@@ -35,7 +35,7 @@ export default function DesktopApp() {
       </section>
 
       <section className="panel stack">
-        <h2>Kiosk safety</h2>
+        <h2><MonitorSmartphone size={17} /> Kiosk safety</h2>
         <ul className="qa-ul">
           <li>Kiosk only works when the app runs as administrator on a PC you own. On an agent's personal PC it can't (and shouldn't) lock anything.</li>
           <li>Uninstalling Modo, or the exit PIN, always removes the lock — a PC can never get stuck.</li>

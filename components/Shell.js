@@ -276,7 +276,7 @@ me?.role === "AGENT" ? (
       <main className="shell">
         <WhatsNewBanner />
         <div className="bar">
-          <div>{current && <><h1>{current.label}</h1>{current.hint && <div className="page-title">{current.hint}</div>}</>}</div>
+          <div className="bar-t">{current && <>{current.icon && <span className="page-ic" aria-hidden="true">{current.icon}</span>}<div className="bar-tx"><h1>{current.label}</h1>{current.hint && <div className="page-title">{current.hint}</div>}</div></>}</div>
           <div className="row small muted" style={{ gap: 8 }}>
             {header && <span>{header}</span>}
             {me?.role === "AGENT" && presence?.attendance && (

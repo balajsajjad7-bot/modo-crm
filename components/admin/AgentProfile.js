@@ -7,7 +7,7 @@ import Link from "next/link";
 import { pkr, dur } from "@/lib/fmt";
 import { useShell } from "@/components/Shell";
 import { api } from "./api";
-import { ArrowLeft, Phone, MessageSquare, KeyRound, Ban, RotateCcw, LogOut, Coffee, Plus, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Phone, MessageSquare, KeyRound, Ban, RotateCcw, LogOut, Coffee, Plus, Trash2, Save, BadgeDollarSign, CalendarClock, NotebookPen, UserPen, Wallet } from "lucide-react";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -78,7 +78,7 @@ export default function AgentProfile({ id }) {
 
       {tab === "overview" && (
         <section className="panel stack">
-          <h2>Edit details</h2>
+          <h2><UserPen size={17} /> Edit details</h2>
           <div className="form">
             <label>Full name<input value={form.name || ""} onChange={set("name")} /></label>
             <label>Email<input type="email" value={form.email || ""} onChange={set("email")} /></label>
@@ -101,7 +101,7 @@ export default function AgentProfile({ id }) {
       {tab === "pay" && (
         <div className="stack">
           <section className="panel stack">
-            <div className="row" style={{ justifyContent: "space-between" }}><h2>Payslip</h2><label style={{ maxWidth: 180 }}>Month<input type="month" value={month} onChange={(e) => setMonth(e.target.value)} /></label></div>
+            <div className="row" style={{ justifyContent: "space-between" }}><h2><Wallet size={17} /> Payslip</h2><label style={{ maxWidth: 180 }}>Month<input type="month" value={month} onChange={(e) => setMonth(e.target.value)} /></label></div>
             <table><tbody>
               <tr><td>Base salary</td><td className="r">{pkr(s.base)}</td></tr>
               <tr><td>Absent ({s.absent} days)</td><td className="r" style={{ color: "var(--red)" }}>−{pkr(s.absentDeduction)}</td></tr>
@@ -113,7 +113,7 @@ export default function AgentProfile({ id }) {
             </tbody></table>
           </section>
           <section className="panel stack">
-            <h2>Add bonus or deduction</h2>
+            <h2><BadgeDollarSign size={17} /> Add bonus or deduction</h2>
             <div className="form">
               <label>Amount (Rs, minus for deduction)<input type="number" value={adj.amount} onChange={(e) => setAdj({ ...adj, amount: e.target.value })} placeholder="e.g. 2000 or -500" /></label>
               <label>Reason<input value={adj.reason} onChange={(e) => setAdj({ ...adj, reason: e.target.value })} placeholder="e.g. Top seller of the week" /></label>
@@ -149,7 +149,7 @@ export default function AgentProfile({ id }) {
 
       {tab === "notes" && (
         <section className="panel stack">
-          <h2>Private notes</h2>
+          <h2><NotebookPen size={17} /> Private notes</h2>
           <p className="muted small" style={{ margin: 0 }}>Only admins see these.</p>
           <textarea style={{ minHeight: 80 }} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Coaching: slow down on disclosures. Follow up Friday." />
           <div><button onClick={() => act({ action: "note", text: note }, () => setNote(""))} disabled={!note.trim()}><Plus size={15} /> Add note</button></div>
@@ -164,7 +164,7 @@ export default function AgentProfile({ id }) {
 
       {tab === "actions" && (
         <section className="panel stack">
-          <h2>Account and shift</h2>
+          <h2><CalendarClock size={17} /> Account and shift</h2>
           <div className="action-list">
             <div><div><b>Reset password</b><div className="muted small">Set a new password and tell the agent.</div></div>
               <div className="row" style={{ flexWrap: "nowrap" }}><input type="text" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="New password" style={{ maxWidth: 180 }} /><button onClick={() => save({ password: pw })} disabled={pw.length < 6}><KeyRound size={15} /> Set</button></div></div>

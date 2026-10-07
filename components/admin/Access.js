@@ -11,7 +11,7 @@ export default function Access() {
   if (!d) return <p className="muted">Loading…</p>;
   return (
     <section className="panel stack">
-      <div className="row" style={{ gap: 8 }}><ShieldCheck size={18} /><h2>What agents can do</h2></div>
+      <div className="row" style={{ gap: 8 }}><ShieldCheck size={18} /><h2><ShieldCheck size={17} /> What agents can do</h2></div>
       <p className="muted small" style={{ margin: 0 }}>Applies to every agent. Admins can always do everything. Turned-off actions are blocked by the server, not just hidden.</p>
       <div className="action-list">
         {Object.entries(d.perms).map(([k, p]) => (

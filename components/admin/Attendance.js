@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "./api";
 import { dur } from "@/lib/fmt";
-import { Building2, Home, Coffee, Moon, LogOut, UserX, MonitorSmartphone, LocateFixed, Save, Pencil, Wifi, QrCode, KeyRound, Zap } from "lucide-react";
+import { Building2, Home, Coffee, Moon, LogOut, UserX, MonitorSmartphone, LocateFixed, Save, Pencil, Wifi, QrCode, KeyRound, Zap, ClipboardList, Fingerprint } from "lucide-react";
 
 const ST = { working: ["In office / working", Building2], remote: ["Remote", Home], "on break": ["On break", Coffee], idle: ["Idle (no activity)", Moon], busy: ["Busy", Zap], away: ["Away", Moon], "clocked out": ["Clocked out", LogOut], "not in": ["Not in yet", UserX] };
 const SRC = { login: ["signed in", KeyRound], auto: ["auto (opened CRM)", Zap], qr: ["QR at office", QrCode], kiosk: ["office kiosk", MonitorSmartphone], admin: ["set by admin", Pencil] };
@@ -43,7 +43,7 @@ export default function Attendance() {
       </div>
 
       <section className="panel stack">
-        <div className="row" style={{ justifyContent: "space-between" }}><h2>Right now</h2><Link href="/kiosk" className="btn-link"><MonitorSmartphone size={14} /> Open office kiosk</Link></div>
+        <div className="row" style={{ justifyContent: "space-between" }}><h2><Zap size={17} /> Right now</h2><Link href="/kiosk" className="btn-link"><MonitorSmartphone size={14} /> Open office kiosk</Link></div>
         <div className="who-grid">
           {(live || []).map((a) => { const [l] = ST[a.status]; const src = SRC[a.source]; return (
             <Link key={a.id} href={`/admin/agents/${a.id}`} className="panel who" style={{ textDecoration: "none", color: "var(--foreground)", background: "rgba(0,0,0,.25)" }}>
@@ -64,7 +64,7 @@ export default function Attendance() {
       </section>
 
       <section className="panel stack">
-        <div className="row" style={{ justifyContent: "space-between" }}><h2>Register</h2><label style={{ maxWidth: 180 }}>Shift date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label></div>
+        <div className="row" style={{ justifyContent: "space-between" }}><h2><ClipboardList size={17} /> Register</h2><label style={{ maxWidth: 180 }}>Shift date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label></div>
         <div className="tablewrap"><table>
           <thead><tr><th>Agent</th><th>Clock in</th><th>Clock out</th><th>Late</th><th>Where</th><th>How</th><th></th></tr></thead>
           <tbody>{(day || []).map((a) => { const r = a.record; const src = r && SRC[r.source]; return (
@@ -91,7 +91,7 @@ export default function Attendance() {
 
       {s && (
         <section className="panel stack">
-          <h2>Automatic attendance</h2>
+          <h2><Fingerprint size={17} /> Automatic attendance</h2>
           <div className="action-list">
             <div><div><b>Auto clock-in</b><div className="muted small">Opening the CRM during shift time clocks the agent in, even without signing in again.</div></div>
               <label className="row" style={{ color: "var(--foreground)" }}><input type="checkbox" style={{ width: "auto" }} checked={s.autoClockIn} onChange={(e) => setS({ ...s, autoClockIn: e.target.checked })} /> On</label></div>

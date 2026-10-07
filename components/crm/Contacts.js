@@ -9,7 +9,7 @@ import { useShell } from "@/components/Shell";
 import { api, money, when, Modal, usePeople, OwnerFilter, base, toLocalInput } from "./shared";
 import { DealEditor } from "./Pipeline";
 import EmailComposer from "@/components/EmailComposer";
-import { Plus, Upload, Phone, Mail, MapPin, Building2, Tag, ArrowLeft, Copy, PhoneCall, StickyNote, AlarmClock, Trash2, Calculator, Check } from "lucide-react";
+import { Plus, Upload, Phone, Mail, MapPin, Building2, Tag, ArrowLeft, Copy, PhoneCall, StickyNote, AlarmClock, Trash2, Calculator, Check, Handshake, History, ListChecks } from "lucide-react";
 
 const OUTCOMES = ["Reached", "No answer", "Voicemail", "Call back later", "Not interested", "Wrong number"];
 
@@ -128,13 +128,13 @@ export function ContactDetail({ id }) {
       <div className="two-col">
         <div className="stack">
           {P.addNotes && <section className="panel stack">
-            <h2>Log a call or note</h2>
+            <h2><PhoneCall size={17} /> Log a call or note</h2>
             <div className="row">{OUTCOMES.map((o) => <button key={o} className={outcome === o ? "sm" : "ghost sm"} onClick={() => setOutcome(outcome === o ? "" : o)}>{o}</button>)}</div>
             <textarea style={{ minHeight: 70 }} value={note} onChange={(e) => setNote(e.target.value)} placeholder="What happened on the call, what they need, next steps…" />
             <div className="row"><button onClick={() => log("call")} disabled={!outcome && !note.trim()}><PhoneCall size={15} /> Log call</button><button className="ghost" onClick={() => log("note")} disabled={!note.trim()}><StickyNote size={15} /> Save note</button></div>
           </section>}
           <section className="panel stack">
-            <h2>Timeline</h2>
+            <h2><History size={17} /> Timeline</h2>
             <div className="timeline">
               {d.activity.map((a) => <div key={a.id}><span className="dot" /><div><div style={{ whiteSpace: "pre-wrap" }}>{a.text}</div><div className="small muted">{a.by} · {when(a.createdAt)}</div></div></div>)}
               {!d.activity.length && <p className="muted small">Nothing yet.</p>}
@@ -143,7 +143,7 @@ export function ContactDetail({ id }) {
         </div>
         <div className="stack">
           <section className="panel stack">
-            <div className="row" style={{ justifyContent: "space-between" }}><h2>Deals</h2><button className="ghost sm" onClick={() => setDeal({ stage: "lead", title: "", value: "", service: "" })}><Plus size={14} /> Deal</button></div>
+            <div className="row" style={{ justifyContent: "space-between" }}><h2><Handshake size={17} /> Deals</h2><button className="ghost sm" onClick={() => setDeal({ stage: "lead", title: "", value: "", service: "" })}><Plus size={14} /> Deal</button></div>
             {d.deals.map((x) => (
               <button key={x.id} className="kcard" style={{ textAlign: "left", color: "var(--foreground)", fontWeight: 400 }} onClick={() => setDeal({ ...x, expectedClose: x.expectedClose?.slice(0, 10) || "" })}>
                 <b>{x.title}</b><div className="row" style={{ justifyContent: "space-between" }}><span className="val">{money(x.value)}</span><span className={"chip " + (x.stage === "won" ? "ok" : x.stage === "lost" ? "red" : "")}>{stages.find((s) => s.id === x.stage)?.label || x.stage}</span></div>
@@ -152,7 +152,7 @@ export function ContactDetail({ id }) {
             {!d.deals.length && <p className="muted small" style={{ margin: 0 }}>No deals yet.</p>}
           </section>
           <section className="panel stack">
-            <div className="row" style={{ justifyContent: "space-between" }}><h2>Tasks</h2><button className="ghost sm" onClick={() => setTask({ type: "task", title: "", dueAt: "" })}><Plus size={14} /> Task</button></div>
+            <div className="row" style={{ justifyContent: "space-between" }}><h2><ListChecks size={17} /> Tasks</h2><button className="ghost sm" onClick={() => setTask({ type: "task", title: "", dueAt: "" })}><Plus size={14} /> Task</button></div>
             {d.tasks.map((t) => {
               const over = !t.done && t.dueAt && new Date(t.dueAt) < new Date();
               return (
