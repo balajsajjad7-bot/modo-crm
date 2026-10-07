@@ -17,9 +17,15 @@ const jidOf = new Map();  // phone digits → the chat id to reply to (WhatsApp 
 
 const modo = (path, opts = {}) => fetch(MODO + path, { ...opts, headers: { "content-type": "application/json", "x-relay-key": KEY, ...(opts.headers || {}) }, signal: AbortSignal.timeout(opts.timeout || 30000) });
 
+let lastReport = { ok: null, at: "", error: "" };
 async function report(extra = {}) {
-  try { await modo("/api/wa-link/event", { method: "POST", body: JSON.stringify({ type: "status", state, qr, me, error: lastErr, ...extra }) }); } catch (e) { log("status report failed:", e.message); }
+  try {
+    const r = await modo("/api/wa-link/event", { method: "POST", body: JSON.stringify({ type: "status", state, qr, me, error: lastErr, ...extra }) });
+    lastReport = { ok: r.ok, at: new Date().toISOString(), error: r.ok ? "" : "Modo answered " + r.status };
+  } catch (e) { lastReport = { ok: false, at: new Date().toISOString(), error: e.message }; log("status report failed:", e.message); }
 }
+// For the relay's /health page (no QR, no keys)
+function info() { return { loaded: true, state, hasQr: !!qr, linkedNumber: me ? me.slice(0, 4) + "…" + me.slice(-2) : "", error: lastErr, lastReportToModo: lastReport }; }
 
 // ── Auth state kept in Modo (so a free host that restarts or sleeps doesn't lose the login) ──
 async function loadAuth() {
@@ -164,4 +170,4 @@ function start() {
   setInterval(() => { if (state === "open") flushOutbox(); }, 5 * 60000); // catch anything Modo queued while we were away
 }
 
-module.exports = { start, handle };
+module.exports = { info, start, handle };

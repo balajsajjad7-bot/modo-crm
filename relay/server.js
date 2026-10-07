@@ -12,12 +12,19 @@ const KEY = process.env.RELAY_KEY || "";
 const PORT = Number(process.env.PORT) || 10000;
 const SELF = String(process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || "").replace(/\/+$/, "");
 let allowed = [];
+let reg = { ok: false, at: "", error: "not tried yet" }; // last registration with Modo (shown on /health, no secrets)
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
 let wa = null; try { wa = require("./whatsapp"); } catch (e) { log("WhatsApp module not loaded:", e.message); }
 
 function forward(req, res) {
   if (req.url === "/" || req.url === "/ping") { res.writeHead(200, { "content-type": "text/plain" }); return res.end("modo-relay ok"); }
+  // Diagnostics without secrets: is Modo accepting our key, and what is WhatsApp doing?
+  if (req.url === "/health") {
+    const w = wa && wa.info ? wa.info() : { loaded: !!wa };
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end(JSON.stringify({ relay: "ok", modo: MODO, hasKey: !!KEY, keyLength: KEY.length, publicUrl: SELF, registered: reg, whatsapp: w }));
+  }
   // Modo WhatsApp (linked number): /wa/status, /wa/send, /wa/pair, /wa/logout, /wa/flush
   if (req.url.startsWith("/wa/")) {
     if (!wa) { res.writeHead(503); return res.end("whatsapp module missing"); }
@@ -50,14 +57,15 @@ function forward(req, res) {
 }
 
 async function register() {
-  if (!MODO || !KEY || !SELF) return log("Set MODO_URL and RELAY_KEY (and the public URL) to connect.");
+  if (!MODO || !KEY || !SELF) { reg = { ok: false, at: new Date().toISOString(), error: "missing " + [!MODO && "MODO_URL", !KEY && "RELAY_KEY", !SELF && "public URL"].filter(Boolean).join(", ") }; return log("Set MODO_URL and RELAY_KEY (and the public URL) to connect."); }
   try {
     const r = await fetch(MODO + "/api/relay/register", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key: KEY, url: SELF, kind: "cloud" }) });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) return log("Modo refused:", d.error || r.status);
+    if (!r.ok) { reg = { ok: false, at: new Date().toISOString(), error: "Modo refused: " + (d.error || r.status) }; return log("Modo refused:", d.error || r.status); }
+    reg = { ok: true, at: new Date().toISOString(), error: "" };
     allowed = (d.hosts || []).map((h) => String(h).toLowerCase());
     log("Connected to Modo. Dialer:", allowed.join(", "));
-  } catch (e) { log("Couldn't reach Modo:", e.message); }
+  } catch (e) { reg = { ok: false, at: new Date().toISOString(), error: "Couldn't reach Modo: " + e.message }; log("Couldn't reach Modo:", e.message); }
 }
 http.createServer(forward).listen(PORT, () => { log("Modo Cloud Relay on port", PORT, SELF); register(); if (wa) wa.start(); });
 setInterval(register, 4 * 60 * 1000);
