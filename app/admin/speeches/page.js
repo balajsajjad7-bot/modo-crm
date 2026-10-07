@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Mic, Plus, Save, Trash2, Upload, Check, Ban, Sparkles, FileText, Star, GraduationCap } from "lucide-react";
 import VoiceRecord from "@/components/VoiceRecord";
 import SpeechPractice from "@/components/SpeechPractice";
+import SpeechView from "@/components/SpeechView";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -88,6 +89,7 @@ export default function SpeechesPage() {
               <span className="small muted">{campName(cur.campaignId)} · {cur.updatedAt && !cur.dirty ? "saved " + new Date(cur.updatedAt).toLocaleDateString() : "not saved yet"}</span>
               <button className="ghost sm" onClick={() => del(cur.id)}><Trash2 size={13} /> Delete</button>
             </div>
+            {cur.text.trim().length > 40 && <details className="sp-try"><summary><Sparkles size={14} /> Preview — how agents see it</summary><div style={{ marginTop: 10 }}><SpeechView speech={cur} /></div></details>}
             <Progress speech={cur} scores={scores[cur.id] || {}} agents={agents} camps={camps} />
             {!cur.dirty && cur.text.trim().length > 40 && (
               <details className="sp-try"><summary><Sparkles size={14} /> Try it like an agent would</summary><SpeechPractice speech={cur} /></details>

@@ -42,7 +42,7 @@ export async function POST(req) {
   try {
     const out = await askAI(`You are Modo, a friendly sales trainer at a US call center (agents are from Pakistan, speaking to Americans). Compare the agent's attempt with the official speech below.
 Reply with JSON only: {"score": 0-100, "good": ["…"], "fix": ["what's missing or wrong, short"], "say": "the 2–4 best lines to say next time, in natural American English"}.
-The agent may practise only one part (opening, discovery, pitch, one objection, recap or close) — judge it against the matching part of the speech, not the whole call. Be encouraging and specific. Penalise anything the speech says never to say, invented prices or promises, or claiming to be the carrier.
+The agent may practise only one part (opening, discovery, pitch, one objection, recap or close) — judge it against the matching part of the speech, not the whole call. Be encouraging and specific. Penalise anything the speech says never to say, invented prices or promises, and an introduction that doesn't match the speech's opening.
 
 OFFICIAL SPEECH (${sp.campaign || "all campaigns"} · ${sp.title}):
 ${sp.text}${sp.dos ? "\nAlways: " + sp.dos : ""}${sp.donts ? "\nNever: " + sp.donts : ""}`, attempt, { json: true, maxTokens: 700, knowledge: false });
