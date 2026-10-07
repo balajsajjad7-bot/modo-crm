@@ -5,6 +5,7 @@ import { usePoll, api } from "@/components/admin/api";
 import BeCard, { money } from "./BeCard";
 import BeTeam from "./BeTeam";
 import { Download, Search, PiggyBank, Trophy } from "lucide-react";
+import FoldHead from "@/components/FoldHead";
 
 const TABS = [["NEW", "New"], ["FOLLOWUP", "Follow-up"], ["APPROVED", "Approved"], ["REJECTED", "Rejected"], ["ALL", "All"]];
 export default function BeBoard() {
@@ -46,7 +47,7 @@ export default function BeBoard() {
       <div className="two-col be-cols">
         <div className="be-list">{shown.map((r) => <BeCard key={r.id} r={r} admin onStatus={setStatus} onDelete={del} onReveal={reveal} />)}{!shown.length && <div className="panel muted">Nothing here.</div>}</div>
         <section className="panel stack" style={{ alignSelf: "start" }}>
-          <h2><Trophy size={17} /> Budget Ease leaderboard</h2>
+          <FoldHead id="lb-be" icon={<Trophy size={17} />} title="Budget Ease leaderboard" />
           <div className="dialer-list">{board.map((b, i) => <div key={b.id}><b className="num" style={{ width: 22 }}>{i + 1}</b><b>{b.name}</b><span className="chip ok">{b.approved} approved</span><span className="muted small" style={{ marginLeft: "auto" }}>{b.total} total · {b.today} today</span></div>)}{!board.length && <p className="muted">No signups yet.</p>}</div>
         </section>
       </div>

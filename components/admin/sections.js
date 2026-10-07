@@ -8,6 +8,7 @@ export { api, usePoll };
 import Link from "next/link";
 import { useShell } from "@/components/Shell";
 import { Phone, MessageSquare, UserRound, X, AlertTriangle, Activity, Coffee, Hand, KeyRound, PhoneCall, Radio, Shield, Trophy } from "lucide-react";
+import FoldHead from "@/components/FoldHead";
 
 export function Floor() {
   const [vici] = usePoll("/api/vicidial", 5000);
@@ -18,7 +19,7 @@ export function Floor() {
   return (
     <div className="stack">
       <section className="panel stack">
-        <h2><Trophy size={17} /> Today's leaderboard</h2>
+        <FoldHead id="lb-admin" icon={<Trophy size={17} />} title="Today's leaderboard" />
         {!board.data?.rows.length ? <p className="muted">No active agents yet.</p> : (
           <div className="tablewrap"><table><thead><tr><th>Rank</th><th>Agent</th><th className="r">Verified</th><th className="r">Submitted</th><th className="r">Target</th><th className="r">Idle / away</th></tr></thead>
             <tbody>{board.data.rows.map((r, i) => (

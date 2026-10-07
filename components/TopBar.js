@@ -11,6 +11,7 @@ import { ChevronDown, Menu, X, MoreHorizontal, Palette } from "lucide-react";
 import AppearanceToggle, { QuickTheme } from "./Appearance";
 import LangPicker from "./LangPicker";
 import { ModoMark, ModoWord } from "./ModoLogo";
+import { toneStyle } from "@/lib/tones";
 
 const isOn = (path, it) => (it.exact ? path === it.href : path === it.href || path.startsWith(it.href + "/"));
 const groupOn = (path, it) => (it.children ? it.children.some((c) => isOn(path, c)) : isOn(path, it));
@@ -22,7 +23,7 @@ function MenuList({ items, path, wide }) {
     <div className={"tb-list" + (wide ? " wide" : "")}>
       {items.map((c) => (
         <Link key={c.href} href={c.href} className={"tb-link" + (isOn(path, c) ? " on" : "")} role="menuitem">
-          <span className="tb-link-ic">{c.icon}</span>
+          <span className="tb-link-ic gt" style={toneStyle(c.label + " " + (c.hint || ""))}>{c.icon}</span>
           <span className="tb-link-t"><b>{c.label}</b>{c.hint && <small>{c.hint}</small>}</span>
           {c.badge ? <span className="tb-badge">{c.badge}</span> : null}
         </Link>
@@ -167,13 +168,13 @@ export default function TopBar({ nav, home, user, userMenu, action, search }) {
                   <div className="pn-sheet-h">{it.icon}<span>{it.label}</span></div>
                   {it.children.map((c) => (
                     <Link key={c.href} href={c.href} className={"pn-sheet-item" + (isOn(path, c) ? " on" : "")} onClick={() => setSheet(false)}>
-                      {c.icon}<span style={{ flex: 1 }}>{c.label}<span className="sub">{c.hint}</span></span>{c.badge ? <span className="pn-badge">{c.badge}</span> : null}
+                      <span className="gt gt-sm" style={toneStyle(c.label + " " + (c.hint || ""))}>{c.icon}</span><span style={{ flex: 1 }}>{c.label}<span className="sub">{c.hint}</span></span>{c.badge ? <span className="pn-badge">{c.badge}</span> : null}
                     </Link>
                   ))}
                 </div>
               ) : (
                 <Link key={it.href} href={it.href} className={"pn-sheet-item solo" + (isOn(path, it) ? " on" : "")} onClick={() => setSheet(false)}>
-                  {it.icon}<span style={{ flex: 1 }}>{it.label}</span>{it.badge ? <span className="pn-badge">{it.badge}</span> : null}
+                  <span className="gt gt-sm" style={toneStyle(it.label)}>{it.icon}</span><span style={{ flex: 1 }}>{it.label}</span>{it.badge ? <span className="pn-badge">{it.badge}</span> : null}
                 </Link>
               ))}
               <div className="pn-sheet-group">

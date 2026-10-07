@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Star, Search, LayoutGrid, ChevronDown } from "lucide-react";
 import { useShell } from "./Shell";
+import { toneStyle } from "@/lib/tones";
 import { useNewPages } from "./WhatsNew";
 
 export default function Launcher({ title = "Go to" }) {
@@ -28,7 +29,7 @@ export default function Launcher({ title = "Go to" }) {
   const quick = [...(pinned.length ? pinned : [...flat].sort((a, b) => rank(a.href) - rank(b.href)).slice(0, 8)), ...flat.filter((x) => isNew(x.href) && !pins.includes(x.href)).slice(0, 4)].filter((x, i, arr) => arr.findIndex((y) => y.href === x.href) === i);
   const Tile = ({ it }) => (
     <div className="ln-tile">
-      <Link href={it.href} className="ln-go" onClick={() => isNew(it.href) && markSeen(it.href)}><span className="ln-ic">{it.icon}</span><span className="ln-t"><b><span className="ln-l">{it.label}</span>{it.badge ? <em className="ln-badge">{it.badge}</em> : null}{isNew(it.href) && <em className="wn-chip">NEW</em>}</b>{it.hint && <small>{it.hint}</small>}</span></Link>
+      <Link href={it.href} className="ln-go" onClick={() => isNew(it.href) && markSeen(it.href)}><span className="ln-ic gt" style={toneStyle(it.label + " " + (it.hint || ""))}>{it.icon}</span><span className="ln-t"><b><span className="ln-l">{it.label}</span>{it.badge ? <em className="ln-badge">{it.badge}</em> : null}{isNew(it.href) && <em className="wn-chip">NEW</em>}</b>{it.hint && <small>{it.hint}</small>}</span></Link>
       <button className={"ghost ln-pin" + (pins.includes(it.href) ? " on" : "")} aria-label={pins.includes(it.href) ? "Unpin" : "Pin to home"} title={pins.includes(it.href) ? "Unpin" : "Pin to home"} onClick={() => toggle(it.href)}><Star size={14} /></button>
     </div>
   );

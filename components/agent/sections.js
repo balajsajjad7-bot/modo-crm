@@ -5,6 +5,7 @@ import { pkr, dur } from "@/lib/fmt";
 import { startSending } from "@/components/listen";
 import AssistTools from "./AssistTools";
 import Spectrum from "@/components/Spectrum";
+import FoldHead from "@/components/FoldHead";
 
 export const post = (url, body, extra) => fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}), ...extra });
 export const markActive = () => window.dispatchEvent(new Event("modo-active"));
@@ -288,7 +289,7 @@ export function Leaderboard({ me }) {
   if (!board) return <section className="panel muted">Loading leaderboard…</section>;
   return (
     <section className="panel stack">
-      <h2><Trophy size={17} /> Today's leaderboard</h2>
+      <FoldHead id="lb-agent" icon={<Trophy size={17} />} title="Today's leaderboard" />
       <div className="tablewrap"><table>
         <thead><tr><th>Rank</th><th>Agent</th><th className="r">Verified</th><th className="r">Submitted</th></tr></thead>
         <tbody>{board.rows.map((r, i) => (

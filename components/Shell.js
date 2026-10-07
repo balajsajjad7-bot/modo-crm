@@ -2,6 +2,7 @@
 // Shared frame for every signed-in page: the dock, chat badge, incoming-call banner and the call panel.
 // It lives in the layout, so a call keeps going while you move between pages.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { toneStyle } from "@/lib/tones";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import TopBar from "./TopBar";
@@ -276,7 +277,7 @@ me?.role === "AGENT" ? (
       <main className="shell">
         <WhatsNewBanner />
         <div className="bar">
-          <div className="bar-t">{current && <>{current.icon && <span className="page-ic" aria-hidden="true">{current.icon}</span>}<div className="bar-tx"><h1>{current.label}</h1>{current.hint && <div className="page-title">{current.hint}</div>}</div></>}</div>
+          <div className="bar-t">{current && <>{current.icon && <span className="page-ic gt" style={toneStyle(current.label + " " + (current.hint || ""))} aria-hidden="true">{current.icon}</span>}<div className="bar-tx"><h1>{current.label}</h1>{current.hint && <div className="page-title">{current.hint}</div>}</div></>}</div>
           <div className="row small muted" style={{ gap: 8 }}>
             {header && <span>{header}</span>}
             {me?.role === "AGENT" && presence?.attendance && (

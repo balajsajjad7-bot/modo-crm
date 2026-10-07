@@ -20,7 +20,7 @@ export async function POST(req) {
     const bl = await isBlocked("login-id:" + aid);
     if (bl.blocked) return NextResponse.json({ error: `Too many wrong tries. Try again in ${waitText(bl.wait)}.` }, { status: 429 });
     user = await db.user.findUnique({ where: { agentId: aid } });
-    if (!user || !user.active || !(await bcrypt.compare(String(b.password || "").slice(0, 200), user.passwordHash))) { await failed("login-id:" + aid, { max: 6 }); await failed("login-ip:" + (clientIp() || "unknown"), { max: 20 }); return NextResponse.json({ error: "Agent ID or password is wrong." }, { status: 401 }); }
+    if (!user || !user.active || !(await bcrypt.compare(String(b.password || "").slice(0, 200), user.passwordHash))) { await failed("login-id:" + aid, { max: 6 }); await failed("login-ip:" + (clientIp() || "unknown"), { max: 80, baseLockMs: 10 * 60000 }); return NextResponse.json({ error: "Agent ID or password is wrong." }, { status: 401 }); }
     await cleared("login-id:" + aid);
   } else if (s?.role === "AGENT") {
     user = await db.user.findUnique({ where: { id: s.uid } });

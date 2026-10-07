@@ -10,6 +10,7 @@ import RecentCalls from "@/components/RecentCalls";
 import Launcher from "@/components/Launcher";
 import { startChunkListen } from "@/components/chunklisten";
 import Spectrum from "./Spectrum";
+import FoldHead from "@/components/FoldHead";
 
 const lines = (t) => (t || "").split("\n").filter(Boolean).map((l) => (l.startsWith("C: ") ? { who: "C", text: l.slice(3) } : { who: "A", text: l.startsWith("A: ") ? l.slice(3) : l }));
 const mins = (a, b) => Math.max(0, Math.round(((b ? new Date(b) : Date.now()) - new Date(a)) / 1000));
@@ -128,7 +129,7 @@ export default function Floor() {
           )}
         </section>
         <section className="panel stack">
-          <h2><Trophy size={17} /> Today's leaderboard</h2>
+          <FoldHead id="lb-floor" icon={<Trophy size={17} />} title="Today's leaderboard" />
           {!board.data?.rows.length ? <p className="muted">No active agents yet.</p> : (
             <div className="dialer-list">{board.data.rows.slice(0, 8).map((r, i) => (
               <div key={r.agentId}><b className="num" style={{ width: 22 }}>{i + 1}</b><b>{r.name}</b><span className={"chip " + (r.verified >= board.data.target ? "ok" : "")}>{r.verified}/{board.data.target}</span><span className="muted small" style={{ marginLeft: "auto" }}>{r.submitted} sent · idle {dur(r.idleSeconds || 0)}</span></div>

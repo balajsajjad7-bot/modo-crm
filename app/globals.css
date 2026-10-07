@@ -2899,3 +2899,48 @@ html[data-look="minimal"] .page-ic{box-shadow:none}
 @media (max-width:600px){.ob-page .ob-contract-body{padding:14px;font-size:14px}.ob-hero .chip{margin-left:0}}
 @media print{.tb,.fl-dock,.bar,.ob-foot{display:none!important}.ob-page{border:0;box-shadow:none}}
 .ob-gap{height:6px}
+
+/* ── Graphic icon tiles (corporate "app icon" look): glossy gradient squircle, white glyph, soft depth ── */
+.gt{position:relative;overflow:hidden;isolation:isolate;display:inline-grid;place-items:center;flex-shrink:0;color:#fff!important;
+  background:linear-gradient(145deg,var(--g1,#a78bfa) 0%,var(--g2,#7c3aed) 100%)!important;border:1px solid rgba(255,255,255,.22)!important;
+  box-shadow:0 8px 18px -8px var(--g2,#7c3aed),inset 0 1px 0 rgba(255,255,255,.45),inset 0 -3px 8px rgba(0,0,0,.18)!important}
+.gt::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(120% 70% at 25% 0%,rgba(255,255,255,.55),rgba(255,255,255,0) 55%)}
+.gt::after{content:"";position:absolute;right:-30%;bottom:-40%;width:90%;height:90%;z-index:-1;border-radius:50%;background:rgba(255,255,255,.10)}
+.gt svg{filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.25));stroke-width:2.1}
+.ln-ic.gt{width:44px;height:44px;border-radius:14px}
+.ln-ic.gt svg{width:22px;height:22px}
+.tb-link-ic.gt{width:36px;height:36px;border-radius:11px}
+.tb-link-ic.gt svg{width:18px;height:18px}
+.gt-sm{width:32px;height:32px;border-radius:10px}
+.gt-sm svg{width:17px;height:17px}
+.page-ic.gt{width:52px;height:52px;border-radius:16px}
+.page-ic.gt svg{width:26px!important;height:26px!important}
+.ln-tile:hover .ln-ic.gt,.tb-link:hover .tb-link-ic.gt{transform:translateY(-1px) scale(1.04);transition:transform .2s}
+@media (max-width:760px){.page-ic.gt{width:40px;height:40px;border-radius:12px}.page-ic.gt svg{width:20px!important;height:20px!important}}
+@media (max-width:600px){.ln-ic.gt{width:34px;height:34px;border-radius:11px}.ln-ic.gt svg{width:17px;height:17px}}
+html[data-look="minimal"] .gt{box-shadow:none!important}
+html[data-look="minimal"] .gt::before,html[data-look="minimal"] .gt::after{display:none}
+
+/* Section headings: the icon becomes a small brand-gradient badge */
+.panel h2>svg:first-child,.panel>.row h2>svg:first-child,h2.sec-h>svg:first-child,.panel h2.row>svg:first-child{
+  width:30px!important;height:30px!important;padding:6px;border-radius:9px;margin-right:2px;vertical-align:middle;flex-shrink:0;color:#fff;stroke-width:2.2;
+  background:linear-gradient(145deg,rgb(var(--s)),rgb(var(--p)));box-shadow:0 6px 14px -6px rgba(var(--p),.7),inset 0 1px 0 rgba(255,255,255,.35)}
+.panel h2:has(>svg:first-child){display:flex;align-items:center;gap:8px}
+html[data-look="minimal"] .panel h2>svg:first-child{box-shadow:none}
+
+/* KPI tiles: icon in a glossy badge */
+.floor-kpis svg,.sales-kpis>div>svg:first-child{width:38px!important;height:38px!important;padding:9px;border-radius:12px;color:#fff!important;
+  background:linear-gradient(145deg,rgb(var(--s)),rgb(var(--p)));box-shadow:0 8px 18px -8px rgba(var(--p),.75),inset 0 1px 0 rgba(255,255,255,.35)}
+.floor-kpis>div:nth-child(2) svg{background:linear-gradient(145deg,#34d399,#059669);box-shadow:0 8px 18px -8px #059669}
+.floor-kpis>div:nth-child(3) svg{background:linear-gradient(145deg,#fcd34d,#d97706);box-shadow:0 8px 18px -8px #d97706}
+.floor-kpis>div:nth-child(4) svg{background:linear-gradient(145deg,#a5b4fc,#4f46e5);box-shadow:0 8px 18px -8px #4f46e5}
+.floor-kpis>div:nth-child(5) svg{background:linear-gradient(145deg,#fda4af,#e11d48);box-shadow:0 8px 18px -8px #e11d48}
+
+/* Minimizable sections (leaderboards) */
+.fold-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fold-h h2{margin:0;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.fold-h h2>svg:first-child{width:30px!important;height:30px!important;padding:6px;border-radius:9px;color:#fff;flex-shrink:0;
+  background:linear-gradient(145deg,#fcd34d,#d97706);box-shadow:0 6px 14px -6px #d97706,inset 0 1px 0 rgba(255,255,255,.4)}
+.fold-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:4px}
+.panel.folded>:not(.fold-h){display:none!important}
+.panel.folded{padding-top:12px!important;padding-bottom:12px!important}
