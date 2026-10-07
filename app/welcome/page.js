@@ -30,6 +30,8 @@ export default function Welcome() {
   const [plans, setPlans] = useState([]); const [yearly, setYearly] = useState(false);
   const [f, setF] = useState({ company: "", contact: "", email: "", phone: "", plan: "next", seats: 10, notes: "", website: "" });
   const [state, setState] = useState(""); const [err, setErr] = useState("");
+  // This page is always dark, whatever appearance the visitor picked inside Modo (restored when leaving).
+  useEffect(() => { const h = document.documentElement; const a = h.getAttribute("data-appearance"), t = h.getAttribute("data-theme"); h.setAttribute("data-appearance", "dark"); h.setAttribute("data-theme", "dark"); return () => { if (a) h.setAttribute("data-appearance", a); if (t) h.setAttribute("data-theme", t); }; }, []);
   useEffect(() => { fetch("/api/subs/public").then((r) => r.json()).then((d) => setPlans(d.plans || [])).catch(() => {}); }, []);
   const pick = (id) => { setF((x) => ({ ...x, plan: id })); document.getElementById("start")?.scrollIntoView({ behavior: "smooth" }); };
   const send = async (e) => {

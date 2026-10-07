@@ -3174,3 +3174,5 @@ h2.af-h:not(.row){display:flex;align-items:center;gap:8px}
 .lp .wl-btn.wl-wide{grid-column:1/-1}
 .lp .wl-toggle button{background:transparent!important;color:var(--wl-mute)!important;border:0!important}
 .lp .wl-toggle button.on{background:rgba(255,255,255,.1)!important;color:var(--wl-fg)!important}
+html .lp h1,html .lp h2,html .lp h3{color:#f1f3f9!important;-webkit-text-fill-color:#f1f3f9!important;background:none!important}
+html .lp .wl-hero h1 em{background:linear-gradient(90deg,#c4b5fd,#93c5fd 60%,#67e8f9)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;-webkit-text-fill-color:transparent!important}
