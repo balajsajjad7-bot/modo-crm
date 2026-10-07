@@ -9,6 +9,7 @@ import { emit } from "@/lib/connectors";
 import { log } from "@/lib/crm";
 import { returnConfig, makeLabel } from "@/lib/returnLabel";
 import { findTracking } from "@/lib/upsBot";
+import { setSaleStatus } from "@/lib/saleStatus";
 
 const num = (v) => (v === "" || v == null || isNaN(Number(v)) ? null : Number(v));
 const str = (v, n = 200) => (v == null || String(v).trim() === "" ? null : String(v).trim().slice(0, n));
@@ -122,22 +123,5 @@ export async function PATCH(req) {
   if (error) return error;
   const { id, status } = await req.json();
   if (!["NEW", "VERIFIED", "REJECTED"].includes(status)) return NextResponse.json({ error: "Unknown status." }, { status: 400 });
-  const before = await db.sale.findUnique({ where: { id }, select: { status: true } });
-  const turnedActive = status === "VERIFIED" && before?.status !== "VERIFIED";
-  let s = await db.sale.update({ where: { id }, data: { status, ...(turnedActive ? { activatedAt: new Date(), cheeredAt: null } : {}) }, include: { user: { select: { name: true } } } });
-  // Congrats: the agent gets a phone alert now and a celebration in Modo the next time it's open.
-  if (turnedActive) {
-    const first = String(s.user?.name || "").split(" ")[0];
-    sendPush(s.userId, { title: `🎉 Congrats ${first}! Sale approved`, body: `Well done! #${s.orderNumber || s.receipt}${s.customer ? " for " + s.customer : ""}${s.device ? " (" + s.device + ")" : ""} is now Active.`, url: "/agent", tag: "cheer-" + s.id, urgent: true }).catch(() => {});
-  }
-  // Automatic return label: when a sale turns Active and "Make a label automatically" is on in Connectors.
-  if (status === "VERIFIED" && !s.returnLabelUrl) {
-    try {
-      const cfg = await returnConfig();
-      if (cfg?.auto) { const r = await makeLabel(s, { cfg }); if (r.sale) s = { ...s, ...r.sale }; }
-    } catch {}
-  }
-  if (before?.status !== status) await feed(`${status === "VERIFIED" ? "✅" : status === "REJECTED" ? "❌" : "↩️"} ${tag(s)} → ${status === "VERIFIED" ? "Active" : status === "REJECTED" ? "Not active" : "New"} by ${session.name}${turnedActive ? ` · ${String(s.user?.name || "").split(" ")[0]} got a congrats 🎉` : ""}${s.returnLabelUrl && turnedActive ? " · return label made" : ""}`);
-  await emit("sale.status", { order: s.orderNumber, receipt: s.receipt, status: status === "VERIFIED" ? "Active" : status === "REJECTED" ? "Not active" : "New", agent: s.user.name, customer: s.customer });
-  return NextResponse.json(s);
+  return NextResponse.json(await setSaleStatus(id, status, session.name));
 }
