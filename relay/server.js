@@ -20,7 +20,7 @@ let wa = null; try { wa = require("./whatsapp"); } catch (e) { log("WhatsApp mod
 function forward(req, res) {
   if (req.url === "/" || req.url === "/ping") { res.writeHead(200, { "content-type": "text/plain" }); return res.end("modo-relay ok"); }
   // Diagnostics without secrets: is Modo accepting our key, and what is WhatsApp doing?
-  if (req.url === "/health") {
+  if (req.url === "/health" || req.url.startsWith("/health?")) {
     const w = wa && wa.info ? wa.info() : { loaded: !!wa };
     res.writeHead(200, { "content-type": "application/json" });
     return res.end(JSON.stringify({ relay: "ok", modo: MODO, hasKey: !!KEY, keyLength: KEY.length, publicUrl: SELF, registered: reg, whatsapp: w }));
