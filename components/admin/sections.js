@@ -135,6 +135,7 @@ export function Agents() {
             }}>✨ Generate contract from their details</button>
           </div>
           <textarea style={{ minHeight: 160 }} value={form.contract || ""} onChange={set("contract")} placeholder="Click Generate to auto-fill a professional contract with their salary and shift — then edit anything and Save. They'll see it on first sign-in and under My contract." /></label>
+          {editing && <ContractSigned uid={editing} />}
         {perSec > 0 && <p className="muted small" style={{ margin: 0 }}>Lateness costs {pkr(perSec * 3600 * form.shiftHours)} per day, {pkr(perSec * 3600)} per hour, {pkr(perSec * 60)} per minute ({perSec.toFixed(4)} per second). An absent working day deducts one full day.</p>}
         {msg && <div className="receipt">{msg}</div>}
         <div className="row"><button>{editing ? "Save changes" : "Add agent"}</button>{editing && <button type="button" className="ghost" onClick={() => { setEditing(null); setForm(EMPTY); }}>Cancel</button>}</div>
@@ -343,4 +344,14 @@ export function Settings() {
       <div><button>Save settings</button></div>
     </form></div>
   );
+}
+
+// Admin: shows whether the agent has signed their contract (and the signature itself).
+function ContractSigned({ uid }) {
+  const [st, setSt] = useState(null);
+  useEffect(() => { setSt(null); fetch("/api/contract/signature?uid=" + encodeURIComponent(uid), { cache: "no-store" }).then((r) => r.json()).then(setSt).catch(() => {}); }, [uid]);
+  if (!st || !st.required) return null;
+  return st.signed ? (
+    <div className="cs-ok"><img src={st.image} alt={"Signature of " + st.signedName} /><span><b>✅ Signed by {st.signedName}</b><small className="muted">{new Date(st.signedAt).toLocaleString()}{st.ip ? " · " + st.ip : ""}</small></span></div>
+  ) : <div className="cs-no">⏳ {st.outdated ? "Contract changed since they signed — they're being asked to sign the new version." : "Not signed yet — they're reminded every time they open Modo."}</div>;
 }

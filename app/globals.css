@@ -2944,3 +2944,20 @@ html[data-look="minimal"] .panel h2>svg:first-child{box-shadow:none}
 .fold-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:4px}
 .panel.folded>:not(.fold-h){display:none!important}
 .panel.folded{padding-top:12px!important;padding-bottom:12px!important}
+
+/* Contract signing */
+.ob-sign{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;border:1px solid rgba(var(--p),.35);background:rgba(var(--p),.06)}
+.ob-name{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:13px}
+.ob-agree{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500}
+.ob-agree input{width:auto}
+.ob-sign>button{align-self:flex-start;display:inline-flex;align-items:center;gap:6px}
+.sigpad{position:relative;height:150px;border-radius:12px;background:#fff;border:1px dashed rgba(var(--p),.5);overflow:hidden;touch-action:none}
+.sigpad canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
+.sigpad-hint{position:absolute;inset:0;display:grid;place-items:center;color:#94a3b8;font-size:15px;pointer-events:none}
+.sigpad-line{position:absolute;left:18px;right:18px;bottom:34px;border-bottom:1.5px solid #cbd5e1;pointer-events:none}
+.sigpad-clear{position:absolute;top:6px;right:6px;background:#fff!important;color:#475569!important;border:1px solid #e2e8f0!important}
+.ob-signed,.cs-ok{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(16,185,129,.4);background:rgba(16,185,129,.08)}
+.ob-signed img,.cs-ok img{height:56px;max-width:200px;object-fit:contain;background:#fff;border-radius:8px;padding:4px}
+.ob-signed span,.cs-ok span{display:flex;flex-direction:column;gap:2px}
+.ob-signed b{display:flex;align-items:center;gap:5px;color:var(--green)}
+.cs-no{padding:8px 12px;border-radius:10px;background:var(--amber-soft);color:var(--amber);font-size:13px}

@@ -58,7 +58,7 @@ export default function SpeechesPage() {
             </div>
           ))}
           {missingSeeds.map((x) => <button key={x.id} className="ghost sm" onClick={() => addSeed(x)}><Sparkles size={13} /> Add Modo's {x.campaign} speech</button>)}
-          {!camps.length && <p className="muted small">Add your campaigns (Budget Ease, Verizon, AT&T…) in Team → Departments & campaigns to give each its own speech.</p>}
+          {!camps.length && <p className="muted small">Add your campaigns (Budget Ease, US Campaign…) in Team → Departments & campaigns to give each its own speech.</p>}
         </aside>
 
         {cur ? (
