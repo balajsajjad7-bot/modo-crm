@@ -2,7 +2,9 @@
 // Modo WhatsApp: link a normal WhatsApp number by scanning a QR (like WhatsApp Web) — no Meta, no API key.
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { Smartphone, CheckCircle2, RefreshCw, LogOut, AlertTriangle, KeyRound, Save, Copy } from "lucide-react";
+import Link from "next/link";
+import WaCommands from "@/components/WaCommands";
+import { Smartphone, CheckCircle2, RefreshCw, LogOut, AlertTriangle, KeyRound, Save, Copy, Inbox } from "lucide-react";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const LABEL = { installing: "Installing on the relay…", open: "Connected", qr: "Waiting for you to scan", reconnecting: "Reconnecting…", starting: "Starting…", logged_out: "Not linked", not_set_up: "Not linked", error: "Problem" };
@@ -10,7 +12,7 @@ const LABEL = { installing: "Installing on the relay…", open: "Connected", qr:
 export default function WhatsAppPage() {
   const [d, setD] = useState(null);
   const [img, setImg] = useState("");
-  const [admins, setAdmins] = useState(""); const [ai, setAi] = useState("on"); const [saved, setSaved] = useState("");
+  const [admins, setAdmins] = useState(""); const [saved, setSaved] = useState("");
   const [num, setNum] = useState(""); const [pairMsg, setPairMsg] = useState(""); const [busy, setBusy] = useState(false); const [copied, setCopied] = useState(false);
   const [diag, setDiag] = useState(null); const [diagBusy, setDiagBusy] = useState(false);
   const check = async () => { setDiagBusy(true); const r = await api("/api/wa-link", "POST", { action: "diagnose" }); setDiagBusy(false); setDiag(r.ok ? r.data.relay : { error: r.data.error }); };
@@ -20,14 +22,14 @@ export default function WhatsAppPage() {
   const load = async () => {
     const r = await api("/api/wa-link"); if (!r.ok) return;
     setD(r.data);
-    if (!loaded.current) { loaded.current = true; setAdmins(r.data.settings?.admins || ""); setAi(r.data.settings?.aiReply || "on"); }
+    if (!loaded.current) { loaded.current = true; setAdmins(r.data.settings?.admins || ""); }
   };
   useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t); }, []);
   useEffect(() => { const q = d?.status?.qr; if (!q) { setImg(""); return; } QRCode.toDataURL(q, { margin: 1, width: 280 }).then(setImg).catch(() => setImg("")); }, [d?.status?.qr]);
 
   if (!d) return <p className="muted">Loading…</p>;
   const st = d.status || {}; const state = st.state || "not_set_up"; const relay = d.relay;
-  const saveSettings = async () => { const r = await api("/api/wa-link", "POST", { action: "settings", admins, aiReply: ai }); setSaved(r.ok ? "Saved" : r.data.error || "Couldn't save"); if (r.ok) setAdmins(r.data.settings.admins); setTimeout(() => setSaved(""), 2500); };
+  const saveSettings = async () => { const r = await api("/api/wa-link", "POST", { action: "settings", admins }); setSaved(r.ok ? "Saved" : r.data.error || "Couldn't save"); if (r.ok) setAdmins(r.data.settings.admins); setTimeout(() => setSaved(""), 2500); };
   const pair = async () => { setBusy(true); setPairMsg(""); const r = await api("/api/wa-link", "POST", { action: "pair", number: num }); setBusy(false); setPairMsg(r.ok ? (r.data.code ? "" : "Getting your code… it appears here in a few seconds.") : r.data.error); load(); };
   const logout = async () => { if (!confirm("Unlink this WhatsApp number from Modo? Bots, alerts and customer chats on WhatsApp stop until you link again.")) return; await api("/api/wa-link", "POST", { action: "logout" }); load(); };
 
@@ -96,15 +98,14 @@ export default function WhatsAppPage() {
         <label>Admin WhatsApp numbers (they can text Modo commands and get bot alerts)
           <input value={admins} onChange={(e) => setAdmins(e.target.value)} placeholder="With country code, comma-separated, e.g. 923001234567, 923331112233" inputMode="tel" />
         </label>
-        <label>When a customer messages
-          <select value={ai} onChange={(e) => setAi(e.target.value)}>
-            <option value="on">Modo AI replies first, the team can take over in Chat</option>
-            <option value="off">Only the team replies (in Chat)</option>
-          </select>
-        </label>
         <div className="row" style={{ gap: 8 }}><button onClick={saveSettings}><Save size={14} /> Save</button>{saved && <span className="small muted">{saved}</span>}</div>
-        <p className="muted small" style={{ margin: 0 }}>Text <b>help</b> to the business number from an admin number to see the commands (sales, online, late, callbacks, brief, coach, tracking numbers…).</p>
+        <p className="muted small" style={{ margin: 0 }}>What Modo may say to customers (and whether it asks you first) is set in <Link href="/admin/whatsapp/inbox">WhatsApp inbox → What Modo says</Link>. By default Modo asks you before every reply and never sends links.</p>
       </section>
+      <section className="panel row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+        <span><b>Your whole WhatsApp in Modo</b><br /><small className="muted">Every chat and group on the linked number — read and reply from here, OK Modo's suggested replies.</small></span>
+        <Link className="btn-link" href="/admin/whatsapp/inbox"><Inbox size={14} /> Open WhatsApp inbox</Link>
+      </section>
+      <WaCommands />
     </div>
   );
 }

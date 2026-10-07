@@ -55,7 +55,8 @@ export async function POST(req) {
   const transcript = (s.transcript + (said ? "\n" + tag + said : "")).trim().slice(-20000);
   if (!transcript) return NextResponse.json({ sessionId: s.id }); // just opening the session
   let out = null;
-  try { out = await askAI(LIVE, readable(transcript).slice(-4000), { json: true, maxTokens: 900 }); } catch (e) { out = { next: "", tip: e.message, tone: null }; }
+  const camp = (await db.user.findUnique({ where: { id: session.uid }, select: { campaignId: true } }).catch(() => null))?.campaignId || "";
+  try { out = await askAI(LIVE, readable(transcript).slice(-4000), { json: true, maxTokens: 900, campaignId: camp }); } catch (e) { out = { next: "", tip: e.message, tone: null }; }
   await db.callSession.update({ where: { id: s.id }, data: {
     transcript, lastTip: out?.next || null, tone: out?.tone || null, customerSide: s.customerSide || !!customerSide || speaker === "C",
     ...(out?.summary ? { summary: out.summary } : {}), ...(out?.mood ? { mood: out.mood } : {}),

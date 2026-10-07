@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 import { sectionForPath } from "@/lib/supaccess";
@@ -50,16 +50,16 @@ export default function AdminLayout({ children }) {
       { href: "/admin/access", label: "Agent access", hint: "Choose what agents can see and change", icon: i(ShieldCheck) },
       { href: "/kiosk", label: "Office kiosk", hint: "Check-in screen for the office entrance", icon: i(MonitorSmartphone) },
     ] },
-    secure
-      ? { label: "Chat", icon: i(MessageSquare), chat: true, children: [
-          { href: "/admin/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
-          { href: "/admin/vault", label: "Secure line", hint: "Encrypted room", icon: i(Lock) },
-        ] }
-      : { href: "/admin/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
+    { label: "Chat", icon: i(MessageSquare), chat: true, children: [
+      { href: "/admin/chat", label: "Chat", hint: "Channels, messages, voice notes and huddles", icon: i(MessageSquare), chat: true },
+      { href: "/admin/whatsapp/inbox", label: "WhatsApp inbox", hint: "All your WhatsApp chats; OK Modo's replies before customers get them", icon: i(MessageCircle) },
+      ...(secure ? [{ href: "/admin/vault", label: "Secure line", hint: "Encrypted room", icon: i(Lock) }] : []),
+    ] },
     { label: "AI", icon: i(Sparkles), children: [
       { href: "/admin/ai", label: "Modo AI", hint: "Ask anything about your team, sales and pay", icon: i(Sparkles) },
       { href: "/admin/builder", label: "AI Builder", hint: "Describe any app, tool or page and it builds it live", icon: i(Wand2) },
       { href: "/admin/train", label: "Train Modo AI", hint: "Teach the AI your prices, script, rules and objections", icon: i(Brain) },
+      { href: "/admin/speeches", label: "Campaign speeches", hint: "Your pitch for every campaign — Modo AI coaches agents with it", icon: i(Mic) },
       { href: "/admin/knowledge", label: "Product knowledge", hint: "Verizon, AT&T, T-Mobile & other providers: plans, prices, terms. Search or ask AI", icon: i(BookOpen) },
       { href: "/admin/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },
     ] },

@@ -23,7 +23,7 @@ export async function POST(req) {
   try {
     if (b.action === "settings") {
       const admins = String(b.admins || "").split(/[\s,;]+/).map((x) => x.replace(/\D/g, "")).filter((x) => x.length >= 8).join(", ");
-      return NextResponse.json({ ok: true, settings: await saveSettings({ admins, aiReply: b.aiReply === "off" ? "off" : "on" }) });
+      return NextResponse.json({ ok: true, settings: await saveSettings({ admins, ...(b.aiReply ? { aiReply: b.aiReply === "off" ? "off" : "on", mode: b.aiReply === "off" ? "off" : "ask" } : {}) }) });
     }
     if (b.action === "pair") {
       const n = String(b.number || "").replace(/\D/g, "");

@@ -16,7 +16,7 @@ export async function POST(req) {
   }
   if (b.type === "message") {
     try {
-      const replies = await handleIncoming({ from: b.from, name: b.name, text: b.text, kind: b.kind, msgId: b.id, hidden: !!b.hiddenNumber });
+      const replies = await handleIncoming({ from: b.from, name: b.name, text: b.text, kind: b.kind, msgId: b.id, hidden: !!b.hiddenNumber, fromMe: !!b.fromMe, group: b.group || "", groupName: b.groupName || "" });
       return NextResponse.json({ replies });
     } catch (e) { return NextResponse.json({ replies: [], error: e.message }); }
   }

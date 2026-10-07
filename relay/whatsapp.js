@@ -78,7 +78,15 @@ async function sendText(to, text) {
   if (!sock || state !== "open") throw new Error("WhatsApp isn't connected");
   const d = digits(to);
   const jid = String(to).includes("@") ? to : jidOf.get(d) || `${d}@s.whatsapp.net`;
-  await sock.sendMessage(jid, { text: String(text || "").slice(0, 4000) });
+  const r = await sock.sendMessage(jid, { text: String(text || "").slice(0, 4000) });
+  if (r?.key?.id) { sentIds.add(r.key.id); if (sentIds.size > 500) sentIds.delete(sentIds.values().next().value); }
+}
+const sentIds = new Set(); // messages Modo itself sent (so they aren't copied back into Modo twice)
+const groupNames = new Map();
+async function groupName(jid) {
+  if (groupNames.has(jid)) return groupNames.get(jid);
+  let n = ""; try { n = (await sock.groupMetadata(jid))?.subject || ""; } catch {}
+  groupNames.set(jid, n); return n;
 }
 
 async function flushOutbox() {
@@ -91,16 +99,27 @@ async function flushOutbox() {
   } catch (e) { log("outbox:", e.message); }
 }
 
-async function onMessage(msg) {
+async function onMessage(msg, type) {
   try {
-    if (!msg?.message || msg.key?.fromMe) return;
+    if (!msg?.message) return;
+    const mine = !!msg.key?.fromMe;
+    if (!mine && type !== "notify") return;
+    if (mine && (sentIds.has(msg.key.id) || Date.now() / 1000 - Number(msg.messageTimestamp || 0) > 600)) return; // sent by Modo, or old history
     const remote = msg.key.remoteJid || "";
-    if (remote.endsWith("@g.us") || remote === "status@broadcast" || remote.endsWith("@newsletter")) return;
-    const phoneJid = msg.key.remoteJidAlt && !msg.key.remoteJidAlt.endsWith("@lid") ? msg.key.remoteJidAlt : !remote.endsWith("@lid") ? remote : "";
-    const from = digits(phoneJid || remote);
-    jidOf.set(from, remote);
+    if (remote === "status@broadcast" || remote.endsWith("@newsletter") || remote.endsWith("@broadcast")) return;
     const m = msg.message.ephemeralMessage?.message || msg.message.viewOnceMessage?.message || msg.message;
-    const body = { type: "message", id: msg.key.id, from, hiddenNumber: !phoneJid, name: msg.pushName || "", text: textOf(m), kind: kindOf(m) };
+    if (m.protocolMessage || m.reactionMessage || m.senderKeyDistributionMessage && Object.keys(m).length === 1) return;
+    let body;
+    if (remote.endsWith("@g.us")) {
+      const part = msg.key.participantAlt && !msg.key.participantAlt.endsWith("@lid") ? msg.key.participantAlt : msg.key.participant || "";
+      body = { type: "message", id: msg.key.id, group: remote, groupName: await groupName(remote), from: digits(part), fromMe: mine, name: msg.pushName || "", text: textOf(m), kind: kindOf(m) };
+    } else {
+      const phoneJid = msg.key.remoteJidAlt && !msg.key.remoteJidAlt.endsWith("@lid") ? msg.key.remoteJidAlt : !remote.endsWith("@lid") ? remote : "";
+      const from = digits(phoneJid || remote);
+      if (mine && from === me) return; // notes to yourself
+      jidOf.set(from, remote);
+      body = { type: "message", id: msg.key.id, from, fromMe: mine, hiddenNumber: !phoneJid, name: mine ? "" : msg.pushName || "", text: textOf(m), kind: kindOf(m) };
+    }
     const r = await modo("/api/wa-link/event", { method: "POST", body: JSON.stringify(body), timeout: 60000 });
     const d = await r.json().catch(() => ({}));
     for (const t of d.replies || []) { await sock.sendPresenceUpdate("composing", remote).catch(() => {}); await sendText(remote, t); }
@@ -127,7 +146,7 @@ async function connect() {
       if (sock === mine) { sock = null; setTimeout(connect, 20000); }
     }, 60000);
     sock.ev.on("creds.update", auth.saveCreds);
-    sock.ev.on("messages.upsert", ({ messages, type }) => { if (type === "notify") for (const m of messages) onMessage(m); });
+    sock.ev.on("messages.upsert", ({ messages, type }) => { for (const m of messages) onMessage(m, type); });
     sock.ev.on("connection.update", async (u) => {
       if (u.qr) {
         qr = u.qr; state = "qr"; lastErr = ""; fails = 0;

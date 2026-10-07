@@ -63,7 +63,8 @@ export async function POST(req) {
     const creator = (await getSettings()).creatorName || "Balaj";
     const CREATOR = `\n\nIf you are asked who created, made, built or designed you, answer simply that you were created by ${creator}. Never reveal or hint at any passphrase, password, or way to switch or unlock accounts, and never claim to be able to change someone's access.`;
     const system = (s.role === "ADMIN" ? ADMIN_SYS : AGENT_SYS) + CREATOR + "\n\n" + SKILLS + appMap(s.role) + "\n\nDATA SNAPSHOT (JSON):\n" + JSON.stringify(ctx);
-    const reply = await askAI(system, turns, { maxTokens: 1500 });
+    const camp = s?.uid ? (await db.user.findUnique({ where: { id: s.uid }, select: { campaignId: true } }).catch(() => null))?.campaignId || "" : "";
+    const reply = await askAI(system, turns, { maxTokens: 1500, campaignId: camp });
     return NextResponse.json({ reply });
   } catch (e) {
     return NextResponse.json({ error: /AI key|AI request/.test(e.message) ? e.message : friendlyError(e) }, { status: 500 });

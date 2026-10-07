@@ -20,6 +20,8 @@ export default function VoiceDialer() {
   const [msg, setMsg] = useState(null); const [busy, setBusy] = useState(false); const [k, setK] = useState(0);
   const say = (ok, text) => { setMsg({ ok, text }); setTimeout(() => setMsg(null), 4500); };
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  // Opened from a chat / WhatsApp with ?n=3055550199&name=John → number ready to call
+  useEffect(() => { try { const u = new URLSearchParams(location.search); const n = (u.get("n") || "").replace(/\D/g, "").slice(-10); if (n) setNum(n); if (u.get("name")) setName(u.get("name").slice(0, 60)); } catch {} }, []);
   const digits = num.replace(/\D/g, "").slice(-10);
   const live = sp?.call && sp.call.state !== "ended" && sp.call.dir === "out";
   const active = live && sp.call.state === "active";

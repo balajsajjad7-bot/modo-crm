@@ -1,5 +1,6 @@
 "use client";
 import AiButton from "@/components/AiButton";
+import ModoPad from "@/components/ModoPad";
 // Callback notepad: customer name (read-only), the last thing you talked about, and when to call back.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShell } from "@/components/Shell";
@@ -18,7 +19,9 @@ export default function Notepad() {
   const [editing, setEditing] = useState(null); const [editText, setEditText] = useState("");
   const saveEdit = async () => { const r = await api(`/api/crm/activity/${editing}`, "PATCH", { text: editText }); if (!r.ok) return alert(r.data.error); setEditing(null); load(); };
   const delNote = async (id) => { if (!confirm("Delete this note?")) return; const r = await api(`/api/crm/activity/${id}`, "DELETE"); if (!r.ok) return alert(r.data.error); load(); };
-  const [view, setView] = useState("customers"); const [adding, setAdding] = useState(false); const [nc, setNc] = useState({ name: "", phone: "" });
+  const [view, setViewRaw] = useState("customers");
+  useEffect(() => { try { const v = localStorage.getItem("modo-notepad-view"); if (v === "pad") setViewRaw("pad"); } catch {} }, []);
+  const setView = (v) => { setViewRaw(v); try { localStorage.setItem("modo-notepad-view", v); } catch {} }; const [adding, setAdding] = useState(false); const [nc, setNc] = useState({ name: "", phone: "" });
   async function addCustomer() {
     const r = await api("/api/crm/contacts", "POST", { ...nc, force: true });
     if (!r.ok) return alert(r.data.error);
@@ -138,22 +141,12 @@ export default function Notepad() {
   );
 }
 
-// Free-form personal notes. Saves automatically while you type.
+// Personal notes: Modo Pad (pages, checklists, tap-to-copy numbers, my campaign speech). Saves by itself.
 function Scratchpad() {
-  const [text, setText] = useState(null); const [state, setState] = useState("");
-  useEffect(() => { api("/api/me/pad").then((r) => setText(r.ok ? r.data.text : "")); }, []);
-  useEffect(() => {
-    if (text === null) return;
-    setState("Saving…");
-    const t = setTimeout(async () => { const r = await api("/api/me/pad", "POST", { text }); setState(r.ok ? "Saved" : "Couldn't save"); }, 700);
-    return () => clearTimeout(t);
-  }, [text]);
-  if (text === null) return <p className="muted">Loading…</p>;
   return (
     <section className="panel stack">
-      <div className="row" style={{ justifyContent: "space-between" }}><h2><NotebookPen size={17} /> My scratchpad</h2><span className="small muted">{state}</span></div>
-      <p className="muted small" style={{ margin: 0 }}>Only you can see this. It saves by itself.</p>
-      <textarea className="pad" value={text} onChange={(e) => setText(e.target.value)} placeholder="Numbers to call back, reminders, scripts, anything…" />
+      <div className="row" style={{ justifyContent: "space-between" }}><h2><NotebookPen size={17} /> My scratchpad</h2><span className="small muted">Only you and your admin can see this</span></div>
+      <ModoPad />
     </section>
   );
 }

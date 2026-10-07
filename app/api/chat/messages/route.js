@@ -90,7 +90,7 @@ export async function POST(req) {
   // Agent's own Modo bot inbox: Modo AI answers as their sales coach.
   if (c === "botdm-" + s.uid && !parentId && text) {
     let reply = "";
-    try { reply = await askAI("You are the Modo bot, a friendly sales coach for a US call-center agent. Answer briefly and practically: scripts, objections, product facts, American English phrases. Follow the call guide: honest, no pressure, never claim to be the customer's provider, never ask for passwords, PINs, one-time codes, card numbers or SSNs.", text, { maxTokens: 600 }); }
+    try { reply = await askAI("You are the Modo bot, a friendly sales coach for a US call-center agent. Answer briefly and practically: scripts, objections, product facts, American English phrases. Follow the call guide: honest, no pressure, never claim to be the customer's provider, never ask for passwords, PINs, one-time codes, card numbers or SSNs. If the agent asks for their campaign speech or to practise, use the campaign speeches from the admin.", text, { maxTokens: 600, campaignId: (await db.user.findUnique({ where: { id: s.uid }, select: { campaignId: true } }).catch(() => null))?.campaignId || "" }); }
     catch (e) { reply = "I couldn't answer right now: " + (e.message || "AI error"); }
     const bot = await db.message.create({ data: { conversationId: c, userId: "modo-bot", kind: "TEXT", text: String(reply).slice(0, 3900) } });
     await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: bot.createdAt } });
@@ -99,7 +99,7 @@ export async function POST(req) {
   if (c.startsWith("wa-") && !parentId && data.kind !== "TEXT") {
     await db.message.create({ data: { conversationId: c, userId: "system", kind: "SYSTEM", text: "Files and voice notes stay in Modo — only text messages are sent to WhatsApp." } });
   } else if (c.startsWith("wa-") && !parentId && text) {
-    const r = await sendWA(c.slice(3), text).catch((e) => ({ ok: false, error: e.message }));
+    const r = await sendWA(c.startsWith("wa-g-") ? c.slice(5) + "@g.us" : c.slice(3), text).catch((e) => ({ ok: false, error: e.message }));
     if (!r.ok) await db.message.create({ data: { conversationId: c, userId: "system", kind: "SYSTEM", text: `⚠️ Not delivered on WhatsApp: ${r.error}${r.pinged ? " (we sent them a ping so they can reply)" : ""}` } });
   }
   return NextResponse.json((await shapeAll([m], s.uid))[0]);

@@ -28,7 +28,7 @@ export async function POST(req) {
     call?.transcript ? `Call so far:\n${readable(call.transcript).slice(-6000)}` : "No call transcript yet (answer generally, or from the agent's input).",
   ].filter(Boolean).join("\n\n");
   try {
-    const text = await askAI(`You are Modo, a world-class real-time sales coach sitting next to a US call-center agent during a live call. Be practical and fast: short lines the agent can say out loud. Never suggest lying, pressure, or skipping disclosures. Plain text, no markdown symbols.\n\nTASK: ${tool.prompt}`, ctx, { maxTokens: 700 });
+    const text = await askAI(`You are Modo, a world-class real-time sales coach sitting next to a US call-center agent during a live call. Be practical and fast: short lines the agent can say out loud. Never suggest lying, pressure, or skipping disclosures. Plain text, no markdown symbols.\n\nTASK: ${tool.prompt}`, ctx, { maxTokens: 700, campaignId: (await db.user.findUnique({ where: { id: s.uid }, select: { campaignId: true } }).catch(() => null))?.campaignId || "" });
     return NextResponse.json({ text });
   } catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }); }
 }

@@ -9,8 +9,10 @@ import { useShell } from "./Shell";
 import {
   Hash, Lock, Plus, ChevronDown, ChevronRight, Search, SquarePen, Headphones, Users, X, ArrowLeft,
   Paperclip, Mic, Send, Smile, AtSign, Trash2, Pencil, MessageSquareReply, FileText, Download, Compass, LogOut as Leave,
-  GraduationCap, CheckCircle2, Circle, AlertTriangle, BookOpen, Brain, Sparkles, Truck, Bot, Smartphone,
+  GraduationCap, CheckCircle2, Circle, AlertTriangle, BookOpen, Brain, Sparkles, Truck, Bot, Smartphone, Phone, Inbox,
 } from "lucide-react";
+import Link from "next/link";
+import { waLabel, initialsOf } from "@/lib/waName";
 
 const EMOJIS = ["👍", "❤️", "😂", "🎉", "👀", "✅", "🙏", "🔥", "💯", "😮"];
 const MAX = 4 * 1024 * 1024;
@@ -26,7 +28,7 @@ const dayLabel = (d) => { const x = new Date(d), n = new Date(); const y = new D
   return x.toDateString() === n.toDateString() ? "Today" : x.toDateString() === y.toDateString() ? "Yesterday" : x.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" }); };
 const ago = (d) => { const s = (Date.now() - new Date(d)) / 1000; return s < 60 ? "just now" : s < 3600 ? Math.floor(s / 60) + "m ago" : s < 86400 ? Math.floor(s / 3600) + "h ago" : Math.floor(s / 86400) + "d ago"; };
 const kb = (n) => (n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
-const initials = (s) => (s || "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+const initials = initialsOf;
 const WARM = [4, 14, 24, 32, 356, 10];
 const hue = (s) => WARM[[...(s || "")].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 997, 7) % WARM.length];
 
@@ -69,13 +71,15 @@ export default function Chat() {
 
   const match = (c) => !q || c.title.toLowerCase().includes(q.toLowerCase());
   const channels = convs.filter((c) => c.kind === "channel" && match(c)).sort((a, b) => (b.id === TRAINING) - (a.id === TRAINING) || (b.id === COACH) - (a.id === COACH) || (b.id === BOT) - (a.id === BOT) || (b.id === UPSBOT) - (a.id === UPSBOT) || a.title.localeCompare(b.title));
-  const dms = convs.filter((c) => c.kind !== "channel" && match(c)).sort((a, b) => (b.id?.startsWith("botdm-") - a.id?.startsWith("botdm-")) || 0);
+  const isWa = (c) => c.id?.startsWith("wa-");
+  const was = convs.filter((c) => isWa(c) && match(c));
+  const dms = convs.filter((c) => c.kind !== "channel" && !isWa(c) && match(c)).sort((a, b) => (b.id?.startsWith("botdm-") - a.id?.startsWith("botdm-")) || 0);
   const open = (id) => { setOpenId(id); setModal(null); reloadChat(); };
 
   const Item = ({ c }) => (
     <button className={"sl-item" + (c.id === openId ? " on" : "") + (c.unread ? " unread" : "")} onClick={() => setOpenId(c.id)}>
       {c.kind === "dm" ? <Avatar name={c.title} size={20} online={c.online} /> : <span className="sl-ico"><ConvIcon c={c} /></span>}
-      <span className="ellipsis">{c.title}</span>
+      {isWa(c) ? (() => { const w = waLabel(c.id, c.title); return <span className="sl-wa"><span className="ellipsis">{w.name}</span>{w.number && <small>{w.number}</small>}</span>; })() : <span className="ellipsis">{c.title}</span>}
       {c.huddle && <Headphones size={14} className="sl-huddle-ico" aria-label="Huddle in progress" />}
       {(c.mentions > 0 || ((c.kind !== "channel" || BOTCHANS.includes(c.id)) && c.unread > 0)) && <span className="sl-badge">{c.kind === "channel" && !BOTCHANS.includes(c.id) ? c.mentions : c.unread}</span>}
     </button>
@@ -107,6 +111,12 @@ export default function Chat() {
             {dms.map((c) => <Item key={c.id} c={c} />)}
             {!dms.length && <p className="sl-empty">No direct messages yet.</p>}
           </Section>
+          {(was.length > 0 || me?.role === "ADMIN") && (
+            <Section id="wa" label="WhatsApp" onAdd={() => { location.href = "/admin/whatsapp/inbox?new=1"; }} addLabel="Text a number on WhatsApp">
+              {was.map((c) => <Item key={c.id} c={c} />)}
+              {!was.length && <p className="sl-empty">No WhatsApp chats yet.</p>}
+            </Section>
+          )}
         </div>
       </aside>
 
@@ -153,6 +163,7 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
   const h = conv.huddle; const inThis = huddle.call && huddle.call.conversationId === conv.id;
   const isAdmin = me?.role === "ADMIN";
   const other = conv.kind === "dm" ? conv.members.find((m) => m.id !== me?.uid) : null;
+  const wa = conv.id.startsWith("wa-") ? waLabel(conv.id, conv.title) : null;
   async function saveTopic() { await api("/api/chat/conversations", "PATCH", { id: conv.id, topic }); setEditTopic(false); reloadChat(); reload(); }
 
   return (
@@ -160,8 +171,8 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
       <header className="sl-head">
         <button className="sl-icon back" aria-label="Back" onClick={onBack}><ArrowLeft size={18} /></button>
         <div className="sl-head-title">
-          <b className="row" style={{ gap: 6, flexWrap: "nowrap" }}>{conv.kind === "dm" ? <Avatar name={conv.title} size={22} online={conv.online} /> : <ConvIcon c={conv} size={18} />}<span className="ellipsis">{conv.title}</span></b>
-          {conv.kind === "channel" ? (editTopic
+          <b className="row" style={{ gap: 6, flexWrap: "nowrap" }}>{conv.kind === "dm" ? <Avatar name={conv.title} size={22} online={conv.online} /> : <ConvIcon c={conv} size={18} />}<span className="ellipsis">{wa ? wa.name : conv.title}</span></b>
+          {wa ? <span className="sl-sub">{wa.number ? wa.number + " · " : ""}{wa.group ? "WhatsApp group" : "WhatsApp"}</span> : conv.kind === "channel" ? (editTopic
             ? <span className="row" style={{ gap: 6 }}><input autoFocus value={topic} onChange={(e) => setTopic(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveTopic()} placeholder="What's this channel about?" style={{ padding: "3px 8px", maxWidth: 320 }} /><button className="ghost sm" onClick={saveTopic}>Save</button></span>
             : <button className="sl-topic" onClick={() => setEditTopic(true)}>{conv.topic || "Add a topic"}</button>)
             : <span className="sl-sub">{conv.kind === "dm" ? (other?.online ? "Active now" : "Away") + (other?.role === "ADMIN" ? " · Admin" : other?.agentId ? " · " + other.agentId : "") : conv.members.length + " members"}</span>}
@@ -169,13 +180,16 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
         <div className="sl-head-actions">
           {training && isAdmin && <button className="sl-huddle" onClick={() => setLessonEdit({})}><BookOpen size={16} /> New lesson</button>}
           {coach && isAdmin && <button className="sl-huddle" onClick={coachNow} disabled={coachBusy}><Sparkles size={16} /> {coachBusy ? "Reading notepads…" : "Coach everyone now"}</button>}
-          {!training && !coach && conv.id !== UPSBOT && conv.id !== BOT && !conv.id.startsWith("botdm-") && <AiButton task="summarize_chat" payload={{ conversationId: conv.id }} label="Catch me up" />}
-          <button className="sl-members" onClick={onMembers} aria-label="Members">
+          {wa && wa.us && <Link className="sl-huddle" href={(isAdmin ? "/admin/phone" : "/agent/phone") + "?n=" + wa.digits.slice(1) + "&name=" + encodeURIComponent(wa.name)} title="Call from Modo phone"><Phone size={16} /><span className="lbl">Call</span></Link>}
+          {wa && !wa.group && wa.digits && <a className="sl-huddle" href={"https://wa.me/" + wa.digits} target="_blank" rel="noreferrer" title="Open in WhatsApp (voice/video call from the phone)"><Smartphone size={16} /><span className="lbl">WhatsApp</span></a>}
+          {wa && isAdmin && <Link className="sl-huddle" href={"/admin/whatsapp/inbox?c=" + conv.id} title="Open in WhatsApp inbox"><Inbox size={16} /><span className="lbl">Inbox</span></Link>}
+          {!wa && !training && !coach && conv.id !== UPSBOT && conv.id !== BOT && !conv.id.startsWith("botdm-") && <AiButton task="summarize_chat" payload={{ conversationId: conv.id }} label="Catch me up" />}
+          {!wa && <button className="sl-members" onClick={onMembers} aria-label="Members">
             <span className="stack-av">{conv.members.slice(0, 3).map((m) => <Avatar key={m.id} name={m.name} size={22} />)}</span>{conv.members.length}
-          </button>
-          {inThis ? <button className="sl-huddle on" disabled><Headphones size={16} /> In huddle</button>
-            : h ? <button className="sl-huddle live" onClick={() => huddle.join(h.id).then(reloadChat)}><Headphones size={16} /> Join huddle · {h.count}</button>
-            : isAdmin ? <button className="sl-huddle" onClick={() => huddle.start(conv.id).then(reloadChat)}><Headphones size={16} /> {conv.kind === "dm" ? "Call" : "Huddle"}</button> : null}
+          </button>}
+          {inThis ? <button className="sl-huddle on" disabled><Headphones size={16} /><span className="lbl">In huddle</span></button>
+            : h ? <button className="sl-huddle live" onClick={() => huddle.join(h.id).then(reloadChat)}><Headphones size={16} /><span className="lbl">Join huddle · </span>{h.count}</button>
+            : isAdmin && !wa ? <button className="sl-huddle" onClick={() => huddle.start(conv.id).then(reloadChat)}><Headphones size={16} /><span className="lbl">{conv.kind === "dm" ? "Call" : "Huddle"}</span></button> : null}
         </div>
       </header>
 
@@ -184,8 +198,8 @@ export function Conversation({ conv, me, huddle, reloadChat, onBack, onThread, t
           <>
             <div className="sl-intro">
               {conv.kind === "dm" ? <Avatar name={conv.title} size={64} /> : <span className="sl-intro-ico"><ConvIcon c={conv} size={30} /></span>}
-              <h2>{conv.kind === "channel" ? "#" + conv.title : conv.title}</h2>
-              <p className="muted">{conv.id === BOT ? "Only admins can see this. The Modo bots post here by themselves: start- and end-of-shift briefings, callbacks, sale checks and attendance alerts (also sent to your WhatsApp). Ask anything: sales, online, late, callbacks, brief, coach — or type help." : conv.id?.startsWith("botdm-") ? "Your personal Modo bot: callback reminders, sale fixes and shift notices land here." : conv.id?.startsWith("wa-") ? "Customer WhatsApp chat. What you type here is sent to the customer on WhatsApp (text only; WhatsApp allows free replies within 24 hours of their last message). Add agents with the members button." : conv.id === UPSBOT ? "Only admins can see this. Send a tracking number with the order number or customer name (e.g. 1Z999AA10123456784 #12345) and the Modo bot adds it to the sale and checks UPS. Type help for everything it can do." : coach ? "Only admins can see this. Whenever an agent's notepad changes, the Modo bot posts a summary here with what to say to each customer and how to engage them." : training ? "Lessons and call guides from management. Read each one, tap Got it, and ask questions in the lesson's thread." : conv.kind === "channel" ? `This is the start of #${conv.title}. ${conv.topic || ""}` : conv.kind === "dm" ? `This is your conversation with ${conv.title}.` : `Group with ${names.join(", ")}.`}</p>
+              <h2>{wa ? wa.name : conv.kind === "channel" ? "#" + conv.title : conv.title}</h2>{wa?.number && <p className="sl-intro-num">{wa.number}</p>}
+              <p className="muted">{conv.id === BOT ? "Only admins can see this. The Modo bots post here by themselves: start- and end-of-shift briefings, callbacks, sale checks and attendance alerts (also sent to your WhatsApp). Ask anything: sales, online, late, callbacks, brief, coach — or type help." : conv.id?.startsWith("botdm-") ? "Your personal Modo bot: callback reminders, sale fixes and shift notices land here." : conv.id?.startsWith("wa-") ? "Customer WhatsApp chat — what you type here goes to them on WhatsApp. Modo asks you before it replies by itself." : conv.id === UPSBOT ? "Only admins can see this. Send a tracking number with the order number or customer name (e.g. 1Z999AA10123456784 #12345) and the Modo bot adds it to the sale and checks UPS. Type help for everything it can do." : coach ? "Only admins can see this. Whenever an agent's notepad changes, the Modo bot posts a summary here with what to say to each customer and how to engage them." : training ? "Lessons and call guides from management. Read each one, tap Got it, and ask questions in the lesson's thread." : conv.kind === "channel" ? `This is the start of #${conv.title}. ${conv.topic || ""}` : conv.kind === "dm" ? `This is your conversation with ${conv.title}.` : `Group with ${names.join(", ")}.`}</p>
             </div>
             <MessageList msgs={msgs} me={me} names={names} onThread={onThread} reload={reload} activeThread={thread} conv={conv} onEditLesson={setLessonEdit} />
           </>
