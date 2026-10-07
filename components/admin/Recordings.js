@@ -1,6 +1,7 @@
 "use client";
 // Admin → Call recordings: pull every agent's VICIdial recordings by day, listen, and mark QA.
 import { useEffect, useState } from "react";
+import ViciFix from "@/components/ViciFix";
 import { api } from "./api";
 import { Search, RefreshCw, Download, AlertCircle, Star, CheckCircle2, XCircle, Save } from "lucide-react";
 
@@ -45,12 +46,12 @@ function QaForm({ rec, onSaved }) {
 }
 
 export default function Recordings() {
-  const [date, setDate] = useState(iso(new Date())); const [agent, setAgent] = useState(""); const [phone, setPhone] = useState("");
+  const [date, setDate] = useState(iso(new Date())); const [agent, setAgent] = useState(""); const [phone, setPhone] = useState(""); const [range, setRange] = useState("1");
   const [d, setD] = useState(null); const [busy, setBusy] = useState(false); const [err, setErr] = useState(""); const [open, setOpen] = useState(null); const [filter, setFilter] = useState("all");
   const load = async () => {
     setBusy(true); setErr(""); setD(null); setOpen(null);
-    const r = await api(`/api/vicidial/recordings?date=${date}${agent ? "&agent=" + encodeURIComponent(agent) : ""}${phone ? "&phone=" + encodeURIComponent(phone) : ""}`);
-    setBusy(false); if (r.ok) setD(r.data.rows.map((x) => ({ ...x, callDate: date }))); else setErr(r.data.error || "Couldn't load recordings.");
+    const r = await api(`/api/vicidial/recordings?date=${date}${range !== "1" ? "&days=" + range : ""}${agent ? "&agent=" + encodeURIComponent(agent) : ""}${phone ? "&phone=" + encodeURIComponent(phone) : ""}`);
+    setBusy(false); if (r.ok) setD(r.data.rows.map((x) => ({ ...x, callDate: x.callDate || date }))); else setErr(r.data.error || "Couldn't load recordings.");
   };
   useEffect(() => { load(); }, []); // eslint-disable-line
   const rows = (d || []).filter((r) => filter === "all" || (filter === "todo" && !r.qa) || (filter === "done" && r.qa) || (filter === "low" && r.qa && r.qa.score < 50));
@@ -64,12 +65,14 @@ export default function Recordings() {
   return (
     <div className="stack">
       <section className="panel toolbar">
-        <label style={{ maxWidth: 175 }}>Day<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+        <label style={{ maxWidth: 170 }}>Show<select value={range} onChange={(e) => setRange(e.target.value)}><option value="1">One day</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select></label>
+        {range === "1" && <label style={{ maxWidth: 175 }}>Day<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>}
         <label style={{ maxWidth: 165 }}>Agent (blank = all)<input value={agent} onChange={(e) => setAgent(e.target.value)} placeholder="all agents" /></label>
         <label style={{ maxWidth: 175 }}>Phone<input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="customer number" /></label>
         <button style={{ alignSelf: "flex-end" }} onClick={load} disabled={busy}><Search size={15} /> {busy ? "Loading…" : "Load recordings"}</button>
       </section>
       {err && <section className="panel err" style={{ display: "flex", gap: 10 }}><AlertCircle size={18} style={{ flexShrink: 0 }} /><div>{err}</div></section>}
+      {err && <ViciFix onFixed={load} />}
       {d && (
         <>
           <div className="toolbar">
@@ -79,14 +82,15 @@ export default function Recordings() {
             <button className="ghost icon-btn" onClick={load} aria-label="Refresh"><RefreshCw size={14} /></button>
           </div>
           <section className="stack">
-            {!rows.length && <div className="panel muted">{d.length ? "Nothing matches this filter." : "No recordings for this day. If your VICIdial connector isn't connected yet, connect it in Tools → Connectors → VICIdial first."}</div>}
+            {!rows.length && !d.length && <ViciFix compact />}
+            {!rows.length && <div className="panel muted">{d.length ? "Nothing matches this filter." : range === "1" ? "No recordings for this day — try Last 7 or 30 days. If calls should be here, press Fix dialer connection below." : "No recordings in this period."}</div>}
             {rows.map((r, i) => {
               const rid = r.id || r.url;
               return (
                 <article key={rid || i} className="panel rec-row">
                   <div className="rec-head">
                     <div style={{ minWidth: 0 }}>
-                      <b>{r.agent || "Agent"}</b> <span className="muted small">{r.phone || ""}{r.start ? " · " + r.start : ""} · {dur(r.seconds)}</span>
+                      <b>{r.agent || "Agent"}</b> <span className="muted small">{r.phone || ""}{r.start ? " · " + r.start : r.callDate && range !== "1" ? " · " + r.callDate : ""} · {dur(r.seconds)}</span>
                     </div>
                     {r.qa ? <span className={"chip " + tone(r.qa.score)}><Star size={11} /> {r.qa.score}{r.qa.outcome ? " · " + r.qa.outcome : ""}</span> : <span className="chip">not scored</span>}
                     <button className={open === rid ? "sm" : "ghost sm"} onClick={() => setOpen(open === rid ? null : rid)}>{open === rid ? "Close" : r.qa ? "Edit QA" : "Mark QA"}</button>

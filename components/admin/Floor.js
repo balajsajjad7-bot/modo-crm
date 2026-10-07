@@ -11,6 +11,7 @@ import Launcher from "@/components/Launcher";
 import { startChunkListen } from "@/components/chunklisten";
 import Spectrum from "./Spectrum";
 import FoldHead from "@/components/FoldHead";
+import ViciFix from "@/components/ViciFix";
 
 const lines = (t) => (t || "").split("\n").filter(Boolean).map((l) => (l.startsWith("C: ") ? { who: "C", text: l.slice(3) } : { who: "A", text: l.startsWith("A: ") ? l.slice(3) : l }));
 const mins = (a, b) => Math.max(0, Math.round(((b ? new Date(b) : Date.now()) - new Date(a)) / 1000));
@@ -75,7 +76,7 @@ export default function Floor() {
 
       {phoneMsg && <div className={phoneMsg.err ? "err" : "receipt"} style={{ margin: 0 }}><Ear size={14} /> {phoneMsg.err || phoneMsg.text}</div>}
 
-      <section className="stack">
+      <section className="stack" id="live" style={{ scrollMarginTop: 80 }}>
         <div className="row" style={{ justifyContent: "space-between" }}>
           <h2 className="sec-h"><PhoneCall size={17} /> Live calls <span className="muted small">{live.length ? "subtitles update every few seconds" : ""}</span></h2>
         </div>
@@ -118,6 +119,7 @@ export default function Floor() {
           {vici.data && (vici.data.monitorPhone
             ? <p className="small muted" style={{ margin: 0 }}><Ear size={12} /> Listening rings your phone <b>{vici.data.monitorPhone}</b> — keep that softphone/extension logged in to hear calls.</p>
             : <p className="small" style={{ margin: 0, color: "var(--amber)" }}><Ear size={12} /> No listen phone set. Add one in <Link href="/admin/connectors">Connectors → VICIdial → Monitor phone</Link> to listen to agents.</p>)}
+          {vici.error && <ViciFix compact onFixed={reloadVici} />}
           {vici.error ? <p className="muted small" style={{ margin: 0 }}>{vici.error} <Link href="/admin/connectors">Connect VICIdial</Link></p> : !vici.data ? <p className="muted">Checking…</p> : !(vici.data.agents || []).length ? <p className="muted">No one is logged into the dialer.</p> : (
             <div className="dialer-list">{vici.data.agents.map((a, i) => (
               <div key={i}><span className={"dot " + String(a.status || "").toLowerCase()} /><b>{a.full_name || a.user || a.f0}</b><span className="chip">{a.status}</span><span className="muted small">{a.campaign_id || a.campaign || ""}</span><span className="muted small" style={{ marginLeft: "auto" }}>{a.calls_today ? a.calls_today + " calls" : ""}</span>

@@ -5,6 +5,7 @@ import { api } from "./api";
 import DownloadLink from "@/components/DownloadLink";
 import PhonesSetup from "./PhonesSetup";
 import { PhoneCall, Plug, Users, ListChecks, CheckCircle2, Circle, Zap, Save, Plus, Trash2, Wand2, Search, Stethoscope, XCircle, AlertTriangle, Router, Download, Headset, MonitorSmartphone, PauseCircle } from "lucide-react";
+import ViciFix from "@/components/ViciFix";
 
 // Office relay: gets Modo past the dialer's IP firewall by sending requests through a PC in the office.
 function Relay() {
@@ -156,6 +157,7 @@ export default function DialerSetup() {
   const setAct = (a, k, val) => setCustom((c) => ({ ...c, [a]: { ...(c[a] || {}), [k]: val } }));
   return (
     <div className="stack">
+      {d.provider === "vicidial" && <ViciFix />}
       <section className="panel stack">
         <h2><PhoneCall size={17} /> Which dialer?</h2>
         <div className="prov-grid">{PROVIDERS.map(([k, l, h]) => (

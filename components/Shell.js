@@ -3,11 +3,12 @@
 // It lives in the layout, so a call keeps going while you move between pages.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toneStyle } from "@/lib/tones";
+import AutoFold from "./AutoFold";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import TopBar from "./TopBar";
 import { useHuddle } from "./useHuddle";
-import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee, Settings as SettingsIcon, LayoutDashboard, KeyRound } from "lucide-react";
+import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee, Settings as SettingsIcon, LayoutDashboard, KeyRound, Headphones, Smartphone, Bot } from "lucide-react";
 import { guideForRole } from "@/lib/guide";
 import { startChunkSend } from "@/components/chunklisten";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -64,6 +65,8 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   const [due, setDue] = useState([]);
   const [notif, setNotif] = useState("granted");
   const [dialOpen, setDialOpen] = useState(false);
+  const [notifHide, setNotifHide] = useState(false);
+  useEffect(() => { try { setNotifHide(sessionStorage.getItem("modo-notif-hide") === "1"); } catch {} }, []);
   const isDesktop = typeof window !== "undefined" && !!window.modo?.isDesktop;
   const [locked, setLocked] = useState(null); const [myStatus, setMyStatus] = useState("available");
   useEffect(() => { if (me?.status) setMyStatus(me.status); }, [me]);
@@ -210,7 +213,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   const current = flat.find((n) => (n.exact ? path === n.href : path === n.href || path.startsWith(n.href + "/")));
   const loc = presence?.attendance?.location;
 
-  // Quick-actions speed-dial (agents: their most-used actions; admins: overview/settings/chat). Lives in the movable dock.
+  // Quick-actions speed-dial: only things the dock and top menu don't already have (Chat lives on its own button).
   const speedDial = (
 me?.role === "AGENT" ? (
         <div className={"agent-dial" + (dialOpen ? " open" : "")}>
@@ -220,7 +223,6 @@ me?.role === "AGENT" ? (
             <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/sale"); }}><span className="ad-ic"><Receipt size={18} /></span>Submit sale</button>
             <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/lookups"); }}><span className="ad-ic"><SearchCheck size={18} /></span>Lookups</button>
             <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent"); }}><span className="ad-ic"><Timer size={18} /></span>My shift</button>
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/agent/chat"); }}><span className="ad-ic"><MessageSquare size={18} /></span>Chat{unread > 0 && <em className="ad-badge">{unread > 99 ? "99+" : unread}</em>}</button>
             <div className="ad-status">
               {[["available", "🟢", "Available"], ["away", "⚪", "Away"], ["busy", "🟠", "Busy"]].map(([k, e, l]) => (
                 <button key={k} className={myStatus === k ? "on" : ""} title={l} onClick={() => { setStatus(k); setDialOpen(false); }}>{e}</button>
@@ -229,20 +231,19 @@ me?.role === "AGENT" ? (
           </div>
           <button className="chat-fab ad-main" aria-label="Quick actions" aria-expanded={dialOpen} onClick={() => setDialOpen((o) => !o)}>
             {dialOpen ? <X size={24} /> : <Plus size={26} />}
-            {!dialOpen && unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
           </button>
         </div>
       ) : (
         <div className={"agent-dial" + (dialOpen ? " open" : "")}>
           {dialOpen && <div className="ad-backdrop" onClick={() => setDialOpen(false)} />}
           <div className="ad-actions" role="menu">
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin"); }}><span className="ad-ic"><LayoutDashboard size={18} /></span>Overview</button>
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/settings"); }}><span className="ad-ic"><SettingsIcon size={18} /></span>Settings</button>
-            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/chat"); }}><span className="ad-ic"><MessageSquare size={18} /></span>Chat{unread > 0 && <em className="ad-badge">{unread > 99 ? "99+" : unread}</em>}</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin#live"); }}><span className="ad-ic"><Headphones size={18} /></span>Listen live</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/sales"); }}><span className="ad-ic"><Receipt size={18} /></span>Review sales</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/whatsapp/inbox"); }}><span className="ad-ic"><Smartphone size={18} /></span>WhatsApp</button>
+            <button className="ad-item" onClick={() => { setDialOpen(false); router.push("/admin/bots"); }}><span className="ad-ic"><Bot size={18} /></span>Bots</button>
           </div>
           <button className="chat-fab ad-main" aria-label="Quick actions" aria-expanded={dialOpen} onClick={() => setDialOpen((o) => !o)}>
             {dialOpen ? <X size={24} /> : <Plus size={26} />}
-            {!dialOpen && unread > 0 && <span className="chat-fab-badge">{unread > 99 ? "99+" : unread}</span>}
           </button>
         </div>
       )
@@ -286,6 +287,7 @@ me?.role === "AGENT" ? (
           </div>
         </div>
         <ErrorBoundary resetKey={path}>{children}</ErrorBoundary>
+        <AutoFold />
       </main>
 
       {invites.slice(0, 1).map((c) => (
@@ -308,7 +310,7 @@ me?.role === "AGENT" ? (
       {seWaiting > 0 && typeof window !== "undefined" && !location.pathname.startsWith("/admin/attendance") && location.pathname !== "/admin" && <a className="toast se-toast" href="/admin/attendance"><Clock size={18} /><div><b>{seWaiting} agent{seWaiting > 1 ? "s want" : " wants"} to end their shift early</b><div className="small">Tap to approve or deny</div></div></a>}
       <ErrorBoundary resetKey="cheers"><Cheers me={me} /></ErrorBoundary>
       {pwOpen && <ChangePassword onClose={() => setPwOpen(false)} />}
-      {notif !== "granted" && <button className="notif-ask ghost" onClick={askNotif}><Phone size={14} /> Turn on phone alerts</button>}
+      {notif !== "granted" && !notifHide && <div className="notif-ask" role="region" aria-label="Phone alerts"><button className="ghost sm" onClick={askNotif}><Phone size={14} /> Turn on phone alerts</button><button className="ghost sm icon-btn" aria-label="Not now" onClick={() => { setNotifHide(true); try { sessionStorage.setItem("modo-notif-hide", "1"); } catch {} }}><X size={14} /></button></div>}
       {huddle.error && <div className="call-banner warn" role="alert"><div>{huddle.error}</div><button className="ghost" onClick={huddle.clearError}><X size={16} /></button></div>}
       {huddle.call && <CallPanel huddle={huddle} me={me} conv={chat.conversations.find((c) => c.id === huddle.call.conversationId)} />}
       {/* Floating dock: Notepad · Tools · Chats + the quick-actions button. Drag the grip to put it anywhere. */}

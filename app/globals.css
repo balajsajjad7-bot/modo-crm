@@ -2974,3 +2974,52 @@ html[data-look="minimal"] .panel h2>svg:first-child{box-shadow:none}
 .bot-tx span{font-size:12.5px;color:var(--muted-fg);line-height:1.4}
 .bot-tx small{font-size:11.5px;color:var(--muted-fg)}
 .bot-err{color:var(--red)!important}
+
+/* Dialer choice cards: only the chosen one is highlighted (others were all painted as buttons in light mode) */
+html[data-appearance] .prov-grid .prov{background:var(--card)!important;color:var(--foreground)!important;border:1px solid var(--border)!important;box-shadow:none!important;filter:none!important}
+html[data-appearance] .prov-grid .prov.on{background:rgba(var(--p),.12)!important;border:2px solid rgb(var(--p))!important;box-shadow:0 0 0 4px rgba(var(--p),.12)!important}
+html[data-appearance] .prov-grid .prov.on b::after{content:" ✓";color:rgb(var(--p))}
+html[data-appearance] .prov-grid .prov span{color:var(--muted-fg)!important;opacity:1}
+
+/* Quick-actions (+) menu: one tidy card with a dimmed, blurred page behind — nothing overlaps the page or itself */
+.agent-dial.open .ad-backdrop{background:rgba(8,8,20,.35);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.fl-dock .ad-actions{display:flex;flex-direction:column;align-items:stretch!important;gap:4px;padding:8px;min-width:220px;border-radius:18px;
+  background:var(--card-solid,var(--card));border:1px solid var(--border);box-shadow:0 24px 60px -18px rgba(0,0,0,.45)}
+.fl-dock .ad-item{width:100%;justify-content:flex-start;border:0!important;border-radius:12px!important;padding:8px 10px!important;box-shadow:none!important;background:transparent!important;font-weight:600}
+.fl-dock .ad-item:hover{background:rgba(var(--p),.1)!important}
+.fl-dock .ad-item .ad-ic{width:34px;height:34px;border-radius:10px;color:#fff;background:linear-gradient(145deg,rgb(var(--s)),rgb(var(--p)));box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.fl-dock .ad-item:nth-child(2) .ad-ic{background:linear-gradient(145deg,#34d399,#059669)}
+.fl-dock .ad-item:nth-child(3) .ad-ic{background:linear-gradient(145deg,#4ade80,#128c7e)}
+.fl-dock .ad-item:nth-child(4) .ad-ic{background:linear-gradient(145deg,#a5b4fc,#4f46e5)}
+.fl-dock .ad-status{justify-content:center;padding-top:6px;border-top:1px solid var(--border);margin-top:2px}
+/* the dock itself: even spacing, buttons never squeeze into each other */
+.fl-dock{gap:8px!important}
+.fl-dock>*{flex-shrink:0}
+@media (max-width:560px){.fl-dock{gap:6px!important}.fl-dock .fl-fab,.fl-dock .chat-fab{width:44px!important;height:44px!important}}
+/* "Turn on phone alerts": a small pill at the top, out of the way of the floating buttons */
+.notif-ask{position:fixed!important;top:calc(74px + env(safe-area-inset-top,0px))!important;bottom:auto!important;left:50%!important;transform:translateX(-50%);z-index:56;display:flex;align-items:center;gap:2px;padding:3px!important;border-radius:999px;background:var(--card-solid,var(--card));border:1px solid var(--border);box-shadow:0 10px 30px -12px rgba(0,0,0,.35)}
+.notif-ask button{border:0!important;background:transparent!important;box-shadow:none!important;white-space:nowrap}
+@media (max-width:760px){.notif-ask{top:calc(66px + env(safe-area-inset-top,0px))!important}}
+.vf{display:flex;flex-direction:column;gap:10px;border-color:rgba(245,158,11,.4)!important}
+.vf-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.vf-head>div{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
+.vf-ic{width:42px;height:42px;border-radius:13px}
+.vf-head>button{display:inline-flex;align-items:center;gap:6px}
+.vf-res{display:flex;flex-direction:column;gap:5px}
+.vf-sum{display:flex;align-items:center;gap:6px;font-weight:700}
+.vf-sum.ok{color:var(--green)}.vf-sum.bad{color:var(--red)}
+.vf-fix{padding:8px 10px;border-radius:10px;background:var(--amber-soft);font-size:13.5px}
+.vf-step{display:flex;gap:6px;align-items:flex-start;font-size:12.5px;color:var(--muted-fg)}
+.vf-step svg{flex-shrink:0;margin-top:2px}
+.vf-step.ok svg{color:var(--green)}.vf-step.warn svg{color:var(--amber)}.vf-step.bad svg{color:var(--red)}
+.vf-step em{display:block;font-style:normal;color:var(--foreground)}
+
+/* Minimize any card */
+.af-h{position:relative}
+.af-btn{margin-left:auto!important;flex-shrink:0;width:28px;height:28px;padding:0!important;min-height:0!important;border-radius:9px!important;display:inline-grid!important;place-items:center;
+  background:transparent!important;border:1px solid var(--border)!important;color:var(--muted-fg)!important;box-shadow:none!important;cursor:pointer;opacity:.55;transition:opacity .15s,background .15s;vertical-align:middle}
+.af-btn:hover{opacity:1;background:rgba(var(--p),.1)!important;color:var(--foreground)!important}
+section.panel[data-folded="1"]>:not(:first-child){display:none!important}
+section.panel[data-folded="1"]{padding-top:12px!important;padding-bottom:12px!important}
+section.panel[data-folded="1"] .af-btn{opacity:1}
+h2.af-h:not(.row){display:flex;align-items:center;gap:8px}
