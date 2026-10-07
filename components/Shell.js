@@ -130,7 +130,9 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
     window.addEventListener("pointerdown", u); window.addEventListener("keydown", u);
     if ("Notification" in window) setNotif(Notification.permission);
     // Register the push service worker; if already allowed, make sure this device is subscribed.
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").then(() => { if (window.Notification?.permission === "granted") subscribePush(); }).catch(() => {});
+    // A tapped notification can ask this window to open a page (when the worker can't move it itself).
+    if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", (e) => { const u = e.data?.type === "modo-open" && e.data.url; if (u && u.startsWith(location.origin)) location.href = u; });
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then(() => { if (window.Notification?.permission === "granted") subscribePush(); }).catch(() => {});
     return () => { window.removeEventListener("pointerdown", u); window.removeEventListener("keydown", u); };
   }, []);
   const askNotif = async () => { unlockAudio(); if ("Notification" in window) { const p = await Notification.requestPermission(); setNotif(p); if (p === "granted") subscribePush(); } };

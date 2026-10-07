@@ -150,6 +150,21 @@ export default function FloatDock({ extra }) {
   useEffect(() => { setOpen(LS("modo-float-open", { chat: false, notes: false, tools: false })); }, []);
   const set = (k, v) => setOpen((o) => { const n = { ...o, [k]: v }; SAVE("modo-float-open", n); return n; });
   const onChatPage = /\/(admin|agent)\/chat/.test(path);
+  // Tucks itself away: after a few seconds without being used the buttons fold into one small bubble at the
+  // edge (with the unread count). Tap / hover the bubble to bring them back.
+  const [awake, setAwake] = useState(true);
+  const sleepT = useRef(null);
+  const sleep = useCallback(() => {
+    clearTimeout(sleepT.current);
+    sleepT.current = setTimeout(() => {
+      const el = dock.ref.current;
+      if (el && (el.matches(":hover") || el.contains(document.activeElement) || el.querySelector(".agent-dial.open, [aria-expanded='true']"))) return sleep(); // in use → wait
+      setAwake(false);
+    }, 4000);
+  }, [dock.ref]);
+  const wake = useCallback(() => { setAwake(true); sleep(); }, [sleep]);
+  useEffect(() => { sleep(); return () => clearTimeout(sleepT.current); }, [sleep]);
+  useEffect(() => { if (open.chat || open.notes || open.tools) wake(); }, [open, wake]);
   const unread = (chat?.conversations || []).reduce((n, c) => n + (c.unread || 0), 0);
   // Alt+N notes · Alt+T tools · Alt+C chat
   useEffect(() => {
@@ -158,8 +173,12 @@ export default function FloatDock({ extra }) {
   }, []);
   return (
     <>
-      <div ref={dock.ref} className={"fl-dock" + (dock.pos ? " placed" : "") + (dock.side.down ? " down" : "") + (dock.side.left ? " left" : "")}
-        style={dock.pos ? { left: dock.pos.x, top: dock.pos.y, right: "auto", bottom: "auto" } : undefined} role="toolbar" aria-label="Floating tools">
+      <div ref={dock.ref} className={"fl-dock" + (awake ? "" : " sleep") + (dock.pos ? " placed" : "") + (dock.side.down ? " down" : "") + (dock.side.left ? " left" : "")}
+        style={dock.pos ? { left: dock.pos.x, top: dock.pos.y, right: "auto", bottom: "auto" } : undefined} role="toolbar" aria-label="Floating tools"
+        onPointerEnter={wake} onPointerDown={wake} onFocusCapture={wake} onPointerLeave={sleep}>
+        {!awake && <button className="fl-peek" data-plain onClick={wake} onPointerEnter={wake} aria-label={"Show Notepad, Tools and Chats" + (unread ? ` (${unread} unread)` : "")} title="Notepad · Tools · Chats">
+          <MessageSquare size={17} />{unread > 0 && <em className="fl-badge">{unread > 99 ? "99+" : unread}</em>}
+        </button>}
         <button className="fl-grip" aria-label="Move these buttons (drag). Double-click to reset." title="Drag to move · double-click to reset" {...dock.grip}><GripVertical size={16} /></button>
         <button className={"fl-fab" + (open.notes ? " on" : "")} onClick={() => set("notes", !open.notes)} title="Notepad (Alt+N)" aria-label="Notepad"><NotebookPen size={18} /></button>
         <button className={"fl-fab" + (open.tools ? " on" : "")} onClick={() => set("tools", !open.tools)} title="Tools (Alt+T)" aria-label="Tools"><Wrench size={18} /></button>
