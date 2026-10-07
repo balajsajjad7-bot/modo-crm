@@ -2499,3 +2499,5 @@ mark.kb-hit{background:rgba(var(--s),.3);color:inherit;border-radius:3px}
 .wa-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600;text-decoration:none;color:#fff!important;background:#25d366;line-height:1.4;white-space:nowrap}
 .wa-btn:hover{background:#1ebe5a}
 .wa-btn.icon{padding:5px}
+.wa-diag{display:grid;gap:8px;padding-top:10px;border-top:1px solid var(--border)}
+.wa-diag-out{margin:0;padding:10px 12px;border-radius:10px;background:var(--background);font-size:12px;white-space:pre-wrap}

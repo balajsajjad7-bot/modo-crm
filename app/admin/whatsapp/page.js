@@ -5,13 +5,16 @@ import QRCode from "qrcode";
 import { Smartphone, CheckCircle2, RefreshCw, LogOut, AlertTriangle, KeyRound, Save, Copy } from "lucide-react";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
-const LABEL = { open: "Connected", qr: "Waiting for you to scan", reconnecting: "Reconnecting…", starting: "Starting…", logged_out: "Not linked", not_set_up: "Not linked", error: "Problem" };
+const LABEL = { installing: "Installing on the relay…", open: "Connected", qr: "Waiting for you to scan", reconnecting: "Reconnecting…", starting: "Starting…", logged_out: "Not linked", not_set_up: "Not linked", error: "Problem" };
 
 export default function WhatsAppPage() {
   const [d, setD] = useState(null);
   const [img, setImg] = useState("");
   const [admins, setAdmins] = useState(""); const [ai, setAi] = useState("on"); const [saved, setSaved] = useState("");
   const [num, setNum] = useState(""); const [pairMsg, setPairMsg] = useState(""); const [busy, setBusy] = useState(false); const [copied, setCopied] = useState(false);
+  const [diag, setDiag] = useState(null); const [diagBusy, setDiagBusy] = useState(false);
+  const check = async () => { setDiagBusy(true); const r = await api("/api/wa-link", "POST", { action: "diagnose" }); setDiagBusy(false); setDiag(r.ok ? r.data.relay : { error: r.data.error }); };
+  const restart = async (fresh) => { if (fresh && !confirm("Start a fresh link? Any half-finished link is cleared and a new QR is made.")) return; setDiagBusy(true); const r = await api("/api/wa-link", "POST", { action: "restart", fresh }); setDiagBusy(false); setDiag(r.ok ? { note: "Restarting… a QR should appear within a minute." } : { error: r.data.error }); load(); };
   const loaded = useRef(false);
 
   const load = async () => {
@@ -76,6 +79,15 @@ export default function WhatsAppPage() {
           {st.pairCode && <div className="wa-code">Pairing code: <b>{st.pairCode}</b></div>}
           {pairMsg && <p className="small muted" style={{ margin: 0 }}>{pairMsg}</p>}
           {st.error && <div className="err small">{st.error}</div>}
+          <div className="wa-diag">
+            <span className="small muted">Relay says: <b>{LABEL[state] || state}</b>{st.at ? " · last update " + new Date(st.at).toLocaleTimeString() : " · no update from the relay yet"}</span>
+            <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+              <button className="ghost sm" onClick={check} disabled={diagBusy}><RefreshCw size={13} /> Check relay</button>
+              <button className="ghost sm" onClick={() => restart(false)} disabled={diagBusy}>Restart WhatsApp</button>
+              <button className="ghost sm" onClick={() => restart(true)} disabled={diagBusy}>Start fresh link</button>
+            </div>
+            {diag && <pre className="wa-diag-out">{diag.error ? "⚠️ " + diag.error : diag.note ? diag.note : `State: ${diag.state}${diag.error ? "\nProblem: " + diag.error : ""}\nQR ready: ${diag.qr ? "yes" : "no"} · retries: ${diag.fails ?? 0}\nWhatsApp library: ${diag.loaded ? "loaded" : "not loaded yet"} (${diag.wa || "?"}) · Node ${diag.node || "?"}`}</pre>}
+          </div>
         </section>
       )}
 

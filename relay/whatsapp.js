@@ -13,6 +13,21 @@ const log = (...a) => console.log(new Date().toISOString(), "[wa]", ...a);
 let B = null;            // the Baileys module (ESM, loaded with import())
 let sock = null, state = "starting", qr = "", me = "", lastErr = "", connecting = false, stopped = false;
 let pairNumber = "";      // set when Modo asks for a pairing code instead of a QR
+let fails = 0, waVersion = "";
+
+// The WhatsApp library is installed on first start if the host skipped "npm install"
+// (an existing Render service keeps its old build command), so no setting has to be changed.
+async function loadBaileys() {
+  try { return await import("@whiskeysockets/baileys"); }
+  catch (e) {
+    if (!/Cannot find (package|module)|ERR_MODULE_NOT_FOUND/i.test(String(e && (e.code || e.message)))) throw e;
+    state = "installing"; lastErr = "Installing WhatsApp on the relay (one time, about a minute)…"; await report();
+    log("installing @whiskeysockets/baileys…");
+    await new Promise((ok, bad) => require("child_process").exec("npm install --omit=dev --no-audit --no-fund", { cwd: __dirname, timeout: 300000 }, (err, out, er) => (err ? bad(new Error("npm install failed: " + String(er || err.message).slice(-300))) : ok())));
+    lastErr = "";
+    return await import("@whiskeysockets/baileys");
+  }
+}
 const jidOf = new Map();  // phone digits → the chat id to reply to (WhatsApp may use hidden "LID" ids)
 
 const modo = (path, opts = {}) => fetch(MODO + path, { ...opts, headers: { "content-type": "application/json", "x-relay-key": KEY, ...(opts.headers || {}) }, signal: AbortSignal.timeout(opts.timeout || 30000) });
@@ -96,12 +111,13 @@ async function connect() {
   if (connecting || stopped) return;
   connecting = true;
   try {
-    if (!B) B = await import("@whiskeysockets/baileys");
+    if (!B) B = await loadBaileys();
     const auth = await loadAuth();
     const { version } = await Promise.race([B.fetchLatestBaileysVersion(), new Promise((ok) => setTimeout(() => ok({}), 8000))]).catch(() => ({}));
+    waVersion = Array.isArray(version) ? version.join(".") : "default";
     state = "starting"; await report();
     const silent = { level: "silent", trace() {}, debug() {}, info() {}, warn() {}, error() {}, fatal() {}, child() { return silent; } };
-    sock = B.makeWASocket({ auth: auth.state, version, logger: silent, printQRInTerminal: false, browser: B.Browsers.appropriate("Modo"), markOnlineOnConnect: false, syncFullHistory: false, connectTimeoutMs: 30000 });
+    sock = B.makeWASocket({ auth: auth.state, version, logger: silent, printQRInTerminal: false, browser: B.Browsers.ubuntu("Chrome"), markOnlineOnConnect: false, syncFullHistory: false, connectTimeoutMs: 30000 });
     // Watchdog: if WhatsApp doesn't answer within a minute, say so in Modo and try again.
     const mine = sock;
     setTimeout(async () => {
@@ -114,14 +130,14 @@ async function connect() {
     sock.ev.on("messages.upsert", ({ messages, type }) => { if (type === "notify") for (const m of messages) onMessage(m); });
     sock.ev.on("connection.update", async (u) => {
       if (u.qr) {
-        qr = u.qr; state = "qr"; lastErr = "";
+        qr = u.qr; state = "qr"; lastErr = ""; fails = 0;
         if (pairNumber && !auth.state.creds.registered) {
           try { const code = await sock.requestPairingCode(pairNumber); pairNumber = ""; await report({ pairCode: code }); return; } catch (e) { lastErr = "Pairing code failed: " + e.message; }
         }
         await report();
       }
       if (u.connection === "open") {
-        state = "open"; qr = ""; lastErr = ""; me = digits(sock.user?.id);
+        state = "open"; qr = ""; lastErr = ""; fails = 0; me = digits(sock.user?.id);
         log("connected as", me); await report(); flushOutbox();
       }
       if (u.connection === "close") {
@@ -129,10 +145,15 @@ async function connect() {
         const code = u.lastDisconnect?.error?.output?.statusCode;
         const loggedOut = code === B.DisconnectReason.loggedOut;
         state = loggedOut ? "logged_out" : "reconnecting"; qr = "";
-        lastErr = loggedOut ? "WhatsApp was unlinked on the phone. Link it again in Modo → WhatsApp." : code === 403 ? "WhatsApp refused this number (it may be banned)." : "";
+        const restart = code === B.DisconnectReason.restartRequired; // normal right after scanning
+        if (!restart) fails++;
+        lastErr = loggedOut ? "WhatsApp was unlinked on the phone. Link it again in Modo → WhatsApp." : code === 403 ? "WhatsApp refused this number (it may be banned)." : restart ? "" : `WhatsApp closed the connection (code ${code || "?"}${u.lastDisconnect?.error?.message ? ": " + String(u.lastDisconnect.error.message).slice(0, 80) : ""}) — retrying (${fails}).`;
+        // A half-finished link leaves a broken login that never shows a QR: start clean after a few failures.
+        const stuck = !auth.state.creds.registered && fails >= 3;
+        if (stuck) { lastErr += " Starting a fresh link…"; fails = 0; }
         await report();
         sock = null; connecting = false;
-        if (loggedOut) { await auth.wipe(); setTimeout(connect, 3000); }
+        if (loggedOut || stuck) { await auth.wipe(); setTimeout(connect, 3000); }
         else setTimeout(connect, code === 403 ? 10 * 60000 : 4000);
       }
     });
@@ -144,7 +165,14 @@ async function connect() {
 async function handle(req, res, raw) {
   const send = (code, obj) => { res.writeHead(code, { "content-type": "application/json" }); res.end(JSON.stringify(obj)); };
   let b = {}; try { b = raw ? JSON.parse(raw) : {}; } catch {}
-  if (req.url === "/wa/status") return send(200, { state, me, qr, error: lastErr });
+  if (req.url === "/wa/status") return send(200, { state, me, qr: qr ? "yes" : "", error: lastErr, fails, node: process.version, wa: waVersion, loaded: !!B });
+  if (req.url === "/wa/restart") {
+    if (b.fresh) { await modo("/api/wa-link/auth", { method: "DELETE" }).catch(() => {}); }
+    const old = sock; sock = null; connecting = false; fails = 0; state = "starting"; qr = ""; lastErr = "";
+    try { old && old.end(new Error("restart")); } catch {}
+    setTimeout(connect, 1500);
+    return send(200, { ok: true });
+  }
   if (req.url === "/wa/send") {
     try { await sendText(b.to, b.text); return send(200, { ok: true }); } catch (e) { return send(503, { error: e.message }); }
   }

@@ -37,6 +37,8 @@ export async function POST(req) {
       await wipeAuth(); await setStatus({ state: "logged_out", me: "", qr: "" });
       return NextResponse.json({ ok: true });
     }
+    if (b.action === "diagnose") return NextResponse.json({ ok: true, relay: await relayCall("/wa/status") });
+    if (b.action === "restart") { await relayCall("/wa/restart", { fresh: !!b.fresh }); if (b.fresh) await setStatus({ state: "starting", qr: "", error: "" }); return NextResponse.json({ ok: true }); }
     if (b.action === "refresh") {
       const t = await relayTarget();
       if (t) await fetch(t.url + "/ping", { signal: AbortSignal.timeout(8000) }).catch(() => {});
