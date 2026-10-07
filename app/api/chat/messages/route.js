@@ -9,6 +9,7 @@ import { BOT } from "@/lib/bots";
 import { handleCommand } from "@/lib/botCommands";
 import { sendWA } from "@/lib/whatsapp";
 import { waBlocked } from "@/lib/waLock";
+import { agentCommand } from "@/lib/agentBot";
 import { askAI } from "@/lib/ai";
 
 // ?c=<conversation>  [&thread=<parent id>]  [&since=<ISO>]  (since = anything created or changed after)
@@ -93,7 +94,8 @@ export async function POST(req) {
   // Agent's own Modo bot inbox: Modo AI answers as their sales coach.
   if (c === "botdm-" + s.uid && !parentId && text) {
     let reply = "";
-    try { reply = await askAI("You are the Modo bot, a friendly sales coach for a US call-center agent. Answer briefly and practically: scripts, objections, product facts, American English phrases. Follow the call guide: honest, no pressure, never claim to be the customer's provider, never ask for passwords, PINs, one-time codes, card numbers or SSNs. If the agent asks for their campaign speech or to practise, use the campaign speeches from the admin.", text, { maxTokens: 600, campaignId: (await db.user.findUnique({ where: { id: s.uid }, select: { campaignId: true } }).catch(() => null))?.campaignId || "" }); }
+    try { reply = (await agentCommand(text, s.uid)) || ""; } catch {}
+    if (!reply) try { reply = await askAI("You are the Modo bot, a friendly sales coach for a US call-center agent. Answer briefly and practically: scripts, objections, product facts, American English phrases. Follow the call guide: honest, no pressure, never claim to be the customer's provider, never ask for passwords, PINs, one-time codes, card numbers or SSNs. If the agent asks for their campaign speech or to practise, use the campaign speeches from the admin.", text, { maxTokens: 600, campaignId: (await db.user.findUnique({ where: { id: s.uid }, select: { campaignId: true } }).catch(() => null))?.campaignId || "" }); }
     catch (e) { reply = "I couldn't answer right now: " + (e.message || "AI error"); }
     const bot = await db.message.create({ data: { conversationId: c, userId: "modo-bot", kind: "TEXT", text: String(reply).slice(0, 3900) } });
     await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: bot.createdAt } });

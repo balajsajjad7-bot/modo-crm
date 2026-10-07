@@ -2961,3 +2961,16 @@ html[data-look="minimal"] .panel h2>svg:first-child{box-shadow:none}
 .ob-signed span,.cs-ok span{display:flex;flex-direction:column;gap:2px}
 .ob-signed b{display:flex;align-items:center;gap:5px;color:var(--green)}
 .cs-no{padding:8px 12px;border-radius:10px;background:var(--amber-soft);color:var(--amber);font-size:13px}
+
+/* Bots page */
+.bots-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.bots-head h2{margin:0 0 4px}
+.bots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:10px}
+.bot-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;border:1px solid var(--border);background:var(--card);transition:opacity .2s}
+.bot-card.off{opacity:.55}
+.bot-ic{width:46px;height:46px;border-radius:14px;font-size:22px}
+.bot-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.bot-tx b{font-size:14.5px}
+.bot-tx span{font-size:12.5px;color:var(--muted-fg);line-height:1.4}
+.bot-tx small{font-size:11.5px;color:var(--muted-fg)}
+.bot-err{color:var(--red)!important}

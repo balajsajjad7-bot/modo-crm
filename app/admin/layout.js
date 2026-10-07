@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic, Bot } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 import { sectionForPath } from "@/lib/supaccess";
@@ -59,6 +59,7 @@ export default function AdminLayout({ children }) {
       { href: "/admin/ai", label: "Modo AI", hint: "Ask anything about your team, sales and pay", icon: i(Sparkles) },
       { href: "/admin/builder", label: "AI Builder", hint: "Describe any app, tool or page and it builds it live", icon: i(Wand2) },
       { href: "/admin/train", label: "Train Modo AI", hint: "Teach the AI your prices, script, rules and objections", icon: i(Brain) },
+      { href: "/admin/bots", label: "Bots", hint: "16 automations: briefings, wins, pace coach, reminders, checks — on/off", icon: i(Bot) },
       { href: "/admin/speeches", label: "Campaign speeches", hint: "Your pitch for every campaign — Modo AI coaches agents with it", icon: i(Mic) },
       { href: "/admin/knowledge", label: "Product knowledge", hint: "Verizon, AT&T, T-Mobile & other providers: plans, prices, terms. Search or ask AI", icon: i(BookOpen) },
       { href: "/admin/guide", label: "Trainer", hint: "Every tool and how to use it", icon: i(GraduationCap) },

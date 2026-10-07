@@ -9,7 +9,7 @@ import { useShell } from "./Shell";
 import {
   Hash, Lock, Plus, ChevronDown, ChevronRight, Search, SquarePen, Headphones, Users, X, ArrowLeft,
   Paperclip, Mic, Send, Smile, AtSign, Trash2, Pencil, MessageSquareReply, FileText, Download, Compass, LogOut as Leave,
-  GraduationCap, CheckCircle2, Circle, AlertTriangle, BookOpen, Brain, Sparkles, Truck, Bot, Smartphone, Phone, Inbox,
+  GraduationCap, CheckCircle2, Circle, AlertTriangle, BookOpen, Brain, Sparkles, Truck, Bot, Smartphone, Phone, Inbox, Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { waLabel, initialsOf } from "@/lib/waName";
@@ -23,7 +23,8 @@ const TRAINING = "modo-training";
 const COACH = "notepad-coach";
 const UPSBOT = "ups-bot";
 const BOT = "modo-bot";
-const BOTCHANS = [TRAINING, COACH, UPSBOT, BOT];
+const WINS = "wins";
+const BOTCHANS = [TRAINING, COACH, UPSBOT, BOT, WINS];
 const GOT_IT = "✅";
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const t = (d) => new Date(d).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -42,7 +43,7 @@ export function Avatar({ name, size = 36, online, square = true }) {
     </span>
   );
 }
-export const ConvIcon = ({ c, size = 16 }) => c.id === TRAINING ? <GraduationCap size={size} /> : c.id === COACH ? <Brain size={size} /> : c.id === UPSBOT ? <Truck size={size} /> : c.id === BOT || c.id?.startsWith("botdm-") ? <Bot size={size} /> : c.id?.startsWith("wa-") ? <Smartphone size={size - 1} /> : c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
+export const ConvIcon = ({ c, size = 16 }) => c.id === WINS ? <Trophy size={size} /> : c.id === TRAINING ? <GraduationCap size={size} /> : c.id === COACH ? <Brain size={size} /> : c.id === UPSBOT ? <Truck size={size} /> : c.id === BOT || c.id?.startsWith("botdm-") ? <Bot size={size} /> : c.id?.startsWith("wa-") ? <Smartphone size={size - 1} /> : c.kind === "channel" ? (c.isPrivate ? <Lock size={size - 2} /> : <Hash size={size} />) : c.kind === "group" ? <Users size={size - 2} /> : null;
 
 // Turns text into React nodes: links and @mentions highlighted.
 function RichText({ text, names, meName }) {
