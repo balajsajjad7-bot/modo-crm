@@ -3580,3 +3580,4 @@ html[data-look="minimal"] .lp *{transition:none}
 .hr-pc{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hr-pc ul{margin:0;padding-left:0;list-style:none;display:grid;gap:4px;font-size:13px}
 .hr-pc li::before{margin-right:6px}.hr-pc .pro li::before{content:"✓";color:#10b981;font-weight:800}.hr-pc .con li::before{content:"!";color:#f59e0b;font-weight:800}
 @media (max-width:640px){.hr-brief-grid,.hr-pc{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:680px){.wl-themewrap{position:static}.wl-thememenu{position:fixed;top:68px;left:16px;right:16px;width:auto;z-index:60}}

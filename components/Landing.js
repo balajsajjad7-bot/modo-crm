@@ -50,6 +50,11 @@ export default function Landing() {
   // This page is always dark, whatever appearance the visitor picked inside Modo (restored when leaving).
   const [mode, setMode, eff, look, setLook] = useAppearance(); const [themeOpen, setThemeOpen] = useState(false);
   const root = useRef(null); const raf = useRef(0);
+  useEffect(() => {
+    if (!themeOpen) return;
+    const close = (e) => { if (!e.target.closest?.(".wl-themewrap")) setThemeOpen(false); };
+    document.addEventListener("pointerdown", close); return () => document.removeEventListener("pointerdown", close);
+  }, [themeOpen]);
   // Bots turn toward the mouse: --mx / --my from -1 to 1.
   const track = (e) => {
     if (e.pointerType === "touch" || raf.current) return;
@@ -76,7 +81,7 @@ export default function Landing() {
         <span className="wl-themewrap">
           <button type="button" data-plain className="wl-theme" onClick={() => setThemeOpen(!themeOpen)} aria-haspopup="true" aria-expanded={themeOpen} aria-label="Theme" title="Theme">{eff === "dark" ? <Moon size={17} /> : <Sun size={17} />}</button>
           {themeOpen && (
-            <span className="wl-thememenu" role="menu" onMouseLeave={() => setThemeOpen(false)}>
+            <span className="wl-thememenu" role="menu">
               <span className="wl-seg">{[["light", "Day", Sun], ["auto", "Auto", SunMoon], ["dark", "Night", Moon]].map(([k, l, I]) => <button type="button" data-plain key={k} className={mode === k ? "on" : ""} onClick={() => setMode(k)}><I size={14} />{l}</button>)}</span>
               <button type="button" data-plain className={"wl-minimal" + (look === "minimal" ? " on" : "")} onClick={() => setLook(look === "minimal" ? "royal" : "minimal")}>
                 <Square size={14} /><span><b>Minimal look</b><small>Clean and flat, no effects</small></span><i className="wl-sw" />
