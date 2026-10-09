@@ -67,7 +67,7 @@ export default function Install() {
             <span className="muted small num">{origin}/install</span>
           </div>
         )}
-        <a className="btn-link" href="/" style={{ textAlign: "center" }}>Go to sign in →</a>
+        <a className="btn-link" href="/login" style={{ textAlign: "center" }}>Go to sign in →</a>
       </div>
     </main>
   );

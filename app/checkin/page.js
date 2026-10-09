@@ -29,7 +29,7 @@ export default function CheckIn() {
             <button>Check in</button>
           </form>
         )}
-        <a href="/" className="small">Open Modo</a>
+        <a href="/login" className="small">Open Modo</a>
       </div>
     </main>
   );

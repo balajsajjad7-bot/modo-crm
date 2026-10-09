@@ -4,7 +4,7 @@ import Shell from "@/components/Shell";
 import { AgentProvider, useAgent } from "@/components/agent/AgentContext";
 import Onboarding from "@/components/agent/Onboarding";
 import GeoReporter from "@/components/agent/GeoReporter";
-import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText, GraduationCap, Wand2, Phone } from "lucide-react";
+import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText, GraduationCap, Wand2, Phone, MessageSquareWarning } from "lucide-react";
 
 function BreakButton({ onBreak, since, onClick }) {
   const [now, setNow] = useState(Date.now());
@@ -55,8 +55,12 @@ function Frame({ children }) {
   const nav = [
     { href: "/agent", exact: true, label: "My shift", hint: "Time, breaks and deductions", icon: i(Timer) },
     ...(callKids.length === 1 ? callKids : callKids.length ? [{ label: "Calls", icon: i(PhoneCall), children: callKids }] : []),
-    ...(P.submitSale !== false ? [be ? { href: "/agent/budgetease", label: "Budget Ease", hint: "Submit a utility-bill discount signup", icon: i(PiggyBank) }
-       : { href: "/agent/sale", label: "Submit sale", hint: "Goes straight to admin", icon: i(ClipboardPaste) }] : []),
+    ...(() => {
+      const sale = P.submitSale !== false ? [be ? { href: "/agent/budgetease", label: "Budget Ease", hint: "Submit a utility-bill discount signup", icon: i(PiggyBank) }
+        : { href: "/agent/sale", label: "Submit sale", hint: "Goes straight to admin", icon: i(ClipboardPaste) }] : [];
+      const kids = [...sale, { href: "/agent/complaints", label: "Customer complaint", hint: "Listen, type or speak the complaint — admin gets it at once", icon: i(MessageSquareWarning) }];
+      return kids.length > 1 ? [{ label: "Sales", icon: i(ClipboardPaste), children: kids }] : kids;
+    })(),
     ...(crmKids.length ? [{ label: "CRM", icon: i(Briefcase), children: crmKids }] : []),
     { label: "My progress", icon: i(Trophy), children: progressKids },
     ...(P.chat !== false ? [secure ? { label: "Chat", icon: i(MessageSquare), chat: true, children: [chatItem, { href: "/agent/vault", label: "Secure line", hint: "Encrypted room — invited by the CEO", icon: i(Lock) }] } : chatItem]

@@ -55,7 +55,7 @@ export async function POST(req) {
     await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: m.createdAt } });
     try {
       const others = (await db.convMember.findMany({ where: { conversationId: c, userId: { not: s.uid } }, select: { userId: true } })).map((x) => x.userId);
-      if (others.length) sendPush(others, { title: "📘 New lesson in #modo-training", body: l.title, url: "/", tag: "chat-" + c });
+      if (others.length) sendPush(others, { title: "📘 New lesson in #modo-training", body: l.title, url: "/admin/chat", tag: "chat-" + c });
     } catch {}
     return NextResponse.json((await shapeAll([m], s.uid))[0]);
   }
@@ -81,7 +81,7 @@ export async function POST(req) {
     const preview = data.kind === "AUDIO" ? "🎤 Voice note" : data.kind === "FILE" ? "📎 " + (data.fileName || "File") : (text || "").slice(0, 120);
     const title = conv?.isChannel ? `#${conv.name || "channel"} · ${s.name}` : s.name;
     const others = (await db.convMember.findMany({ where: { conversationId: c, userId: { not: s.uid } }, select: { userId: true } })).map((x) => x.userId);
-    if (others.length) sendPush(others, { title, body: preview, url: "/", tag: "chat-" + c });
+    if (others.length) sendPush(others, { title, body: preview, url: "/admin/chat", tag: "chat-" + c });
   } catch {}
   // #ups-bot: the Modo bot answers every admin message (saves tracking on the sale, checks UPS).
   if ((c === UPSBOT || c === BOT) && !parentId && text && s.role === "ADMIN") {

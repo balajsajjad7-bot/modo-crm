@@ -33,10 +33,12 @@ export async function middleware(req) {
     return NextResponse.next();
   }
   if (p.startsWith("/api")) return NextResponse.next();
-  if (p.startsWith("/kiosk") && s?.role !== "ADMIN") return NextResponse.redirect(new URL("/", req.url));
+  // Home (landing) and sign-in: someone already signed in goes straight into their Modo.
+  if (p === "/" || p === "/login") return s ? NextResponse.redirect(new URL(s.role === "AGENT" ? "/agent" : "/admin", req.url)) : NextResponse.next();
+  if (p.startsWith("/kiosk") && s?.role !== "ADMIN") return NextResponse.redirect(new URL(s ? "/agent" : "/login", req.url));
   // A link meant for the other side (e.g. a notification) lands on the matching page for this person.
-  if (p.startsWith("/admin") && s?.role !== "ADMIN" && s?.role !== "SUPERVISOR") return NextResponse.redirect(new URL(s?.role === "AGENT" ? (p.startsWith("/admin/chat") ? "/agent/chat" : "/agent") : "/", req.url));
-  if (p.startsWith("/agent") && s?.role !== "AGENT") return NextResponse.redirect(new URL(s?.role === "ADMIN" || s?.role === "SUPERVISOR" ? (p.startsWith("/agent/chat") ? "/admin/chat" : "/admin") : "/", req.url));
+  if (p.startsWith("/admin") && s?.role !== "ADMIN" && s?.role !== "SUPERVISOR") return NextResponse.redirect(new URL(s?.role === "AGENT" ? (p.startsWith("/admin/chat") ? "/agent/chat" : "/agent") : "/login", req.url));
+  if (p.startsWith("/agent") && s?.role !== "AGENT") return NextResponse.redirect(new URL(s?.role === "ADMIN" || s?.role === "SUPERVISOR" ? (p.startsWith("/agent/chat") ? "/admin/chat" : "/admin") : "/login", req.url));
   // A supervisor may only open the sections the admin granted (Overview "/admin" is always allowed).
   if (p.startsWith("/admin") && s?.role === "SUPERVISOR") {
     // Admin-only areas are never open to supervisors — redirect cleanly instead of showing an error.
@@ -56,4 +58,4 @@ export async function middleware(req) {
   }
   return res;
 }
-export const config = { matcher: ["/admin/:path*", "/agent/:path*", "/kiosk", "/api/:path*"] };
+export const config = { matcher: ["/", "/login", "/admin/:path*", "/agent/:path*", "/kiosk", "/api/:path*"] };

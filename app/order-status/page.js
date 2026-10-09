@@ -31,9 +31,9 @@ export default function OrderStatusReturn() {
     <main className="login">
       <div className="panel stack" style={{ maxWidth: 420, textAlign: "center", alignItems: "center" }}>
         {st.state === "saving" && <p className="muted">Saving the order status to Modo…</p>}
-        {st.state === "confirm" && ask && <><ShieldCheck size={34} style={{ color: "var(--accent)" }} /><h2>Save this status?</h2><p className="small" style={{ margin: 0 }}><b>{ask.status || "—"}</b>{ask.note ? " · " + ask.note : ""}</p><p className="muted small" style={{ margin: 0 }}>Only save it if you just checked this order yourself.</p><div className="row" style={{ gap: 8, justifyContent: "center" }}><button onClick={() => { setSt({ state: "saving" }); ask.save(); }}>Save</button><button className="ghost" onClick={() => location.replace("/")}>Cancel</button></div></>}
+        {st.state === "confirm" && ask && <><ShieldCheck size={34} style={{ color: "var(--accent)" }} /><h2>Save this status?</h2><p className="small" style={{ margin: 0 }}><b>{ask.status || "—"}</b>{ask.note ? " · " + ask.note : ""}</p><p className="muted small" style={{ margin: 0 }}>Only save it if you just checked this order yourself.</p><div className="row" style={{ gap: 8, justifyContent: "center" }}><button onClick={() => { setSt({ state: "saving" }); ask.save(); }}>Save</button><button className="ghost" onClick={() => location.replace("/login")}>Cancel</button></div></>}
         {st.state === "done" && <><PackageCheck size={36} style={{ color: "var(--green)" }} /><h2>Saved to {st.sale?.orderNumber ? "order #" + st.sale.orderNumber : "the sale"}</h2><p className="muted small" style={{ margin: 0 }}>{st.sale?.trackStage}</p><p className="muted small" style={{ margin: 0 }}>Taking you back…</p></>}
-        {st.state === "error" && <><AlertTriangle size={34} style={{ color: "var(--amber)" }} /><h2>Not saved</h2><p className="small" style={{ margin: 0 }}>{st.msg}</p>{/Sign in/.test(st.msg) && <a href="/">Sign in to Modo</a>}</>}
+        {st.state === "error" && <><AlertTriangle size={34} style={{ color: "var(--amber)" }} /><h2>Not saved</h2><p className="small" style={{ margin: 0 }}>{st.msg}</p>{/Sign in/.test(st.msg) && <a href="/login">Sign in to Modo</a>}</>}
       </div>
     </main>
   );

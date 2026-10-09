@@ -1,6 +1,6 @@
 "use client";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic, Bot, CreditCard } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic, Bot, CreditCard, MessageSquareWarning, UserPlus } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 import { sectionForPath } from "@/lib/supaccess";
@@ -19,6 +19,7 @@ export default function AdminLayout({ children }) {
     { href: "/admin", exact: true, label: "Overview", hint: "Live floor, leaderboard and calls", icon: i(LayoutDashboard) },
     { label: "Sales", icon: i(Receipt), badge: fresh || null, children: [
       { href: "/admin/sales", label: "Sales", hint: "Sales submitted by agents", icon: i(Receipt), badge: fresh || null },
+      { href: "/admin/complaints", label: "Complaints", hint: "Customer complaints filed by agents: status, priority, replies", icon: i(MessageSquareWarning) },
       { href: "/admin/tracking", label: "Order tracking", hint: "Order status by carrier — Check order, location codes", icon: i(PackageSearch) },
       { href: "/admin/budgetease", label: "Budget Ease", hint: "Utility-bill discount signups (separate from sales)", icon: i(PiggyBank) },
       { href: "/admin/reports", label: "Reports", hint: "Sales, pipeline, attendance trends", icon: i(BarChart3) },
@@ -43,6 +44,7 @@ export default function AdminLayout({ children }) {
       { href: "/admin/notepads", label: "Agent notepads", hint: "Every agent's personal notepad, read-only", icon: i(NotebookPen) },
       { href: "/admin/agents", label: "Agents", hint: "Add, edit, call and manage agents", icon: i(Users) },
       { href: "/admin/subscriptions", label: "Subscriptions", hint: "Sell Modo: plans, customers, activate / cancel / change plan, agents' plans", icon: i(CreditCard) },
+      { href: "/admin/hiring", label: "Hiring & interviews", hint: "Candidates, English fluency test (Versant-style), interview times and Zoom interviews", icon: i(UserPlus) },
       { href: "/admin/remote", label: "Remote control", hint: "See every agent's Modo live: message, lock, sign out, open a page", icon: i(MonitorSmartphone) },
       { href: "/admin/shifts", label: "Shifts", hint: "Edit everyone's shift times; automatic clock-out at shift end", icon: i(CalendarClock) },
       { href: "/admin/breaks", label: "Break report", hint: "Every break, per agent per day", icon: i(Coffee) },
@@ -91,7 +93,7 @@ export default function AdminLayout({ children }) {
     const ok = (href) => { if (!href || href === "/admin") return true; const k = sectionForPath(href); return !k || allowed.includes(k); };
     shownNav = nav.map((it) => it.children ? (() => { const kids = it.children.filter((c) => ok(c.href)); return kids.length ? { ...it, children: kids } : null; })() : (ok(it.href) ? it : null)).filter(Boolean);
   }
-  const signOut = async (leaveCall) => { await leaveCall(); await fetch("/api/auth/logout", { method: "POST" }); location.href = "/"; };
+  const signOut = async (leaveCall) => { await leaveCall(); await fetch("/api/auth/logout", { method: "POST" }); location.href = "/login"; };
   return <Shell nav={shownNav} home="/admin" onSignOut={signOut}>
     {me?.role === "SUPERVISOR" && <div className="viewonly-banner"><ShieldCheck size={14} /> View-only supervisor — you can monitor everything you're given access to, but changes are turned off.</div>}
     {children}

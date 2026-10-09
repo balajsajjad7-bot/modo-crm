@@ -37,7 +37,7 @@ export default function Demolish() {
     setBusy(false);
     if (!r.ok) return setMsg(r.data.error);
     setDone(true);
-    setTimeout(() => { location.href = "/"; }, 3500);
+    setTimeout(() => { location.href = "/login"; }, 3500);
   }
 
   return (

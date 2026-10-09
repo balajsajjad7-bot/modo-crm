@@ -10,7 +10,7 @@ self.addEventListener("push", (e) => {
     body: d.body || "",
     tag: d.tag || undefined,
     renotify: !!d.tag,
-    data: { url: d.url || "/" },
+    data: { url: d.url || "/login" },
     icon: "/icon-192.png",
     badge: "/favicon-32.png",
     vibrate: [120, 60, 120],
@@ -21,7 +21,7 @@ self.addEventListener("push", (e) => {
 // Tapping a notification opens Modo on the right page — whether Modo is open, in the background or closed.
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const target = new URL((e.notification.data && e.notification.data.url) || "/", self.location.origin).href;
+  const target = new URL((e.notification.data && e.notification.data.url) || "/login", self.location.origin).href;
   e.waitUntil((async () => {
     const cs = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     const mine = cs.filter((c) => c.url && c.url.startsWith(self.location.origin));
