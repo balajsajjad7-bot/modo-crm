@@ -2,7 +2,7 @@
 // Public landing page: what Modo is, plans & prices (live from Admin → Subscriptions), and a "Get started"
 // form that lands in Subscriptions as a pending request. No sign-in needed.
 import { useEffect, useRef, useState } from "react";
-import { PhoneCall, Headphones, Sparkles, MessageSquare, Fingerprint, Wallet, BarChart3, ShieldCheck, Bot, MonitorSmartphone, GraduationCap, CheckCircle2, ArrowRight, Gift, Rocket, Crown, Check, LogIn, Lock, Zap, Globe2, Sun, Moon, UserPlus, Video, MessageSquareWarning, PenLine, NotebookPen } from "lucide-react";
+import { PhoneCall, Headphones, Sparkles, MessageSquare, Fingerprint, Wallet, BarChart3, ShieldCheck, Bot, MonitorSmartphone, GraduationCap, CheckCircle2, ArrowRight, Gift, Rocket, Crown, Check, LogIn, Lock, Zap, Globe2, Sun, Moon, SunMoon, Square, UserPlus, Video, MessageSquareWarning, PenLine, NotebookPen } from "lucide-react";
 import ModoLogo from "@/components/ModoLogo";
 import { useAppearance } from "@/components/Appearance";
 import LoginAura from "@/components/LoginAura";
@@ -11,7 +11,7 @@ import Bot3D from "@/components/Bot3D";
 const FEATURES = [
   [PhoneCall, "Dialer + live listen", "Every call on one screen. Listen, whisper or barge into any agent's call live, and replay every recording.", ["#60a5fa", "#2563eb"]],
   [Sparkles, "AI live call assist", "Modo AI suggests what to say during the call and scores each one for tone, grammar and compliance.", ["#f0abfc", "#c026d3"]],
-  [UserPlus, "Hiring & English test", "Candidates apply online and take a Versant-style English test: speaking, listening, reading and writing, scored 20–80 with CEFR level.", ["#a5b4fc", "#4f46e5"], true],
+  [UserPlus, "Hiring & English test", "Candidates apply online and take the Modo English Assessment: speaking, listening, reading and writing, with a Fluency Score from 20–80 and CEFR level.", ["#a5b4fc", "#4f46e5"], true],
   [Video, "Zoom interviews", "Candidates who pass pick an interview time themselves. Zoom link, invite, calendar and reminders are done for you.", ["#93c5fd", "#2563eb"], true],
   [MessageSquareWarning, "Customer complaints", "Agents type or speak the customer's complaint during the call. You get it instantly, set the priority and reply.", ["#fda4af", "#e11d48"], true],
   [PenLine, "Contracts & e-signing", "Every new team member reads and signs their contract on screen, with reminders until it's signed.", ["#fcd34d", "#d97706"], true],
@@ -48,7 +48,7 @@ export default function Landing() {
   const [f, setF] = useState({ company: "", contact: "", email: "", phone: "", plan: "next", seats: 10, notes: "", website: "" });
   const [state, setState] = useState(""); const [err, setErr] = useState("");
   // This page is always dark, whatever appearance the visitor picked inside Modo (restored when leaving).
-  const [, setMode, eff] = useAppearance();
+  const [mode, setMode, eff, look, setLook] = useAppearance(); const [themeOpen, setThemeOpen] = useState(false);
   const root = useRef(null); const raf = useRef(0);
   // Bots turn toward the mouse: --mx / --my from -1 to 1.
   const track = (e) => {
@@ -73,7 +73,17 @@ export default function Landing() {
       <header className="wl-nav">
         <a href="/" className="wl-brand"><ModoLogo size={30} /></a>
         <nav><a href="#features">Features</a><a href="#bots">Bots</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a href="/apply">Careers</a></nav>
-        <button type="button" data-plain className="wl-theme" onClick={() => setMode(eff === "dark" ? "light" : "dark")} aria-label={eff === "dark" ? "Switch to light mode" : "Switch to dark mode"} title={eff === "dark" ? "Light mode" : "Dark mode"}>{eff === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
+        <span className="wl-themewrap">
+          <button type="button" data-plain className="wl-theme" onClick={() => setThemeOpen(!themeOpen)} aria-haspopup="true" aria-expanded={themeOpen} aria-label="Theme" title="Theme">{eff === "dark" ? <Moon size={17} /> : <Sun size={17} />}</button>
+          {themeOpen && (
+            <span className="wl-thememenu" role="menu" onMouseLeave={() => setThemeOpen(false)}>
+              <span className="wl-seg">{[["light", "Day", Sun], ["auto", "Auto", SunMoon], ["dark", "Night", Moon]].map(([k, l, I]) => <button type="button" data-plain key={k} className={mode === k ? "on" : ""} onClick={() => setMode(k)}><I size={14} />{l}</button>)}</span>
+              <button type="button" data-plain className={"wl-minimal" + (look === "minimal" ? " on" : "")} onClick={() => setLook(look === "minimal" ? "royal" : "minimal")}>
+                <Square size={14} /><span><b>Minimal look</b><small>Clean and flat, no effects</small></span><i className="wl-sw" />
+              </button>
+            </span>
+          )}
+        </span>
         <a href="/login" className="wl-btn ghost"><LogIn size={15} /> Sign in</a>
       </header>
 

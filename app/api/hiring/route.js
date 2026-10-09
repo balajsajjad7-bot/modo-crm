@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireManager, requireAdminOnly } from "@/lib/auth";
-import { loadHiring, publicSettings, addCandidate, updateCandidate, deleteCandidate, scheduleInterview, updateInterview, addSlots, removeSlot, saveSettings, inviteText, calendarLink, STAGES } from "@/lib/hiring";
+import { loadHiring, publicSettings, addCandidate, updateCandidate, deleteCandidate, scheduleInterview, updateInterview, addSlots, removeSlot, saveSettings, inviteText, calendarLink, withLink, STAGES } from "@/lib/hiring";
 import { TRACKS } from "@/lib/englishTest";
 
 // Team → Hiring & interviews.
@@ -8,7 +8,7 @@ export async function GET() {
   const { error } = await requireManager("hiring");
   if (error) return error;
   const v = await loadHiring();
-  const cands = v.candidates.map((c) => ({ ...c, interviews: (c.interviews || []).map((iv) => ({ ...iv, invite: inviteText(c, iv, v.settings), cal: calendarLink(c, iv, v.settings) })) }));
+  const cands = v.candidates.map((c) => ({ ...c, interviews: (c.interviews || []).map((iv) => ({ ...withLink(iv, v.settings), invite: inviteText(c, iv, v.settings), cal: calendarLink(c, iv, v.settings) })) }));
   return NextResponse.json({ candidates: cands, slots: v.slots, settings: publicSettings(v.settings), tracks: TRACKS, stages: STAGES });
 }
 

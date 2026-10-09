@@ -1,12 +1,12 @@
 "use client";
-// Team → Hiring & interviews: candidates, the English fluency test (Versant-style, 20–80 + CEFR),
+// Team → Hiring & interviews: candidates, the Modo English Assessment (Fluency Score 20–80 + CEFR),
 // answer review with recordings, interview slots and Zoom interviews.
-import { useEffect, useState } from "react";
-import { UserPlus, Link2, Copy, MessageCircle, Mail, Video, CalendarPlus, CalendarClock, Settings2, Users, GraduationCap, CheckCircle2, XCircle, PauseCircle, Trash2, RefreshCw, ChevronDown, Star, Headphones, AlertTriangle, ExternalLink, Clock3, Briefcase, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import WaButton from "@/components/WaButton";
+import { UserPlus, Link2, Copy, Mail, Video, CalendarPlus, CalendarClock, Settings2, Users, GraduationCap, CheckCircle2, XCircle, PauseCircle, Trash2, RefreshCw, ChevronDown, Star, Headphones, AlertTriangle, ExternalLink, Clock3, Briefcase, Plus, FileText, Sparkles, UploadCloud, Loader2 } from "lucide-react";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const when = (t) => new Date(t).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-const waNum = (p) => { let d = String(p || "").replace(/\D/g, ""); if (d.startsWith("00")) d = d.slice(2); if (d.startsWith("0")) d = "92" + d.slice(1); if (d.length === 10 && /^[2-9]/.test(d)) d = "1" + d; return d; };
 const copy = (t, say) => { navigator.clipboard?.writeText(t).then(() => say("✓ Copied"), () => say("Couldn't copy")); };
 const ST = { invited: ["Invited", "#64748b"], testing: ["Taking test", "#0ea5e9"], tested: ["Tested", "#8b5cf6"], interview: ["Interview", "#f59e0b"], hired: ["Hired", "#10b981"], rejected: ["Rejected", "#ef4444"], "on hold": ["On hold", "#94a3b8"] };
 const SKILL = { speaking: "Speaking", listening: "Listening", reading: "Reading", writing: "Writing", fluency: "Fluency", pronunciation: "Pronunciation" };
@@ -70,7 +70,7 @@ export default function Hiring() {
                 <span className="row" style={{ gap: 6, flexWrap: "wrap" }}>
                   <a className="btn-link sm" href={iv.zoom?.startUrl || iv.zoom?.joinUrl} target="_blank" rel="noreferrer"><Video size={13} /> Start Zoom</a>
                   <button className="ghost sm" onClick={() => copy(iv.invite, say)}><Copy size={13} /> Invite</button>
-                  {c.phone && <a className="btn-link ghost sm" href={`https://wa.me/${waNum(c.phone)}?text=${encodeURIComponent(iv.invite)}`} target="_blank" rel="noreferrer"><MessageCircle size={13} /> WhatsApp</a>}
+                  {c.phone && <WaButton phone={c.phone} name={c.name} text={iv.invite} label="Send invite" />}
                   <button className="ghost sm" onClick={() => { setTab("candidates"); setOpen(c.id); }}>Open</button>
                 </span>
               </div>
@@ -104,12 +104,12 @@ function AddForm({ tracks, onAdd }) {
 function Cand({ c, d, open, toggle, link, act, say }) {
   const r = c.result; const [s, col] = ST[c.status] || [c.status, "#64748b"];
   const next = (c.interviews || []).filter((iv) => iv.status === "scheduled").sort((a, b) => new Date(a.at) - new Date(b.at))[0];
-  const testMsg = `Hi ${c.name.split(" ")[0]}, thanks for applying to ${d.settings.company || "Modo"}! Please take our English test (about 30 minutes) here:\n${link}\n\nUse Google Chrome, a headset and a quiet place. The link works for ${d.settings.linkDays || 7} days.`;
+  const testMsg = `Hi ${c.name.split(" ")[0]}, thanks for applying to ${d.settings.company || "Modo"}! Please take your Modo English Assessment (about 30 minutes) here:\n${link}\n\nOpen the link in Google Chrome (not inside WhatsApp), use a headset and a quiet place. You can also send us your resume from that page. The link works for ${d.settings.linkDays || 7} days.`;
   return (
     <div className={"hr-cand" + (open ? " open" : "")}>
       <button type="button" data-plain className="hr-head" onClick={toggle}>
         <span className="hr-av">{c.name.split(" ").map((x) => x[0]).slice(0, 2).join("").toUpperCase()}</span>
-        <span className="hr-who"><b>{c.name}</b><small>{d.tracks[c.track]}{c.source === "apply" ? " · applied online" : ""}{next ? " · 🎥 " + when(next.at) : ""}</small></span>
+        <span className="hr-who"><b>{c.name}</b><small>{d.tracks[c.track]}{c.cvBrief ? " · " + c.cvBrief.headline : c.cv ? " · 📄 resume" : ""}{c.source === "apply" ? " · applied online" : ""}{next ? " · 🎥 " + when(next.at) : ""}</small></span>
         {r ? <span className={"hr-score " + (r.pass ? "pass" : "fail")}><b>{r.score}</b><small>/80 · {r.cefr}</small></span> : <span className="hr-score none"><small>no test yet</small></span>}
         <span className="hr-st" style={{ "--c": col }}>{s}</span>
         <ChevronDown size={16} className="cp-chev" />
@@ -122,11 +122,13 @@ function Cand({ c, d, open, toggle, link, act, say }) {
           </div>
           {c.notes && <p className="small" style={{ margin: 0 }}>{c.notes}</p>}
 
+          <ResumeBox c={c} say={say} />
+
           <div className="hr-box">
             <b><Link2 size={14} /> Test link</b>
             <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
               <button className="ghost sm" onClick={() => copy(link, say)}><Copy size={13} /> Copy link</button>
-              {c.phone && <a className="btn-link ghost sm" href={`https://wa.me/${waNum(c.phone)}?text=${encodeURIComponent(testMsg)}`} target="_blank" rel="noreferrer"><MessageCircle size={13} /> WhatsApp</a>}
+              {c.phone && <WaButton phone={c.phone} name={c.name} text={testMsg} label="Send on WhatsApp" />}
               {c.email && <a className="btn-link ghost sm" href={`mailto:${c.email}?subject=${encodeURIComponent((d.settings.company || "Modo") + " English test")}&body=${encodeURIComponent(testMsg)}`}><Mail size={13} /> Email</a>}
               <button className="ghost sm" onClick={() => act({ action: "update", id: c.id, patch: { newLink: true } }, "✓ New link made — the old one stops working")}><RefreshCw size={13} /> New link</button>
               {r && <button className="ghost sm" onClick={() => confirm("Delete their answers and let them take the test again?") && act({ action: "update", id: c.id, patch: { resetTest: true } }, "✓ Test reset")}><RefreshCw size={13} /> Retake</button>}
@@ -146,6 +148,49 @@ function Cand({ c, d, open, toggle, link, act, say }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ResumeBox({ c, say }) {
+  const [busy, setBusy] = useState(""); const [local, setLocal] = useState(null); const ref = useRef(null);
+  const b = local?.brief || c.cvBrief; const cv = local?.info || c.cv; const bErr = local ? local.err : c.cvBriefErr;
+  const upload = async (file) => {
+    if (!file) return; setBusy("up"); const fd = new FormData(); fd.set("id", c.id); fd.set("file", file);
+    const r = await fetch("/api/hiring/cv", { method: "POST", body: fd }).then(async (x) => ({ ok: x.ok, d: await x.json().catch(() => ({})) }));
+    setBusy(""); if (r.ok) { setLocal({ info: r.d.info, brief: r.d.brief, err: r.d.err }); say("✓ Resume saved" + (r.d.brief ? " and briefed" : "")); } else say(r.d.error);
+  };
+  const brief = async () => { setBusy("ai"); const r = await api("/api/hiring/cv", "POST", { id: c.id, action: "brief" }); setBusy(""); if (r.ok) setLocal({ info: cv, brief: r.data.brief, err: "" }); else say(r.data.error); };
+  return (
+    <div className="hr-box hr-cv">
+      <div className="row" style={{ justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+        <b><FileText size={14} /> Resume</b>
+        <span className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+          {cv && <a className="btn-link ghost sm" href={`/api/hiring/cv?id=${c.id}`} target="_blank" rel="noreferrer"><ExternalLink size={13} /> Open {cv.name?.split(".").pop()?.toUpperCase()}</a>}
+          {cv && <button className="ghost sm" disabled={!!busy} onClick={brief}>{busy === "ai" ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />} {b ? "Brief again" : "Brief it with AI"}</button>}
+          <input ref={ref} type="file" hidden accept=".pdf,.docx,.txt,.jpg,.jpeg,.png" onChange={(e) => upload(e.target.files?.[0])} />
+          <button className="ghost sm" disabled={!!busy} onClick={() => ref.current?.click()}>{busy === "up" ? <Loader2 size={13} className="spin" /> : <UploadCloud size={13} />} {cv ? "Replace" : "Upload resume"}</button>
+        </span>
+      </div>
+      {!cv && <small className="muted">No resume yet. Candidates can attach one when they apply or after their assessment, or upload it here.</small>}
+      {busy === "up" && <small className="muted">Reading the resume with Modo AI…</small>}
+      {b ? (
+        <div className="hr-brief">
+          <div className="hr-brief-top"><span className="hr-brief-ic"><Sparkles size={15} /></span><b>{b.headline}</b><span className="hr-fit" title={b.fitWhy}>{"★".repeat(b.fit)}<i>{"★".repeat(5 - b.fit)}</i></span></div>
+          <div className="hr-brief-grid">
+            {b.experience && <div><small>Experience</small><span>{b.experience}</span></div>}
+            {b.callCenter && <div><small>Call center</small><span>{b.callCenter}</span></div>}
+            {b.education && <div><small>Education</small><span>{b.education}</span></div>}
+            {b.languages && <div><small>Languages</small><span>{b.languages}</span></div>}
+          </div>
+          {!!b.skills?.length && <div className="hr-tags">{b.skills.map((x) => <em key={x}>{x}</em>)}</div>}
+          <div className="hr-pc">
+            {!!b.strengths?.length && <ul className="pro">{b.strengths.map((x) => <li key={x}>{x}</li>)}</ul>}
+            {!!b.concerns?.length && <ul className="con">{b.concerns.map((x) => <li key={x}>{x}</li>)}</ul>}
+          </div>
+          {b.fitWhy && <small className="muted">Fit: {b.fitWhy}</small>}
+        </div>
+      ) : cv && bErr ? <small className="hr-warn"><AlertTriangle size={13} /> {bErr}</small> : null}
     </div>
   );
 }
@@ -221,7 +266,7 @@ function Interviews({ c, d, act, say }) {
             {iv.status === "scheduled" && <span className="row" style={{ gap: 6, flexWrap: "wrap" }}>
               <a className="btn-link sm" href={iv.zoom?.startUrl || iv.zoom?.joinUrl} target="_blank" rel="noreferrer"><Video size={13} /> Start Zoom</a>
               <button className="ghost sm" onClick={() => copy(iv.invite, say)}><Copy size={13} /> Copy invite</button>
-              {c.phone && <a className="btn-link ghost sm" href={`https://wa.me/${waNum(c.phone)}?text=${encodeURIComponent(iv.invite)}`} target="_blank" rel="noreferrer"><MessageCircle size={13} /> WhatsApp</a>}
+              {c.phone && <WaButton phone={c.phone} name={c.name} text={iv.invite} label="Send invite" />}
               {c.email && <a className="btn-link ghost sm" href={`mailto:${c.email}?subject=${encodeURIComponent("Your interview with " + (s.company || "Modo"))}&body=${encodeURIComponent(iv.invite)}`}><Mail size={13} /> Email</a>}
               <a className="btn-link ghost sm" href={iv.cal} target="_blank" rel="noreferrer"><CalendarPlus size={13} /> Calendar</a>
             </span>}
@@ -234,12 +279,18 @@ function Interviews({ c, d, act, say }) {
             </>}
             <span className="hr-stars">{[1, 2, 3, 4, 5].map((n) => <button data-plain key={n} title={n + " stars"} className={(iv.rating || 0) >= n ? "on" : ""} onClick={() => act({ action: "interview", id: c.id, ivId: iv.id, patch: { rating: n } })}><Star size={15} /></button>)}</span>
           </div>
+          {iv.status === "scheduled" && !iv.zoom?.joinUrl && <LinkBox onSave={(link) => act({ action: "interview", id: c.id, ivId: iv.id, patch: { link } }, "✓ Zoom link added — send the invite again")} />}
           <NoteBox value={iv.notes || ""} onSave={(notes) => act({ action: "interview", id: c.id, ivId: iv.id, patch: { notes } }, "✓ Notes saved")} />
         </div>
       ))}
       {!list.length && <small className="muted">No interview yet.{c.result?.pass ? " They passed — they can also book one of your open interview times from their test page." : ""}</small>}
     </div>
   );
+}
+
+function LinkBox({ onSave }) {
+  const [v, setV] = useState("");
+  return <div className="cp-reply"><input value={v} onChange={(e) => setV(e.target.value)} placeholder="No Zoom link yet — paste it here (https://…zoom.us/j/…)" /><button className="sm" disabled={!v.trim()} onClick={() => onSave(v.trim())}><Video size={13} /> Add link</button></div>;
 }
 
 function NoteBox({ value, onSave }) {
@@ -296,7 +347,7 @@ function SettingsBox({ d, act, say, origin }) {
         <label>Test link works for (days)<input type="number" value={f.linkDays} onChange={set("linkDays")} /></label>
         <label className="sb-wide row" style={{ gap: 8, alignItems: "center" }}><input type="checkbox" style={{ width: "auto" }} checked={f.applyOpen} onChange={(e) => setF({ ...f, applyOpen: e.target.checked })} /> Public apply page is open ({origin}/apply)</label>
       </div>
-      <p className="muted small" style={{ margin: 0 }}>Score guide (Versant-style 20–80 ≈ CEFR): 30–46 A2 · 47–57 B1 · <b>58–68 B2</b> (good for US customer service) · 69–78 C1 · 79–80 C2. This is Modo's own test, so treat the score as a strong guide alongside the interview, not an official Versant result.</p>
+      <p className="muted small" style={{ margin: 0 }}>Modo Fluency Score guide (20–80 ≈ CEFR): 30–46 A2 · 47–57 B1 · <b>58–68 B2</b> (good for US customer service) · 69–78 C1 · 79–80 C2. Use it as a strong guide alongside the interview — it's Modo's own assessment, not an external certificate.</p>
       <h3 style={{ margin: "8px 0 0" }}><Video size={16} /> Zoom</h3>
       <div className="sb-form">
         <label className="sb-wide">Your Zoom meeting link (used for every interview)<input value={f.zoomLink} onChange={set("zoomLink")} placeholder="https://us05web.zoom.us/j/1234567890?pwd=…" /></label>

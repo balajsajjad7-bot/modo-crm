@@ -14,10 +14,10 @@ async function state(c, v, t) {
   const iv = (c.interviews || []).filter((x) => x.status === "scheduled" && new Date(x.at) > Date.now() - 3600000).sort((a, b) => new Date(a.at) - new Date(b.at))[0];
   const passed = !!c.result?.pass;
   return {
-    name: c.name.split(" ")[0], company: v.settings.company || "Modo", track: TRACKS[c.track], status: c.status,
+    hasCv: !!c.cv, name: c.name.split(" ")[0], company: v.settings.company || "Modo", track: TRACKS[c.track], status: c.status,
     expired: expired(c, t), started: !!t.startedAt, finished: done, startedAt: t.startedAt, limitMin: LIMIT_MIN,
     sections: SECTIONS, items: done ? [] : t.items.map(publicItem), answered: Object.keys(t.answers),
-    interview: iv ? { at: iv.at, mins: iv.mins, joinUrl: iv.zoom?.joinUrl, passcode: iv.zoom?.passcode || "", interviewer: iv.interviewer || "" } : null,
+    interview: iv ? { at: iv.at, mins: iv.mins, joinUrl: iv.zoom?.joinUrl || v.settings.zoomLink || "", passcode: iv.zoom?.passcode || "", interviewer: iv.interviewer || "" } : null,
     slots: done && passed && !iv ? openSlots(v).slice(0, 30).map((s) => ({ id: s.id, at: s.at })) : [],
   };
 }
@@ -64,6 +64,6 @@ export async function POST(req, { params }) {
     t.answers[it.id] = it.type.startsWith("choice") ? { choice: parseInt(b.choice, 10) } : { text: String(b.text || "").slice(0, 6000), secs: Number(b.secs) || null };
     await saveTest(c, t); return NextResponse.json({ ok: true });
   }
-  if (b.action === "finish") { await finishTest(c, t); return NextResponse.json(await state(c, r.v, t)); }
+  if (b.action === "finish") { await finishTest(c, t); const fresh = await byToken(params.token); return NextResponse.json(await state(fresh.c, fresh.v, t)); }
   return NextResponse.json({ error: "Unknown action." }, { status: 400 });
 }

@@ -44,7 +44,7 @@ export default function AdminLayout({ children }) {
       { href: "/admin/notepads", label: "Agent notepads", hint: "Every agent's personal notepad, read-only", icon: i(NotebookPen) },
       { href: "/admin/agents", label: "Agents", hint: "Add, edit, call and manage agents", icon: i(Users) },
       { href: "/admin/subscriptions", label: "Subscriptions", hint: "Sell Modo: plans, customers, activate / cancel / change plan, agents' plans", icon: i(CreditCard) },
-      { href: "/admin/hiring", label: "Hiring & interviews", hint: "Candidates, English fluency test (Versant-style), interview times and Zoom interviews", icon: i(UserPlus) },
+      { href: "/admin/hiring", label: "Hiring & interviews", hint: "Candidates, Modo English Assessment, interview times and Zoom interviews", icon: i(UserPlus) },
       { href: "/admin/remote", label: "Remote control", hint: "See every agent's Modo live: message, lock, sign out, open a page", icon: i(MonitorSmartphone) },
       { href: "/admin/shifts", label: "Shifts", hint: "Edit everyone's shift times; automatic clock-out at shift end", icon: i(CalendarClock) },
       { href: "/admin/breaks", label: "Break report", hint: "Every break, per agent per day", icon: i(Coffee) },
