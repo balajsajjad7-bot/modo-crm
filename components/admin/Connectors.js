@@ -1,6 +1,7 @@
 "use client";
 // Admin → Connectors: plug Modo into other tools.
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "./api";
 import { Plug, Plus, Trash2, Zap, X, Save, PlugZap } from "lucide-react";
 
@@ -89,8 +90,15 @@ function Editor({ title, value, types, events, onClose, onSave }) {
   const t = types[v.type];
   const setCfg = (k, x) => setV({ ...v, config: { ...v.config, [k]: x } });
   const toggleEv = (e) => setV({ ...v, events: v.events.includes(e) ? v.events.filter((x) => x !== e) : [...v.events, e] });
-  return (
-    <section className="panel stack" style={{ borderColor: "var(--accent)" }}>
+  // Opens as a card on top of the page (no scrolling down to find the form). Esc or tapping outside closes it.
+  useEffect(() => {
+    const k = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", k); const o = document.body.style.overflow; document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", k); document.body.style.overflow = o; };
+  }, []); // eslint-disable-line
+  return createPortal(
+    <div className="cx-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <section className="panel stack cx-modal" role="dialog" aria-modal="true" aria-label={title}>
       <div className="row" style={{ justifyContent: "space-between" }}><h2><Plug size={17} /> {title}</h2><button className="ghost icon-btn" aria-label="Close" onClick={onClose}><X size={16} /></button></div>
       <p className="muted small" style={{ margin: 0 }}>{t.hint}</p>
       <div className="form">
@@ -152,5 +160,5 @@ function Editor({ title, value, types, events, onClose, onSave }) {
       {err && <div className="err">{err}</div>}
       <div className="row"><button onClick={async () => { setErr(""); const e = await onSave(v); if (e) setErr(e); }}><Save size={15} /> Save</button><button className="ghost" onClick={onClose}>Cancel</button></div>
     </section>
-  );
+    </div>, document.body);
 }
