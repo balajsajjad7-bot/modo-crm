@@ -17,6 +17,25 @@ const hour = (t) => new Date(t).toLocaleTimeString(undefined, { hour: "numeric",
 const inAppBrowser = () => typeof navigator !== "undefined" && /WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|TikTok|; wv\)/i.test(navigator.userAgent || "");
 const isAndroid = () => typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent || "");
 
+// One audio player for the whole test. "Unlocked" on the first tap, so phones then allow it to play later.
+let player = null;
+const getPlayer = () => (player ||= typeof Audio !== "undefined" ? new Audio() : null);
+let unlocked = false;
+function unlockAudio() {
+  const a = getPlayer(); if (!a || unlocked) return; unlocked = true;
+  try { a.muted = true; a.src = "/audio/et/sample.mp3"; const p = a.play(); if (p) p.then(() => { a.pause(); a.muted = false; a.currentTime = 0; }).catch(() => { a.muted = false; }); } catch {}
+}
+// Play a recorded clip → resolves true when it starts, false if the browser refused.
+function playClip(url, onEnd) {
+  const a = getPlayer(); if (!a) return Promise.resolve(false);
+  try { a.pause(); } catch {}
+  a.muted = false; a.src = url; a.currentTime = 0;
+  a.onended = onEnd; a.onerror = onEnd;
+  unlocked = true;
+  return a.play().then(() => true).catch(() => false);
+}
+const stopClip = () => { try { player?.pause(); } catch {} };
+
 function speak(text, onEnd) {
   try {
     const s = window.speechSynthesis; if (!s) return false;
@@ -105,7 +124,7 @@ export default function TestPage({ params }) {
     setSecIdx(n); setItemIdx(Math.max(0, firstOpen(n))); setPhase("section");
   };
   const finish = async () => {
-    setPhase("submitting"); try { window.speechSynthesis?.cancel(); } catch {}
+    setPhase("submitting"); stopClip(); try { window.speechSynthesis?.cancel(); } catch {}
     await queue.current;
     const r = await call({ action: "finish" });
     try { stream.current?.getTracks().forEach((t) => t.stop()); } catch {}
@@ -113,6 +132,7 @@ export default function TestPage({ params }) {
     setPhase("done");
   };
   const begin = async () => {
+    unlockAudio();
     const r = await call({ action: "start" }); if (!r.ok) return setErr(r.d.error);
     let n = 0; while (n < sections.length && firstOpen(n) < 0) n++;
     if (n >= sections.length) return finish();
@@ -150,7 +170,7 @@ export default function TestPage({ params }) {
               <h2>{sec.title}</h2>
               <p>{sec.help}</p>
               <div className="et-meta"><span><Clock3 size={14} /> {sec.mins} min</span><span><Sparkles size={14} /> {items.length} question{items.length > 1 ? "s" : ""}</span></div>
-              <button data-plain className="et-btn" onClick={() => { setSecLeft(sec.mins * 60); setPhase("item"); }}>Start this part <ArrowRight size={16} /></button>
+              <button data-plain className="et-btn" onClick={() => { unlockAudio(); setSecLeft(sec.mins * 60); setPhase("item"); }}>Start this part <ArrowRight size={16} /></button>
             </div>
           )}
           {phase === "item" && item && <Item key={item.id} it={item} n={itemIdx + 1} of={items.length} stream={stream} onJson={sendJson} onAudio={sendAudio} onPaste={() => call({ action: "event", kind: "paste" })} />}
@@ -191,7 +211,9 @@ function Intro({ st, stream, onStart }) {
   const [mic, setMic] = useState("idle"); const [snd, setSnd] = useState("idle");
   const inApp = inAppBrowser();
   const canMic = typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof window !== "undefined" && !!window.MediaRecorder;
-  const canTts = typeof window !== "undefined" && !!window.speechSynthesis;
+  const canTts = true; // recorded clips play in every modern browser
+  const [sndErr, setSndErr] = useState("");
+  const testSound = async () => { setSndErr(""); const ok = await playClip("/audio/et/sample.mp3", () => {}); if (ok) setSnd("ok"); else setSndErr("Couldn't play sound. Turn the volume up, check silent mode, then tap again."); };
   const checkMic = async () => {
     if (!canMic) return setMic("unsupported");
     try { stream.current = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); setMic("ok"); } catch { setMic("no"); }
@@ -225,8 +247,8 @@ function Intro({ st, stream, onStart }) {
           </div>
           <div className={"et-chk " + (snd === "ok" ? "ok" : !canTts ? "bad" : "")}>
             <span className="et-chk-ic"><Volume2 size={18} /></span>
-            <div><b>Speaker / headset</b><small>{!canTts ? "This browser can't play the test voice. Use Google Chrome." : snd === "ok" ? "Great — you heard it." : "Play the sample and make sure you can hear it clearly."}</small></div>
-            {canTts && <button data-plain className="et-btn ghost sm" onClick={() => { speak("Hello! If you can hear this clearly, your sound is working."); setSnd("ok"); }}><Play size={14} /> Play sample</button>}
+            <div><b>Speaker / headset</b><small>{sndErr || (snd === "ok" ? "Playing — you should hear a voice now. Didn't hear it? Turn the volume up and play again." : "Turn your volume up, play the sample and make sure you hear it clearly.")}</small></div>
+            {canTts && <button data-plain className="et-btn ghost sm" onClick={testSound}><Play size={14} /> Play sample</button>}
           </div>
           <div className={"et-chk " + (inApp ? "bad" : "ok")}>
             <span className="et-chk-ic"><Chrome size={18} /></span>
@@ -260,8 +282,19 @@ function Item({ it, n, of, stream, onJson, onAudio, onPaste }) {
   const [choice, setChoice] = useState(null); const [text, setText] = useState(""); const tStart = useRef(Date.now());
   const maxSecs = it.type === "speak-open" ? it.secs : it.type === "speak-text" ? 25 : 15;
   const R = useRecorder(stream, maxSecs);
-  const play = () => { if (plays >= 2 || playing) return; setPlaying(true); setPlays((p) => p + 1); if (!speak(it.type === "choice-audio" ? it.audio : it.text, () => setPlaying(false))) setPlaying(false); };
-  useEffect(() => { if (it.type === "speak-audio" || it.type === "choice-audio" || it.type === "type-audio") setTimeout(play, 700); return () => { try { window.speechSynthesis?.cancel(); } catch {} }; }, []); // eslint-disable-line
+  const [audioErr, setAudioErr] = useState("");
+  // A play only counts once sound actually starts (if the phone blocks auto-play, the candidate just taps play).
+  const play = async (auto) => {
+    if (plays >= 2 || playing) return; setAudioErr("");
+    if (it.clip) {
+      setPlaying(true);
+      const ok = await playClip(it.clip, () => setPlaying(false));
+      if (ok) setPlays((p) => p + 1); else { setPlaying(false); if (!auto) setAudioErr("Couldn't play the audio. Turn the volume up and tap play again."); }
+      return;
+    }
+    setPlaying(true); setPlays((p) => p + 1); if (!speak(it.type === "choice-audio" ? it.audio : it.text, () => setPlaying(false))) setPlaying(false);
+  };
+  useEffect(() => { if (it.type === "speak-audio" || it.type === "choice-audio" || it.type === "type-audio") setTimeout(() => play(true), 600); return () => { stopClip(); try { window.speechSynthesis?.cancel(); } catch {} }; }, []); // eslint-disable-line
   const isChoice = it.type === "choice" || it.type === "choice-audio";
   useEffect(() => {
     if (!isChoice) return;
@@ -286,8 +319,8 @@ function Item({ it, n, of, stream, onJson, onAudio, onPaste }) {
       <div className="et-qhead"><span className="et-qn">Question {n} of {of}</span><span className="et-dots">{Array.from({ length: of }, (_, i) => <i key={i} className={i < n - 1 ? "d" : i === n - 1 ? "c" : ""} />)}</span></div>
       {needsAudio && (
         <div className="et-play">
-          <button data-plain className={"et-orb" + (playing ? " on" : "")} onClick={play} disabled={plays >= 2 || playing} aria-label="Play">{playing ? <Volume2 size={26} /> : <Play size={26} />}<i /><i /></button>
-          <div><b>{playing ? "Listen carefully…" : plays >= 2 ? "No more replays" : plays ? "Play once more" : "Press play"}</b><small>{2 - plays} play{2 - plays === 1 ? "" : "s"} left</small></div>
+          <button data-plain className={"et-orb" + (playing ? " on" : "")} onClick={() => play(false)} disabled={plays >= 2 || playing} aria-label="Play">{playing ? <Volume2 size={26} /> : <Play size={26} />}<i /><i /></button>
+          <div><b>{playing ? "Listen carefully…" : plays >= 2 ? "No more replays" : plays ? "Play once more" : "Tap play to listen"}</b><small>{audioErr ? <span className="et-err">{audioErr}</span> : `${2 - plays} play${2 - plays === 1 ? "" : "s"} left`}</small></div>
         </div>
       )}
       {it.type === "speak-text" && <><p className="et-mute">Read this out loud, clearly and at a natural pace:</p><blockquote className="et-read">{it.text}</blockquote>{recBox}</>}

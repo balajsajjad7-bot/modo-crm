@@ -8,5 +8,6 @@
       "path": "/api/sales/ups-bot",
       "schedule": "0 14 * * *"
     }
-  ]
+  ],
+  "ignoreCommand": "if echo \"$VERCEL_URL\" | grep -q '^modo-crm-'; then echo 'Old duplicate Vercel project (modo-crm) - skipping. The live site is modo-crm1.'; exit 0; else exit 1; fi"
 }
