@@ -2,7 +2,7 @@
 // Admin → Subscriptions: sell Modo. Plans (Free → Starter → Next → Enterprise) with editable prices,
 // customers (activate / pause / cancel / change plan / renew), your own agents' plans, and the change history.
 import { useEffect, useState } from "react";
-import { CreditCard, Plus, Check, Pause, X, RotateCcw, Trash2, Save, Users, TrendingUp, Clock3, Sparkles, Crown, Rocket, Gift, ExternalLink, History } from "lucide-react";
+import { CreditCard, Plus, Check, Pause, X, RotateCcw, Trash2, Save, Users, TrendingUp, Clock3, Sparkles, Crown, Rocket, Gift, ExternalLink, History, Building2, KeyRound, Copy, Loader2 } from "lucide-react";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const money = (n) => "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -14,6 +14,7 @@ const BLANK = { company: "", contact: "", email: "", phone: "", plan: "starter",
 
 export default function Subscriptions() {
   const [d, setD] = useState(null); const [tab, setTab] = useState("customers"); const [msg, setMsg] = useState("");
+  const [newWs, setNewWs] = useState(null); const [making, setMaking] = useState("");
   const [form, setForm] = useState(null); const [plans, setPlans] = useState(null); const [filter, setFilter] = useState("all");
   const load = () => api("/api/subs").then((r) => { if (r.ok) { setD(r.data); setPlans((p) => p || r.data.plans); } else setMsg(r.data.error || "Couldn't load."); });
   useEffect(() => { load(); }, []);
@@ -42,6 +43,14 @@ export default function Subscriptions() {
         <a className="sb-link" href="/welcome" target="_blank" rel="noreferrer"><ExternalLink size={13} /> Public page</a>
       </div>
       {msg && <div className="small muted">{msg}</div>}
+      {newWs && (
+        <div className="panel stack sb-newws">
+          <h2><Building2 size={17} /> Workspace created for {newWs.company}: <code>{newWs.org}</code></h2>
+          <p className="small muted" style={{ margin: 0 }}>Send these to the customer now — passwords can't be shown again (their admin can reset them later in their Modo).</p>
+          <pre className="sb-creds">{`Sign in: ${typeof location !== "undefined" ? location.origin : ""}${newWs.loginPath}\nWorkspace: ${newWs.org}\n\n` + newWs.users.map((u) => `${u.role === "ADMIN" ? "Admin" : u.name}  ID: ${u.id}  Password: ${u.password}`).join("\n")}</pre>
+          <div className="row" style={{ gap: 6 }}><button onClick={() => navigator.clipboard?.writeText(document.querySelector(".sb-creds")?.textContent || "").then(() => say("✓ Copied"))}><Copy size={14} /> Copy</button><button className="ghost" onClick={() => setNewWs(null)}>Done</button></div>
+        </div>
+      )}
 
       {tab === "customers" && (
         <section className="panel stack">
@@ -59,11 +68,12 @@ export default function Subscriptions() {
               return (
                 <div key={s.id} className={"sb-row st-" + s.status}>
                   <span className="gt gt-sm" style={tone(s.plan)}><I size={17} /></span>
-                  <span className="sb-who"><b>{s.company || "—"}</b><small>{[s.contact, s.email, s.phone].filter(Boolean).join(" · ") || "no contact"}{s.source === "website" ? " · from website" : ""}</small></span>
+                  <span className="sb-who"><b>{s.company || "—"}{s.workspace && <span className={"sb-ws " + (d.tenants?.[s.workspace]?.status || "")} title="Their own Modo workspace"><Building2 size={11} /> {s.workspace}</span>}</b><small>{[s.contact, s.email, s.phone].filter(Boolean).join(" · ") || "no contact"}{s.source === "website" ? " · from website" : ""}</small></span>
                   <span className="sb-plan"><b>{p?.name || s.plan}</b><small>{s.seats || 1} user(s) · {money(each * (s.seats || 1))}/mo{s.price != null ? " (custom)" : ""}</small></span>
                   <span className={"sb-st " + s.status}>{s.status}</span>
                   <span className="sb-dates small muted">{s.status === "cancelled" ? "Cancelled " + day(s.cancelledAt) : s.renewsAt ? "Renews " + day(s.renewsAt) : "Since " + day(s.createdAt)}</span>
                   <span className="sb-acts">
+                    {!s.workspace && s.status !== "cancelled" && d.canProvision && <button className="sm" disabled={!!making} onClick={async () => { setMaking(s.id); const r = await api("/api/subs", "POST", { action: "provision", id: s.id }); setMaking(""); if (r.ok) { setNewWs({ ...r.data.workspace, company: s.company }); load(); } else say(r.data.error); }}>{making === s.id ? <Loader2 size={13} className="spin" /> : <Building2 size={13} />} Create workspace</button>}
                     {s.status !== "active" && <button className="sm" onClick={() => save({ id: s.id, status: "active" })}><Check size={13} /> Activate</button>}
                     {s.status === "active" && <button className="ghost sm" onClick={() => save({ id: s.id, status: "paused" })}><Pause size={13} /> Pause</button>}
                     {s.status === "active" && <button className="ghost sm" onClick={() => { const r = new Date(s.renewsAt || Date.now()); r.setMonth(r.getMonth() + 1); save({ id: s.id, renewsAt: r.toISOString() }); }}><RotateCcw size={13} /> +1 month</button>}
@@ -76,7 +86,8 @@ export default function Subscriptions() {
             })}
             {!shown.length && <p className="muted small">No subscriptions here yet. Press “Give a subscription”, or share your public page — requests land here as “pending”.</p>}
           </div>
-          <p className="muted small" style={{ margin: 0 }}>Modo doesn't charge cards: collect payment your usual way (bank, Payoneer, invoice), then press Activate. Renewal dates remind you when to bill.</p>
+          {!d.canProvision && <p className="sb-note"><KeyRound size={14} /> <span><b>Instant workspaces are off.</b> Add <code>NEON_API_KEY</code> in Vercel → Settings → Environment Variables (Neon → Account settings → API keys), then redeploy. After that, every sign-up gets its own Modo and logins on screen.</span></p>}
+          <p className="muted small" style={{ margin: 0 }}>Each company with a workspace has its own separate Modo and database. Pause or Cancel stops their logins; Activate opens them again. Modo doesn't charge cards: collect payment your usual way (bank, Payoneer, invoice), then press Activate. Renewal dates remind you when to bill.</p>
         </section>
       )}
 

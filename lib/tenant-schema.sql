@@ -1,0 +1,1 @@
+-- Generated at build time by scripts/tenant-schema.js (Modo's tables for new company workspaces).

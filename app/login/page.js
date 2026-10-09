@@ -13,6 +13,9 @@ export default function Login() {
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("creds"); const [ticket, setTicket] = useState(""); const [code, setCode] = useState(""); const [enroll, setEnroll] = useState(null);
   const [lock, setLock] = useState(null); const codeRef = useRef(null);
+  // Company workspace (their own Modo). Empty = the main Modo. Comes from ?w= in the sign-in link, then remembered.
+  const [ws, setWs] = useState(""); const [wsOpen, setWsOpen] = useState(false);
+  useEffect(() => { let w = ""; try { w = new URLSearchParams(location.search).get("w") || localStorage.getItem("modo-ws") || ""; } catch {} w = w.toLowerCase().replace(/[^a-z0-9]/g, ""); if (w) { setWs(w); setWsOpen(true); } }, []);
   useEffect(() => { fetch("/api/status").then((r) => r.json()).then((d) => d.lockdown && setLock(d.message || "Modo is paused by admin.")).catch(() => {}); }, []);
   useEffect(() => { if (step !== "creds") setTimeout(() => codeRef.current?.focus(), 50); }, [step]);
   const go = (role) => { location.href = role === "ADMIN" ? "/admin" : "/agent"; };
@@ -29,7 +32,9 @@ export default function Login() {
   }
   async function signIn(e) {
     e.preventDefault();
-    const d = await post("/api/auth/login", { agentId, password }); if (!d) return;
+    const w = ws.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    const d = await post("/api/auth/login", { agentId, password, ...(w ? { workspace: w } : {}) }); if (!d) return;
+    try { if (w) localStorage.setItem("modo-ws", w); else localStorage.removeItem("modo-ws"); } catch {}
     if (d.step === "otp") { setTicket(d.ticket); setStep("otp"); return; }
     if (d.step === "enroll") { setTicket(d.ticket); setEnroll({ secret: d.secret, svg: await QRCode.toString(d.uri, { type: "svg", margin: 1, color: { dark: "#07080a", light: "#ffffff" } }) }); setStep("enroll"); return; }
     go(d.role);
@@ -54,7 +59,12 @@ export default function Login() {
           <form className="stack" onSubmit={signIn}>
             <h2 className="ova-welcome">Welcome back</h2>
             <p className="muted small" style={{ margin: 0 }}>Signing in starts your shift. Your time is recorded from this moment.</p>
-            <label>Agent ID<input value={agentId} onChange={(e) => setId(e.target.value.toUpperCase())} autoComplete="username" required /></label>
+            {wsOpen ? (
+              <label>Company workspace<span className="login-ws"><input value={ws} onChange={(e) => setWs(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ""))} placeholder="e.g. acmecalls" autoCapitalize="off" autoCorrect="off" spellCheck={false} /><button type="button" className="ghost sm" onClick={() => { setWs(""); setWsOpen(false); }}>Clear</button></span></label>
+            ) : (
+              <button type="button" className="ghost sm login-ws-link" onClick={() => setWsOpen(true)}>Signing in to your company's workspace?</button>
+            )}
+            <label>{ws ? "ID" : "Agent ID"}<input value={agentId} onChange={(e) => setId(e.target.value.toUpperCase())} autoComplete="username" required /></label>
             <label>Password<input type="password" value={password} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" required /></label>
             {err && <div className="err">{err}</div>}
             <button disabled={busy}><KeyRound size={15} /> {busy ? "Signing in…" : "Sign in"}</button>

@@ -9,5 +9,5 @@ export async function GET() {
   let supAccess = []; try { supAccess = JSON.parse(u?.supAccess || "[]"); } catch {}
   let dialerOn = true; try { const dc = JSON.parse((await db.setting.findUnique({ where: { id: "global" }, select: { dialer: true } }))?.dialer || "{}"); dialerOn = dc.provider !== "off" && dc.agentsSeeDialer !== false; } catch {}
   const camp = u?.campaignId ? await db.campaign.findUnique({ where: { id: u.campaignId }, select: { name: true } }).catch(() => null) : null;
-  return NextResponse.json({ uid: s.uid, role: s.role, name: s.name, agentId: s.agentId, perms: await permsFor(s), status: u?.status || "available", departmentId: u?.departmentId, campaignId: u?.campaignId, campaignName: camp?.name || null, budgetEase: /budget\s*ease/i.test(camp?.name || ""), dialerOn, desktop: false, twoStep: !!u?.totpEnabled, ceo: !!u?.ceo, secureLine: !!u?.secureLine, supAccess });
+  return NextResponse.json({ uid: s.uid, role: s.role, name: s.name, agentId: s.agentId, perms: await permsFor(s), status: u?.status || "available", departmentId: u?.departmentId, campaignId: u?.campaignId, campaignName: camp?.name || null, budgetEase: /budget\s*ease/i.test(camp?.name || ""), dialerOn, desktop: false, twoStep: !!u?.totpEnabled, ceo: !!u?.ceo, secureLine: !!u?.secureLine, supAccess, workspace: s.org || null });
 }

@@ -10,7 +10,7 @@
     "seed": "node scripts/seed.js",
     "postinstall": "prisma generate",
     "migrate": "node scripts/migrate.js",
-    "vercel-build": "node scripts/migrate.js && prisma generate && next build"
+    "vercel-build": "node scripts/migrate.js && prisma generate && node scripts/tenant-schema.js && next build"
   },
   "dependencies": {
     "@neondatabase/serverless": "0.9.5",

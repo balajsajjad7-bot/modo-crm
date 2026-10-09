@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
+import { db, runAsOrg, validOrg } from "@/lib/db";
 import { signTicket } from "@/lib/session";
 import { clientIp } from "@/lib/auth";
 import { getSettings, ipAllowed } from "@/lib/settings";
@@ -17,12 +17,23 @@ import { isBlocked, failed, cleared, waitText } from "@/lib/throttle";
 const BAD = { error: "Agent ID or password is wrong." };
 
 export async function POST(req) {
-  try { return await login(req); }
+  try {
+    const body = await req.json().catch(() => ({}));
+    // A company workspace (their own Modo) or "" for yours.
+    const ws = String(body.workspace || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (ws) {
+      if (!validOrg(ws)) return NextResponse.json({ error: "That workspace name isn't right. Check it on the screen where you signed up." }, { status: 400 });
+      const { tenantState } = await import("@/lib/tenants");
+      const st = await tenantState(ws);
+      if (!st.ok) return NextResponse.json({ error: st.why }, { status: 403 });
+      return await runAsOrg(ws, () => login(body, ws));
+    }
+    return await login(body, "");
+  }
   catch (e) { console.error("Login failed:", e); return NextResponse.json({ error: friendlyError(e) }, { status: 500 }); }
 }
 
-async function login(req) {
-  const body = await req.json();
+async function login(body, ws) {
   const id = String(body.agentId || "").trim().toUpperCase().slice(0, 40);
   const pw = typeof body.password === "string" ? body.password.slice(0, 200) : "";
   const ip = clientIp() || "unknown";
@@ -45,9 +56,9 @@ async function login(req) {
     if (!ipAllowed(settings, clientIp())) return NextResponse.json({ error: "Sign in from the office network. This connection isn't on the allowed list." }, { status: 403 });
   }
   if (needs2fa(settings, user)) {
-    if (user.totpEnabled && user.totpSecret) return NextResponse.json({ step: "otp", ticket: await signTicket({ uid: user.id }) });
+    if (user.totpEnabled && user.totpSecret) return NextResponse.json({ step: "otp", ticket: await signTicket({ uid: user.id, ...(ws ? { org: ws } : {}) }) });
     const secret = newSecret(); // first time: set up the authenticator app
-    return NextResponse.json({ step: "enroll", ticket: await signTicket({ uid: user.id, s: enc(secret) }), secret, uri: otpauth(secret, `${user.name} (${user.agentId})`) });
+    return NextResponse.json({ step: "enroll", ticket: await signTicket({ uid: user.id, s: enc(secret), ...(ws ? { org: ws } : {}) }), secret, uri: otpauth(secret, `${user.name} (${user.agentId})`) });
   }
   return finishLogin(user, body);
 }

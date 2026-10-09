@@ -12,9 +12,16 @@ function flooded(key, limit) {
 }
 const ipOf = (req) => (req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "?";
 
+const ORG_HEADER = "x-modo-org";
+const validOrg = (o) => /^[a-z0-9]{3,24}$/.test(String(o || ""));
+
 export async function middleware(req) {
   const s = await readSession(req.cookies.get(COOKIE)?.value);
   const p = req.nextUrl.pathname;
+  // Which company's database this request uses: ONLY from the signed session — any header a visitor sends is dropped.
+  const fwd = new Headers(req.headers); fwd.delete(ORG_HEADER);
+  if (s?.org && validOrg(s.org)) fwd.set(ORG_HEADER, s.org);
+  const pass = () => NextResponse.next({ request: { headers: fwd } });
   if (p.startsWith("/api")) {
     if (flooded(s ? "u:" + s.uid : "ip:" + ipOf(req), s ? 900 : 600)) return NextResponse.json({ error: "Too many requests — slow down." }, { status: 429, headers: { "retry-after": "60" } });
     // Cross-site request forgery: a signed-in browser may only change things from Modo's own pages.
@@ -30,11 +37,11 @@ export async function middleware(req) {
   if (p.startsWith("/api") && s?.role === "SUPERVISOR") {
     const writing = !["GET", "HEAD", "OPTIONS"].includes(req.method);
     if (writing && p !== "/api/auth/logout") return NextResponse.json({ error: "View-only: supervisors can monitor but not change anything." }, { status: 403 });
-    return NextResponse.next();
+    return pass();
   }
-  if (p.startsWith("/api")) return NextResponse.next();
+  if (p.startsWith("/api")) return pass();
   // Home (landing) and sign-in: someone already signed in goes straight into their Modo.
-  if (p === "/" || p === "/login") return s ? NextResponse.redirect(new URL(s.role === "AGENT" ? "/agent" : "/admin", req.url)) : NextResponse.next();
+  if (p === "/" || p === "/login") return s ? NextResponse.redirect(new URL(s.role === "AGENT" ? "/agent" : "/admin", req.url)) : pass();
   if (p.startsWith("/kiosk") && s?.role !== "ADMIN") return NextResponse.redirect(new URL(s ? "/agent" : "/login", req.url));
   // A link meant for the other side (e.g. a notification) lands on the matching page for this person.
   if (p.startsWith("/admin") && s?.role !== "ADMIN" && s?.role !== "SUPERVISOR") return NextResponse.redirect(new URL(s?.role === "AGENT" ? (p.startsWith("/admin/chat") ? "/agent/chat" : "/agent") : "/login", req.url));
@@ -48,11 +55,11 @@ export async function middleware(req) {
     const allowed = Array.isArray(s.sup) ? s.sup : [];
     if (key && !allowed.includes(key)) return NextResponse.redirect(new URL("/admin", req.url));
   }
-  const res = NextResponse.next();
+  const res = pass();
   // Sliding session: while someone's active, keep pushing the expiry out so they never get logged out mid-use.
   if (s && s.exp && (s.exp * 1000 - Date.now()) < 25 * 24 * 3600 * 1000) {
     try {
-      const token = await signSession({ uid: s.uid, role: s.role, name: s.name, agentId: s.agentId, ...(s.sup ? { sup: s.sup } : {}) });
+      const token = await signSession({ uid: s.uid, role: s.role, name: s.name, agentId: s.agentId, ...(s.sup ? { sup: s.sup } : {}), ...(s.org ? { org: s.org } : {}) });
       res.cookies.set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: SESSION_MAX });
     } catch {}
   }

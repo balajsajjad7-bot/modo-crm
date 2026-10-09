@@ -88,10 +88,12 @@ export default function AdminLayout({ children }) {
   // A supervisor only sees the sections the admin granted (Overview always; items with no section, like
   // Windows app / Install / Updates, are treated as general and kept).
   let shownNav = nav;
+  // Inside a customer's own workspace, your Modo-selling tools aren't shown.
+  if (me?.workspace) shownNav = shownNav.map((it) => (it.children ? { ...it, children: it.children.filter((c) => c.href !== "/admin/subscriptions" && c.href !== "/admin/hiring") } : it));
   if (me?.role === "SUPERVISOR") {
     const allowed = Array.isArray(me.supAccess) ? me.supAccess : [];
     const ok = (href) => { if (!href || href === "/admin") return true; const k = sectionForPath(href); return !k || allowed.includes(k); };
-    shownNav = nav.map((it) => it.children ? (() => { const kids = it.children.filter((c) => ok(c.href)); return kids.length ? { ...it, children: kids } : null; })() : (ok(it.href) ? it : null)).filter(Boolean);
+    shownNav = shownNav.map((it) => it.children ? (() => { const kids = it.children.filter((c) => ok(c.href)); return kids.length ? { ...it, children: kids } : null; })() : (ok(it.href) ? it : null)).filter(Boolean);
   }
   const signOut = async (leaveCall) => { await leaveCall(); await fetch("/api/auth/logout", { method: "POST" }); location.href = "/login"; };
   return <Shell nav={shownNav} home="/admin" onSignOut={signOut}>

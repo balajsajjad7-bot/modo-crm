@@ -17,7 +17,7 @@ module.exports = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ["ogl"],
-  experimental: { serverComponentsExternalPackages: ["ws", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/client", "nodemailer", "undici", "web-push", "unpdf", "mammoth"] },
+  experimental: { serverComponentsExternalPackages: ["ws", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/client", "nodemailer", "undici", "web-push", "unpdf", "mammoth"], outputFileTracingIncludes: { "/api/subs/public": ["./lib/tenant-schema.sql"], "/api/subs": ["./lib/tenant-schema.sql"] } },
   async headers() { return [{ source: "/:path*", headers: security }]; },
   // Android app (TWA/Play Store) verification: serve Digital Asset Links at the well-known path.
   async rewrites() { return [{ source: "/.well-known/assetlinks.json", destination: "/api/assetlinks" }]; },

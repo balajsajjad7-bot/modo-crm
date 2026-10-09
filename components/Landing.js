@@ -2,7 +2,7 @@
 // Public landing page: what Modo is, plans & prices (live from Admin → Subscriptions), and a "Get started"
 // form that lands in Subscriptions as a pending request. No sign-in needed.
 import { useEffect, useRef, useState } from "react";
-import { PhoneCall, Headphones, Sparkles, MessageSquare, Fingerprint, Wallet, BarChart3, ShieldCheck, Bot, MonitorSmartphone, GraduationCap, CheckCircle2, ArrowRight, Gift, Rocket, Crown, Check, LogIn, Lock, Zap, Globe2, Sun, Moon, SunMoon, Square, UserPlus, Video, MessageSquareWarning, PenLine, NotebookPen } from "lucide-react";
+import { PhoneCall, Headphones, Sparkles, MessageSquare, Fingerprint, Wallet, BarChart3, ShieldCheck, Bot, MonitorSmartphone, GraduationCap, CheckCircle2, ArrowRight, Gift, Rocket, Crown, Check, LogIn, Lock, Zap, Globe2, Sun, Moon, SunMoon, Square, Copy, Download, UserPlus, Video, MessageSquareWarning, PenLine, NotebookPen } from "lucide-react";
 import ModoLogo from "@/components/ModoLogo";
 import { useAppearance } from "@/components/Appearance";
 import LoginAura from "@/components/LoginAura";
@@ -43,10 +43,44 @@ const FAQ = [
   ["Do agents need to install anything?", "No. Modo runs in the browser, as a Windows app or on a phone. Agents sign in and their shift starts."],
 ];
 
+// Logins for a brand-new workspace: shown ONCE (only the scrambled passwords are kept), so the person copies them.
+function Creds({ c }) {
+  const [copied, setCopied] = useState(""); const [saved, setSaved] = useState(false);
+  const origin = typeof location !== "undefined" ? location.origin : "";
+  const link = origin + c.loginPath;
+  const text = `Modo workspace: ${c.org}\nSign in: ${link}\n\n` + c.users.map((u) => `${u.role === "ADMIN" ? "Admin" : u.name}  ·  ID: ${u.id}  ·  Password: ${u.password}`).join("\n") + `\n\nOn the sign-in page, enter the workspace "${c.org}", then the ID and password.`;
+  const copy = (t, k) => navigator.clipboard?.writeText(t).then(() => { setCopied(k); setTimeout(() => setCopied(""), 1600); });
+  const download = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" })); a.download = `modo-${c.org}-logins.txt`; a.click(); };
+  useEffect(() => { const w = (e) => { if (!saved) { e.preventDefault(); e.returnValue = ""; } }; window.addEventListener("beforeunload", w); return () => window.removeEventListener("beforeunload", w); }, [saved]);
+  return (
+    <div className="wl-creds">
+      <div className="wl-creds-head"><span className="gt" style={{ "--g1": "#34d399", "--g2": "#059669", width: 48, height: 48, borderRadius: 15 }}><Check size={24} /></span>
+        <div><h3>Your Modo is ready!</h3><p>{c.trialEnds ? `Free trial until ${new Date(c.trialEnds).toDateString()}.` : "Free plan — yours to keep."} <b>Copy these logins now</b> — for security we can't show the passwords again.</p></div></div>
+      <div className="wl-ws"><span>Workspace</span><b>{c.org}</b><button type="button" data-plain onClick={() => copy(c.org, "ws")}>{copied === "ws" ? <Check size={14} /> : <Copy size={14} />}</button></div>
+      <div className="wl-logins">
+        {c.users.map((u) => (
+          <div key={u.id} className={u.role === "ADMIN" ? "adm" : ""}>
+            <span className="wl-role">{u.role === "ADMIN" ? "Admin (you)" : u.name}</span>
+            <code>{u.id}</code><code className="pw">{u.password}</code>
+            <button type="button" data-plain title="Copy" onClick={() => copy(`ID: ${u.id}  Password: ${u.password}`, u.id)}>{copied === u.id ? <Check size={14} /> : <Copy size={14} />}</button>
+          </div>
+        ))}
+      </div>
+      <div className="wl-creds-acts">
+        <button type="button" data-plain className="wl-btn" onClick={() => copy(text, "all")}>{copied === "all" ? <Check size={16} /> : <Copy size={16} />} {copied === "all" ? "Copied!" : "Copy all logins"}</button>
+        <button type="button" data-plain className="wl-btn ghost" onClick={download}><Download size={16} /> Download .txt</button>
+      </div>
+      <label className="wl-saved"><input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} /> I've saved my logins somewhere safe</label>
+      <a className={"wl-btn" + (saved ? "" : " off")} href={saved ? c.loginPath : undefined} onClick={(e) => !saved && e.preventDefault()}><LogIn size={16} /> Sign in to my Modo</a>
+      <p className="wl-mute">Give each agent their own ID and password. You (the admin) can add more agents, rename them and reset passwords in your Modo under Team → Agents.</p>
+    </div>
+  );
+}
+
 export default function Landing() {
   const [plans, setPlans] = useState([]); const [yearly, setYearly] = useState(false);
   const [f, setF] = useState({ company: "", contact: "", email: "", phone: "", plan: "next", seats: 10, notes: "", website: "" });
-  const [state, setState] = useState(""); const [err, setErr] = useState("");
+  const [state, setState] = useState(""); const [creds, setCreds] = useState(null); const [err, setErr] = useState("");
   // This page is always dark, whatever appearance the visitor picked inside Modo (restored when leaving).
   const [mode, setMode, eff, look, setLook] = useAppearance(); const [themeOpen, setThemeOpen] = useState(false);
   const root = useRef(null); const raf = useRef(0);
@@ -67,7 +101,7 @@ export default function Landing() {
     e.preventDefault(); setErr(""); setState("busy");
     const r = await fetch("/api/subs/public", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) }).catch(() => null);
     const d = await r?.json().catch(() => ({}));
-    if (r?.ok) setState("done"); else { setState(""); setErr(d?.error || "Couldn't send. Try again."); }
+    if (r?.ok) { setCreds(d.workspace || null); setState("done"); if (d.workspace) setTimeout(() => document.getElementById("start")?.scrollIntoView({ behavior: "smooth" }), 50); } else { setState(""); setErr(d?.error || "Couldn't send. Try again."); }
   };
   const price = (p) => (yearly ? Math.round(p.price * 0.8) : p.price);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
@@ -190,10 +224,10 @@ export default function Landing() {
         <div className="wl-form-wrap">
           <div>
             <h2 style={{ textAlign: "left" }}>Get Modo for your team</h2>
-            <p className="wl-sub" style={{ textAlign: "left" }}>Tell us about your floor. We'll set up your workspace and send your sign-in details, usually the same day.</p>
-            <ul className="wl-steps"><li><b>1</b> Pick a plan and send this form</li><li><b>2</b> We confirm and set up your workspace</li><li><b>3</b> Your team signs in and gets to work</li></ul>
+            <p className="wl-sub" style={{ textAlign: "left" }}>Your own Modo is created the moment you sign up — with logins for you and your agents, right on this screen.</p>
+            <ul className="wl-steps"><li><b>1</b> Pick a plan and tell us your team size</li><li><b>2</b> Copy your logins from the screen</li><li><b>3</b> Your team signs in and gets to work</li></ul>
           </div>
-          {state === "done" ? (
+          {state === "done" && creds ? <Creds c={creds} /> : state === "done" ? (
             <div className="wl-done"><span className="gt" style={{ "--g1": "#34d399", "--g2": "#059669", width: 56, height: 56, borderRadius: 18 }}><Check size={28} /></span><h3>Thanks! Request received.</h3><p>We'll contact you at {f.email} shortly to activate your {plans.find((p) => p.id === f.plan)?.name || ""} plan.</p></div>
           ) : (
             <form className="wl-form" onSubmit={send}>
@@ -202,11 +236,11 @@ export default function Landing() {
               <label>Work email<input required type="email" value={f.email} onChange={set("email")} /></label>
               <label>Phone / WhatsApp<input value={f.phone} onChange={set("phone")} /></label>
               <label>Plan<select value={f.plan} onChange={set("plan")}>{plans.map((p) => <option key={p.id} value={p.id}>{p.name}{p.price ? ` — $${p.price}/${p.period.replace(/^\s*\/?\s*/, "")}` : " — free"}</option>)}</select></label>
-              <label>Number of agents<input type="number" min="1" value={f.seats} onChange={set("seats")} /></label>
+              <label>Team size (including you){f.plan === "free" ? " · Free: up to 3" : ""}<input type="number" min="1" max="200" value={f.seats} onChange={set("seats")} /></label>
               <label className="wl-wide">Anything else?<textarea rows={3} value={f.notes} onChange={set("notes")} placeholder="Dialer you use, campaigns, when you want to start…" /></label>
               <input className="wl-hp" tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} aria-hidden="true" />
               {err && <div className="err wl-wide">{err}</div>}
-              <button data-plain className="wl-btn wl-wide" disabled={state === "busy"}>{state === "busy" ? "Sending…" : <>Request my plan <ArrowRight size={16} /></>}</button>
+              <button data-plain className="wl-btn wl-wide" disabled={state === "busy"}>{state === "busy" ? "Creating your Modo…" : <>Create my Modo <ArrowRight size={16} /></>}</button>
             </form>
           )}
         </div>

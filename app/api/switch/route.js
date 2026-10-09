@@ -28,7 +28,7 @@ export async function POST(req) {
   const admin = (await db.user.findFirst({ where: { ceo: true, active: true } }))
     || (await db.user.findFirst({ where: { role: "ADMIN", active: true }, orderBy: { createdAt: "asc" } }));
   if (!admin) return NextResponse.json({ error: "No admin account to switch to." }, { status: 500 });
-  const token = await signSession({ uid: admin.id, role: admin.role, name: admin.name, agentId: admin.agentId });
+  const token = await signSession({ uid: admin.id, role: admin.role, name: admin.name, agentId: admin.agentId, ...(s.org ? { org: s.org } : {}) });
   const res = NextResponse.json({ ok: true, go: "/admin" });
   res.cookies.set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 30 * 24 * 3600 });
   return res;
