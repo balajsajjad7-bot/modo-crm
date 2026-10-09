@@ -30,7 +30,25 @@ export async function POST(req) {
       const { setTenantStatus } = await import("@/lib/tenants");
       await setTenantStatus(sub.workspace, sub.status === "pending" ? "paused" : sub.status, sub.status === "trial" ? { trialEnds: sub.renewsAt } : sub.status === "active" ? { trialEnds: null } : {});
     }
+    // Activated a customer who has no Modo yet → the Workspace bot creates it now and you get the logins.
+    if (!sub.workspace && ["active", "trial"].includes(sub.status) && b.sub?.status) {
+      const { canProvision, provisionWorkspace } = await import("@/lib/tenants");
+      if (await canProvision()) {
+        try {
+          const ws = await provisionWorkspace({ company: sub.company, contact: sub.contact, email: sub.email, phone: sub.phone, plan: sub.plan, seats: sub.seats, source: "admin" });
+          const saved = await upsertSub({ id: sub.id, workspace: ws.org, ...(sub.status === "trial" && ws.trialEnds ? { renewsAt: ws.trialEnds } : {}) }, by);
+          if (sub.status === "active") { const { setTenantStatus } = await import("@/lib/tenants"); await setTenantStatus(ws.org, "active", { trialEnds: null }); }
+          try { const { postToBot } = await import("@/lib/botChats"); await postToBot("workspaces", `🏢 ${by} activated ${sub.company} → workspace "${ws.org}" created with ${ws.users.length} logins (shown to ${by} once).`, "act-" + ws.org); } catch {}
+          return NextResponse.json({ ok: true, sub: saved, workspace: { org: ws.org, loginPath: "/login?w=" + ws.org, users: ws.users } });
+        } catch (e) { return NextResponse.json({ ok: true, sub, warn: "Activated, but the workspace couldn't be created: " + e.message }); }
+      }
+    }
     return NextResponse.json({ ok: true, sub });
+  }
+  if (b.action === "creds") {
+    const { takeCreds } = await import("@/lib/botChats");
+    const c = await takeCreds(b.id);
+    return c ? NextResponse.json({ ok: true, workspace: c }) : NextResponse.json({ error: "That login link was already opened or has expired (links work once, for 30 minutes). Use Reset admin password if needed." }, { status: 404 });
   }
   if (b.action === "connectNeon") {
     try { const { connectNeon } = await import("@/lib/tenants"); const r = await connectNeon(b); return NextResponse.json({ ok: true, ...r }); }

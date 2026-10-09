@@ -91,6 +91,16 @@ export async function POST(req) {
     await db.conversation.update({ where: { id: c }, data: { lastMessageAt: bot.createdAt } });
     await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: bot.createdAt } });
   }
+  // A bot's own chat (admins): status, run, on/off and the bot's commands (the Workspace bot creates customers' Modos).
+  if (c.startsWith("botx-") && !parentId && text && s.role === "ADMIN") {
+    let reply;
+    try { const { handleBotChat } = await import("@/lib/botChats"); reply = await handleBotChat(c.slice(5), text, s); } catch (e) { reply = "Sorry, something went wrong: " + (e.message || "unknown error"); }
+    if (reply) {
+      const bot = await db.message.create({ data: { conversationId: c, userId: "modo-bot", kind: "TEXT", text: String(reply).slice(0, 3900) } });
+      await db.conversation.update({ where: { id: c }, data: { lastMessageAt: bot.createdAt } });
+      await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: bot.createdAt } });
+    }
+  }
   // Agent's own Modo bot inbox: Modo AI answers as their sales coach.
   if (c === "botdm-" + s.uid && !parentId && text) {
     let reply = "";

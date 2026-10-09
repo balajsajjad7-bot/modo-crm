@@ -17,7 +17,7 @@ export async function GET() {
   await db.user.update({ where: { id: s.uid }, data: { lastSeenAt: new Date() } }).catch(() => {});
   await ensureEveryone();
   await ensureTraining().catch(() => {}); // #modo-training never blocks the chat list
-  if (s.role === "ADMIN") { await ensureCoach().catch(() => {}); await ensureUpsBot().catch(() => {}); await ensureBotChannel().catch(() => {}); }
+  if (s.role === "ADMIN") { await ensureCoach().catch(() => {}); await ensureUpsBot().catch(() => {}); await ensureBotChannel().catch(() => {}); try { const { ensureBotChats } = await import("@/lib/botChats"); await ensureBotChats(); } catch {} }
   const mine = await db.convMember.findMany({ where: { userId: s.uid }, select: { conversationId: true, lastReadAt: true } });
   const convs = await db.conversation.findMany({
     where: { id: { in: mine.map((m) => m.conversationId) } }, orderBy: { lastMessageAt: "desc" },

@@ -53,10 +53,22 @@ export default function Subscriptions() {
   const [form, setForm] = useState(null); const [plans, setPlans] = useState(null); const [filter, setFilter] = useState("all");
   const load = () => api("/api/subs").then((r) => { if (r.ok) { setD(r.data); setPlans((p) => p || r.data.plans); } else setMsg(r.data.error || "Couldn't load."); });
   useEffect(() => { load(); }, []);
+  // One-time login link from the Workspace bot: /admin/subscriptions?creds=…
+  useEffect(() => {
+    let id = ""; try { id = new URLSearchParams(location.search).get("creds") || ""; } catch {}
+    if (!id) return;
+    history.replaceState(null, "", "/admin/subscriptions");
+    api("/api/subs", "POST", { action: "creds", id }).then((r) => { if (r.ok) setNewWs({ ...r.data.workspace, company: r.data.workspace.company || r.data.workspace.org }); else setMsg(r.data.error); });
+  }, []); // eslint-disable-line
   if (!d) return <p className="muted">{msg || "Loading subscriptions…"}</p>;
   const say = (t) => { setMsg(t); setTimeout(() => setMsg(""), 3500); };
   const planOf = (id) => d.plans.find((p) => p.id === id);
-  const save = async (sub) => { const r = await api("/api/subs", "POST", { action: "save", sub }); say(r.ok ? "✓ Saved" : r.data.error); load(); return r.ok; };
+  const save = async (sub) => {
+    const r = await api("/api/subs", "POST", { action: "save", sub });
+    if (r.ok && r.data.workspace) { const s0 = d.subs.find((x) => x.id === sub.id); setNewWs({ ...r.data.workspace, company: s0?.company || sub.company }); say("✓ Activated — their Modo was created"); }
+    else say(r.ok ? (r.data.warn ? "⚠️ " + r.data.warn : "✓ Saved") : r.data.error);
+    load(); return r.ok;
+  };
   const del = async (s) => { if (!confirm(`Delete ${s.company || "this subscription"} for good?`)) return; await api("/api/subs", "POST", { action: "delete", id: s.id }); load(); };
   const counts = Object.fromEntries(["active", "trial", "pending", "paused", "cancelled"].map((k) => [k, d.subs.filter((s) => s.status === k).length]));
   const seats = d.subs.filter((s) => s.status === "active").reduce((t, s) => t + (s.seats || 1), 0);
