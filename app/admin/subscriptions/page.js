@@ -2,7 +2,7 @@
 // Admin → Subscriptions: sell Modo. Plans (Free → Starter → Next → Enterprise) with editable prices,
 // customers (activate / pause / cancel / change plan / renew), your own agents' plans, and the change history.
 import { useEffect, useState } from "react";
-import { CreditCard, Plus, Check, Pause, X, RotateCcw, Trash2, Save, Users, TrendingUp, Clock3, Sparkles, Crown, Rocket, Gift, ExternalLink, History, Building2, KeyRound, Copy, Loader2 } from "lucide-react";
+import { CreditCard, Plus, Check, Pause, X, RotateCcw, Trash2, Save, Users, TrendingUp, Clock3, Sparkles, Crown, Rocket, Gift, ExternalLink, History, Building2, KeyRound, Copy, Loader2, Bot } from "lucide-react";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const money = (n) => "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -11,6 +11,41 @@ const ICON = { free: Gift, starter: Rocket, next: Sparkles, enterprise: Crown };
 const TONE = { free: ["#cbd5e1", "#475569"], starter: ["#60a5fa", "#2563eb"], next: ["#a78bfa", "#7c3aed"], enterprise: ["#fcd34d", "#d97706"] };
 const tone = (id) => { const [a, b] = TONE[id] || ["#5eead4", "#0d9488"]; return { "--g1": a, "--g2": b }; };
 const BLANK = { company: "", contact: "", email: "", phone: "", plan: "starter", seats: 5, status: "active", price: "", notes: "" };
+
+// The Modo bot walks you through turning on instant workspaces: paste a Neon API key once, it checks it, finds
+// your database project and saves the key (encrypted) in your Modo. No Vercel settings needed.
+function SetupBot({ onDone, say }) {
+  const [step, setStep] = useState(0); const [key, setKey] = useState(""); const [pid, setPid] = useState(""); const [showPid, setShowPid] = useState(false);
+  const [busy, setBusy] = useState(false); const [err, setErr] = useState(""); const [ok, setOk] = useState(null);
+  const connect = async () => {
+    setBusy(true); setErr("");
+    const r = await api("/api/subs", "POST", { action: "connectNeon", apiKey: key, projectId: pid });
+    setBusy(false);
+    if (r.ok) { setOk(r.data); setStep(3); setKey(""); say("✓ Instant workspaces are on"); setTimeout(onDone, 2500); }
+    else { setErr(r.data.error); if (/organization|Project ID/i.test(r.data.error || "")) setShowPid(true); }
+  };
+  const Msg = ({ children }) => <div className="sbot-msg"><span className="sbot-av"><Bot size={15} /></span><div>{children}</div></div>;
+  return (
+    <div className="sbot">
+      <div className="sbot-head"><span className="sbot-av big"><Bot size={18} /></span><span><b>Modo setup bot</b><small>Turn on instant workspaces — about 1 minute</small></span>{step === 0 && <button className="sm" onClick={() => setStep(1)}>Start</button>}</div>
+      {step === 0 && <Msg>Right now, sign-ups only arrive as requests. Let me connect your database account so <b>every company that signs up gets its own Modo and logins instantly</b>. I only need one key from Neon, no Vercel settings.</Msg>}
+      {step >= 1 && <>
+        <Msg>Step 1 — open your Neon API keys page and press <b>Create new API key</b>. Name it <i>Modo</i>, then copy the key.<div className="sbot-acts"><a className="btn-link sm" href="https://console.neon.tech/app/settings/api-keys" target="_blank" rel="noreferrer"><ExternalLink size={13} /> Open Neon API keys</a>{step === 1 && <button className="ghost sm" onClick={() => setStep(2)}>I copied it</button>}</div></Msg>
+      </>}
+      {step >= 2 && step < 3 && <>
+        <Msg>Step 2 — paste the key here. I'll check it can reach the project your Modo database lives in, and keep it encrypted.</Msg>
+        <div className="sbot-input">
+          <input type="password" value={key} onChange={(e) => setKey(e.target.value.trim())} placeholder="napi_…" autoComplete="off" />
+          {showPid && <input value={pid} onChange={(e) => setPid(e.target.value.trim())} placeholder="Project ID (Neon → your project → Settings), e.g. cool-river-123456" />}
+          <button onClick={connect} disabled={busy || key.length < 20}>{busy ? <Loader2 size={14} className="spin" /> : <KeyRound size={14} />} {busy ? "Checking…" : "Connect"}</button>
+        </div>
+        {err && <Msg><span className="sbot-err">{err}</span></Msg>}
+        {!showPid && <button className="ghost sm sbot-link" onClick={() => setShowPid(true)}>My Neon project is in an organization</button>}
+      </>}
+      {step === 3 && ok && <Msg>✅ Done! Connected to Neon project <code>{ok.projectId}</code>. From now on, every company that signs up on your home page gets its own Modo and logins on screen, and you'll get an alert. Older requests show a <b>Create workspace</b> button.</Msg>}
+    </div>
+  );
+}
 
 export default function Subscriptions() {
   const [d, setD] = useState(null); const [tab, setTab] = useState("customers"); const [msg, setMsg] = useState("");
@@ -87,7 +122,8 @@ export default function Subscriptions() {
             })}
             {!shown.length && <p className="muted small">No subscriptions here yet. Press “Give a subscription”, or share your public page — requests land here as “pending”.</p>}
           </div>
-          {!d.canProvision && <p className="sb-note"><KeyRound size={14} /> <span><b>Instant workspaces are off.</b> Add <code>NEON_API_KEY</code> in Vercel → Settings → Environment Variables (Neon → Account settings → API keys), then redeploy. After that, every sign-up gets its own Modo and logins on screen.</span></p>}
+          {!d.canProvision && <SetupBot onDone={load} say={say} />}
+          {d.canProvision && <p className="sb-on"><Building2 size={14} /> Instant workspaces are <b>on</b> — every sign-up gets its own Modo.{!d.neonFromEnv && <button className="ghost sm" onClick={async () => { if (confirm("Turn off instant workspaces? Existing customer workspaces keep working.")) { await api("/api/subs", "POST", { action: "disconnectNeon" }); load(); } }}>Turn off</button>}</p>}
           <p className="muted small" style={{ margin: 0 }}>Each company with a workspace has its own separate Modo and database. Pause or Cancel stops their logins; Activate opens them again. Modo doesn't charge cards: collect payment your usual way (bank, Payoneer, invoice), then press Activate. Renewal dates remind you when to bill.</p>
         </section>
       )}

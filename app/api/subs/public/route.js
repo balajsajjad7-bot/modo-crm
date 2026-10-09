@@ -25,7 +25,7 @@ export async function POST(req) {
     // Their own Modo, ready now: database + admin and agent logins (shown once on their screen).
     let ws = null, wsErr = "";
     const { canProvision, provisionWorkspace } = await import("@/lib/tenants");
-    if (canProvision()) {
+    if (await canProvision()) {
       const wsKey = "ws-create:" + ip; const wb = await isBlocked(wsKey);
       if (wb.blocked) wsErr = "This connection already created workspaces today.";
       else {

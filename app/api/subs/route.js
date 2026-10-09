@@ -14,7 +14,7 @@ export async function GET() {
   const v = await getAll();
   const agents = await db.user.findMany({ where: { role: "AGENT", active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, agentId: true } });
   const { listTenants, canProvision } = await import("@/lib/tenants");
-  return NextResponse.json({ ...v, agents, mrr: mrr(v), defaults: DEFAULT_PLANS, tenants: await listTenants(), canProvision: canProvision() });
+  return NextResponse.json({ ...v, agents, mrr: mrr(v), defaults: DEFAULT_PLANS, tenants: await listTenants(), canProvision: await canProvision(), neonFromEnv: !!process.env.NEON_API_KEY });
 }
 // { action: "save" | "delete" | "plans" | "agent" | "agentsAll", ... }
 export async function POST(req) {
@@ -31,6 +31,14 @@ export async function POST(req) {
       await setTenantStatus(sub.workspace, sub.status === "pending" ? "paused" : sub.status, sub.status === "trial" ? { trialEnds: sub.renewsAt } : sub.status === "active" ? { trialEnds: null } : {});
     }
     return NextResponse.json({ ok: true, sub });
+  }
+  if (b.action === "connectNeon") {
+    try { const { connectNeon } = await import("@/lib/tenants"); const r = await connectNeon(b); return NextResponse.json({ ok: true, ...r }); }
+    catch (e) { return NextResponse.json({ error: e.message }, { status: 400 }); }
+  }
+  if (b.action === "disconnectNeon") {
+    const { mainDb } = await import("@/lib/db"); await mainDb.connector.deleteMany({ where: { type: "neon" } });
+    return NextResponse.json({ ok: true });
   }
   if (b.action === "resetAdmin") {
     const v = await getAll(); const sub = v.subs.find((x) => x.id === b.id);
