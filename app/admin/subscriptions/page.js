@@ -45,7 +45,7 @@ export default function Subscriptions() {
       {msg && <div className="small muted">{msg}</div>}
       {newWs && (
         <div className="panel stack sb-newws">
-          <h2><Building2 size={17} /> Workspace created for {newWs.company}: <code>{newWs.org}</code></h2>
+          <h2><Building2 size={17} /> {newWs.reset ? "New admin password" : "Workspace created"} for {newWs.company}: <code>{newWs.org}</code></h2>
           <p className="small muted" style={{ margin: 0 }}>Send these to the customer now — passwords can't be shown again (their admin can reset them later in their Modo).</p>
           <pre className="sb-creds">{`Sign in: ${typeof location !== "undefined" ? location.origin : ""}${newWs.loginPath}\nWorkspace: ${newWs.org}\n\n` + newWs.users.map((u) => `${u.role === "ADMIN" ? "Admin" : u.name}  ID: ${u.id}  Password: ${u.password}`).join("\n")}</pre>
           <div className="row" style={{ gap: 6 }}><button onClick={() => navigator.clipboard?.writeText(document.querySelector(".sb-creds")?.textContent || "").then(() => say("✓ Copied"))}><Copy size={14} /> Copy</button><button className="ghost" onClick={() => setNewWs(null)}>Done</button></div>
@@ -73,6 +73,7 @@ export default function Subscriptions() {
                   <span className={"sb-st " + s.status}>{s.status}</span>
                   <span className="sb-dates small muted">{s.status === "cancelled" ? "Cancelled " + day(s.cancelledAt) : s.renewsAt ? "Renews " + day(s.renewsAt) : "Since " + day(s.createdAt)}</span>
                   <span className="sb-acts">
+                    {s.workspace && <button className="ghost sm" disabled={!!making} onClick={async () => { if (!confirm(`Reset the admin password for ${s.company} (${s.workspace})?\n\nTheir old admin password stops working and 2-step sign-in is turned off so they can set it up again.`)) return; setMaking("r" + s.id); const r = await api("/api/subs", "POST", { action: "resetAdmin", id: s.id }); setMaking(""); if (r.ok) { setNewWs({ ...r.data.workspace, company: s.company }); load(); } else say(r.data.error); }}>{making === "r" + s.id ? <Loader2 size={13} className="spin" /> : <KeyRound size={13} />} Reset admin password</button>}
                     {!s.workspace && s.status !== "cancelled" && d.canProvision && <button className="sm" disabled={!!making} onClick={async () => { setMaking(s.id); const r = await api("/api/subs", "POST", { action: "provision", id: s.id }); setMaking(""); if (r.ok) { setNewWs({ ...r.data.workspace, company: s.company }); load(); } else say(r.data.error); }}>{making === s.id ? <Loader2 size={13} className="spin" /> : <Building2 size={13} />} Create workspace</button>}
                     {s.status !== "active" && <button className="sm" onClick={() => save({ id: s.id, status: "active" })}><Check size={13} /> Activate</button>}
                     {s.status === "active" && <button className="ghost sm" onClick={() => save({ id: s.id, status: "paused" })}><Pause size={13} /> Pause</button>}

@@ -32,6 +32,16 @@ export async function POST(req) {
     }
     return NextResponse.json({ ok: true, sub });
   }
+  if (b.action === "resetAdmin") {
+    const v = await getAll(); const sub = v.subs.find((x) => x.id === b.id);
+    if (!sub?.workspace) return NextResponse.json({ error: "This customer has no workspace yet." }, { status: 400 });
+    try {
+      const { resetWorkspaceAdmin } = await import("@/lib/tenants");
+      const r = await resetWorkspaceAdmin(sub.workspace);
+      await upsertSub({ id: sub.id, notes: `${sub.notes ? sub.notes + " · " : ""}Admin password reset ${new Date().toLocaleDateString("en-GB")} by ${by}` }, by);
+      return NextResponse.json({ ok: true, workspace: { org: r.org, loginPath: "/login?w=" + r.org, users: [{ role: "ADMIN", id: r.id, name: r.name, password: r.password }], reset: true } });
+    } catch (e) { return NextResponse.json({ error: e.message }, { status: 400 }); }
+  }
   if (b.action === "provision") {
     const v = await getAll(); const sub = v.subs.find((x) => x.id === b.id);
     if (!sub) return NextResponse.json({ error: "Subscription not found." }, { status: 404 });
