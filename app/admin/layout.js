@@ -95,7 +95,7 @@ export default function AdminLayout({ children }) {
     const ok = (href) => { if (!href || href === "/admin") return true; const k = sectionForPath(href); return !k || allowed.includes(k); };
     shownNav = shownNav.map((it) => it.children ? (() => { const kids = it.children.filter((c) => ok(c.href)); return kids.length ? { ...it, children: kids } : null; })() : (ok(it.href) ? it : null)).filter(Boolean);
   }
-  const signOut = async (leaveCall) => { await leaveCall(); await fetch("/api/auth/logout", { method: "POST" }); location.href = "/login"; };
+  const signOut = async (leaveCall) => { await leaveCall(); await fetch("/api/auth/logout", { method: "POST" }); try { sessionStorage.clear(); } catch {} location.href = "/login"; };
   return <Shell nav={shownNav} home="/admin" onSignOut={signOut}>
     {me?.role === "SUPERVISOR" && <div className="viewonly-banner"><ShieldCheck size={14} /> View-only supervisor — you can monitor everything you're given access to, but changes are turned off.</div>}
     {children}

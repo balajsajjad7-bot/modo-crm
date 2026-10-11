@@ -7,7 +7,7 @@ import { runQA } from "@/lib/qa";
 // Transcript lines are stored as "A: …" (agent) and "C: …" (customer).
 const readable = (t) => t.split("\n").filter(Boolean).map((l) => (l.startsWith("C: ") ? "Customer: " + l.slice(3) : l.startsWith("A: ") ? "Agent: " + l.slice(3) : "Agent: " + l)).join("\n");
 
-const LIVE = `You coach a call-center sales agent live and brief their supervisor. You get the latest transcript lines.
+const LIVE = `You coach a sales agent live and brief their supervisor. You get the latest transcript lines.
 Lines start with "Agent:" or "Customer:". If there are no Customer lines, only the agent's microphone is being captured.
 Return JSON only:
 {"next": "one short, natural sentence the agent could say next to move the sale forward honestly",

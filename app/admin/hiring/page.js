@@ -241,7 +241,7 @@ function ResumeBox({ c, say }) {
           <div className="hr-brief-top"><span className="hr-brief-ic"><Sparkles size={15} /></span><b>{b.headline}</b><span className="hr-fit" title={b.fitWhy}>{"★".repeat(b.fit)}<i>{"★".repeat(5 - b.fit)}</i></span></div>
           <div className="hr-brief-grid">
             {b.experience && <div><small>Experience</small><span>{b.experience}</span></div>}
-            {b.callCenter && <div><small>Call center</small><span>{b.callCenter}</span></div>}
+            {b.phoneExp && <div><small>Phone experience</small><span>{b.phoneExp}</span></div>}
             {b.education && <div><small>Education</small><span>{b.education}</span></div>}
             {b.languages && <div><small>Languages</small><span>{b.languages}</span></div>}
           </div>

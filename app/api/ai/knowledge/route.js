@@ -15,7 +15,7 @@ export async function PATCH(req) {
   if (error) return error;
   const b = await req.json();
   if (b.tryIt) { // ask the AI a question using the saved knowledge
-    try { return NextResponse.json({ answer: await askAI("You are Modo AI helping a call-center agent. Answer briefly and only with approved company info when it applies.", String(b.tryIt).slice(0, 800), { maxTokens: 500 }) }); }
+    try { return NextResponse.json({ answer: await askAI("You are Modo AI helping a sales agent. Answer briefly and only with approved company info when it applies.", String(b.tryIt).slice(0, 800), { maxTokens: 500 }) }); }
     catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }); }
   }
   const k = { enabled: b.enabled !== false, partners: b.partners !== false, company: String(b.company || "").slice(0, 4000), products: String(b.products || "").slice(0, 4000), prices: String(b.prices || "").slice(0, 3000), script: String(b.script || "").slice(0, 4000),

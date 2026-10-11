@@ -23,7 +23,7 @@ const T = {
     ]);
     const data = { name: c.name, city: c.city, tags: c.tags, deals: deals.map((d) => ({ title: d.title, stage: d.stage, value: d.value })), openTasks: tasks.map((t) => ({ title: t.title, due: t.dueAt })),
       history: acts.map((a) => ({ when: a.createdAt, kind: a.kind, text: a.text })) };
-    return { text: await askAI(`You prepare a call-center agent for a callback. From the customer record, write in plain short lines:
+    return { text: await askAI(`You prepare a sales agent for a callback. From the customer record, write in plain short lines:
 1) Who they are and what they want (1 line)
 2) What happened last time (1-2 lines)
 3) A natural opening sentence for the call
@@ -31,7 +31,7 @@ const T = {
 No preamble, no markdown headings.`, JSON.stringify(data), { maxTokens: 500 }) };
   },
   async tidy_note(s, b) {
-    return { text: await askAI("Rewrite this call-center note so it is clear, short and professional. Keep every fact, number, date and name. Fix spelling and grammar. Return only the note.", String(b.text || "").slice(0, 3000), { maxTokens: 500 }) };
+    return { text: await askAI("Rewrite this customer call note so it is clear, short and professional. Keep every fact, number, date and name. Fix spelling and grammar. Return only the note.", String(b.text || "").slice(0, 3000), { maxTokens: 500 }) };
   },
   async email_draft(s, b) {
     const r = await askAI(`Write a short, warm, professional email from a US utility/telecom savings company to a customer. Plain text, no placeholders like [Name] unless unknown; sign off with the sender name given. Never promise discounts or terms that weren't given.
@@ -48,7 +48,7 @@ Return JSON: {"subject":"…","body":"…"}`, `Customer first name: ${b.customer
     return { text: await askAI("Summarise this team chat for someone who missed it: 3-6 short bullet lines of what was discussed and decided, then 'To do:' lines with who needs to do what (if any). Plain text.", text.slice(-12000), { maxTokens: 600 }) };
   },
   async explain_report(s, b) {
-    return { text: await askAI("You are a call-center operations analyst. From these report numbers, write 4-6 short plain-language bullet lines: what's going well, what's worrying, and one concrete action for tomorrow. Mention names and numbers.", JSON.stringify(b.data || {}).slice(0, 12000), { maxTokens: 600 }) };
+    return { text: await askAI("You are a sales operations analyst. From these report numbers, write 4-6 short plain-language bullet lines: what's going well, what's worrying, and one concrete action for tomorrow. Mention names and numbers.", JSON.stringify(b.data || {}).slice(0, 12000), { maxTokens: 600 }) };
   },
   async agent_review(s, b) {
     if (s.role !== "ADMIN") throw new Error("Admins only.");
@@ -67,7 +67,7 @@ Return JSON: {"subject":"…","body":"…"}`, `Customer first name: ${b.customer
       quality: { calls: qa.length, avgScore: qa.length ? Math.round(qa.reduce((t, q) => t + q.overall, 0) / qa.length) : null, avgFillers: qa.length ? +(qa.reduce((t, q) => t + q.fillers, 0) / qa.length).toFixed(1) : null,
         avgNervous: qa.filter((q) => q.agentNervous != null).length ? Math.round(qa.reduce((t, q) => t + (q.agentNervous || 0), 0) / qa.filter((q) => q.agentNervous != null).length) : null,
         grammarExamples: qa.flatMap((q) => { try { return JSON.parse(q.grammar); } catch { return []; } }).slice(0, 5) } };
-    return { text: await askAI("Write a fair, specific 30-day performance review of a call-center agent for their manager, from the data. Sections as short plain lines: Summary, Strengths, Needs work, Coaching plan (3 steps). Use the numbers. No markdown symbols.", JSON.stringify(data), { maxTokens: 900 }) };
+    return { text: await askAI("Write a fair, specific 30-day performance review of a sales agent for their manager, from the data. Sections as short plain lines: Summary, Strengths, Needs work, Coaching plan (3 steps). Use the numbers. No markdown symbols.", JSON.stringify(data), { maxTokens: 900 }) };
   },
   async check_be(s, b) {
     if (s.role !== "ADMIN") throw new Error("Admins only.");

@@ -54,7 +54,7 @@ export default function ModoPad({ compact = false }) {
   useEffect(() => {
     setBig(!!LS("modo-notes-big", false)); setBitsOpen(LS("modo-pad-bits", true) !== false);
     fetch("/api/me/pad", { cache: "no-store" }).then((r) => (r.ok ? r.json() : Promise.reject())).then((d) => { const p = parsePad(d.text || ""); setPages(p); setCur(Math.min(LS("modo-pad-page", 0), p.length - 1)); })
-      .catch(() => setPages(parsePad(LS("modo-notes-local", ""))));
+      .catch(() => { let t = ""; try { t = JSON.parse(sessionStorage.getItem("modo-notes-local") || "\"\""); } catch {} setPages(parsePad(t)); });
     fetch("/api/ai/speeches", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => d && setSpeeches((d.list || []).filter((s) => s.active !== false && s.text))).catch(() => {});
   }, []);
 
@@ -62,7 +62,7 @@ export default function ModoPad({ compact = false }) {
   useEffect(() => {
     if (text === null) return;
     if (!armed.current) { armed.current = true; return; } // don't re-save what we just loaded
-    setState("saving"); SAVE("modo-notes-local", text);
+    setState("saving"); try { sessionStorage.setItem("modo-notes-local", JSON.stringify(text)); } catch {}
     const t = setTimeout(async () => {
       const r = await fetch("/api/me/pad", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) }).catch(() => null);
       setState(r && r.ok ? "saved" : "local");

@@ -19,7 +19,7 @@ export async function POST() {
     recent: calls.filter((c) => c.endedAt).map((c) => ({ agent: c.user.name, score: c.score, summary: c.summary, confused: c.confused, endedBy: c.endedBy })),
   };
   try {
-    const text = await askAI(`You brief a call-center supervisor. From the JSON snapshot, write 4-7 short bullet points: who is on calls and how they're going, anyone confused (agent or customer) who needs help now, customers hanging up, low scores, and dialer issues. Name agents. Plain language, no preamble.`, JSON.stringify(snap), { maxTokens: 700 });
+    const text = await askAI(`You brief a sales team supervisor. From the JSON snapshot, write 4-7 short bullet points: who is on calls and how they're going, anyone confused (agent or customer) who needs help now, customers hanging up, low scores, and dialer issues. Name agents. Plain language, no preamble.`, JSON.stringify(snap), { maxTokens: 700 });
     return NextResponse.json({ text });
   } catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }); }
 }

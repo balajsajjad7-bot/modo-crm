@@ -34,7 +34,7 @@ export default function Lookups({ compact = false, preset = null }) {
   const [res, setRes] = useState(null); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [history, setHistory] = useState([]);
   useEffect(() => { const h = (e) => { setTool(e.detail.tool); setQ(e.detail.q); run(null, e.detail); }; window.addEventListener("modo-lookup", h); return () => window.removeEventListener("modo-lookup", h); }); // eslint-disable-line
   const [links, setLinks] = useState([]); const [linkQ, setLinkQ] = useState(""); const [isAdmin, setIsAdmin] = useState(false);
-  useEffect(() => { fetch("/api/lookup?type=list").then((r) => r.json()).then((d) => Array.isArray(d) && setCustom(d)).catch(() => {}); try { setHistory(JSON.parse(localStorage.getItem("modo-lookups") || "[]")); } catch {}
+  useEffect(() => { fetch("/api/lookup?type=list").then((r) => r.json()).then((d) => Array.isArray(d) && setCustom(d)).catch(() => {}); try { setHistory(JSON.parse(sessionStorage.getItem("modo-lookups") || "[]")); } catch {}
     fetch("/api/me").then((r) => r.json()).then((m) => setIsAdmin(m?.role === "ADMIN")).catch(() => {});
     fetch("/api/settings").then((r) => r.json()).then((d) => { let q = []; try { q = JSON.parse(d.quickLinks || "[]"); } catch {} setLinks(Array.isArray(q) ? q : []); }).catch(() => {}); }, []);
   const all = [...BUILT, ...custom.map((c) => ({ id: c.id, name: c.name, icon: Plug, hint: c.hint || "Search", ph: c.hint || "", desc: c.id.startsWith("u:") ? "Your lookup" : "Your API" }))];
@@ -49,7 +49,7 @@ export default function Lookups({ compact = false, preset = null }) {
     if (!r.ok) return setErr(d.error || "Lookup failed.");
     setRes(d);
     const h = [{ tool: t, q: query, title: d.title, at: Date.now() }, ...history.filter((x) => !(x.tool === t && x.q === query))].slice(0, 12);
-    setHistory(h); try { localStorage.setItem("modo-lookups", JSON.stringify(h)); } catch {}
+    setHistory(h); try { sessionStorage.setItem("modo-lookups", JSON.stringify(h)); } catch {}
   }
   return (
     <div className={"lookups" + (compact ? " compact" : "")}>

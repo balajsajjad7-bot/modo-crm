@@ -11,7 +11,7 @@ export async function GET(req) {
   const calls = await db.callSession.findMany({ where: { id: { in: good.map((g) => g.callSessionId) }, customerSide: true }, select: { transcript: true } });
   const lines = [];
   for (const c of calls) {
-    const msgs = [{ role: "system", content: "You are a friendly, honest call-center sales agent." }];
+    const msgs = [{ role: "system", content: "You are a friendly, honest sales agent." }];
     for (const l of c.transcript.split("\n").filter(Boolean)) {
       const role = l.startsWith("C: ") ? "user" : "assistant"; const content = l.replace(/^[AC]: /, "").trim(); if (!content) continue;
       const last = msgs[msgs.length - 1]; if (last.role === role) last.content += " " + content; else msgs.push({ role, content });

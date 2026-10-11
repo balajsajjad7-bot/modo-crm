@@ -1,6 +1,7 @@
 "use client";
 // Budget Ease agents: submit a utility-bill discount signup. Separate from telecom sales.
 import { useEffect, useState } from "react";
+import { useSaleGate, SalePassword, SalesOff } from "@/components/agent/SaleGate";
 import BeCard, { money } from "./BeCard";
 import BrandLogo from "@/components/BrandLogo";
 import { Sparkles, Send, Eye, EyeOff, Lock, CheckCircle2, Upload, ClipboardCheck, PiggyBank } from "lucide-react";
@@ -10,6 +11,7 @@ const COMPANIES = ["Duke Energy", "Florida Power & Light (FPL)", "Georgia Power"
 const post = (u, b) => fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) });
 
 export default function BeForm() {
+  const gate = useSaleGate(); const [salePw, setSalePw] = useState("");
   const [f, setF] = useState(EMPTY); const [err, setErr] = useState(""); const [done, setDone] = useState(null); const [busy, setBusy] = useState(false);
   const [showSsn, setShowSsn] = useState(false); const [notes, setNotes] = useState(""); const [ai, setAi] = useState(""); const [zipInfo, setZipInfo] = useState(""); const [mine, setMine] = useState([]);
   const [scan, setScan] = useState(""); const [scanning, setScanning] = useState(false);
@@ -49,10 +51,11 @@ export default function BeForm() {
   }
   async function submit(e) {
     e.preventDefault(); setErr(""); setBusy(true);
-    const r = await post("/api/budgetease", f); const d = await r.json().catch(() => ({})); setBusy(false);
+    const r = await post("/api/budgetease", { ...f, ...(gate.needPassword ? { salePassword: salePw } : {}) }); const d = await r.json().catch(() => ({})); setBusy(false);
     if (!r.ok) return setErr(d.error || "Couldn't submit.");
-    setDone(d); setF(EMPTY); setNotes(""); setAi(""); loadMine(); window.scrollTo({ top: 0, behavior: "smooth" });
+    setDone(d); setF(EMPTY); setSalePw(""); setNotes(""); setAi(""); loadMine(); window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  if (gate.off) return <SalesOff />;
   return (
     <div className="stack">
       {done && (
@@ -97,6 +100,7 @@ export default function BeForm() {
           </fieldset>
           <fieldset><legend>Notes</legend><textarea value={f.notes} onChange={set("notes")} placeholder="Anything admin should know" /></fieldset>
           {err && <div className="err">{err}</div>}
+          {gate.needPassword && <SalePassword value={salePw} onChange={setSalePw} />}
           <button disabled={busy}><Send size={15} /> {busy ? "Submitting…" : "Submit Budget Ease signup"}</button>
         </form>
         <aside className="sale-preview"><span className="sf-l">Preview</span><BeCard preview r={{ ...f, billAmount: bill || null, payAmount: pay || null, discountPct: pct, flags: pct > 35 ? [`Asks for ${pct}% off (max is 35%)`] : [] }} /></aside>

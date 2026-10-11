@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { redact } from "@/lib/redact";
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { isMember, MAX_FILE, shapeAll } from "@/lib/chat";
@@ -38,7 +39,7 @@ export async function POST(req) {
   const c = String(form.get("c") || "");
   if (!c || !(await isMember(c, s.uid))) return NextResponse.json({ error: "You're not in this conversation." }, { status: 403 });
   if (c.startsWith("wa-")) { const lk = await waBlocked(s); if (lk) return NextResponse.json(lk.body, { status: lk.status }); }
-  const text = String(form.get("text") || "").trim().slice(0, 4000);
+  const text = redact(String(form.get("text") || "").trim().slice(0, 4000)); // card numbers / SSNs never get stored
   const parentId = String(form.get("parentId") || "") || null;
   if (parentId) {
     const p = await db.message.findUnique({ where: { id: parentId } });
@@ -105,7 +106,7 @@ export async function POST(req) {
   if (c === "botdm-" + s.uid && !parentId && text) {
     let reply = "";
     try { reply = (await agentCommand(text, s.uid)) || ""; } catch {}
-    if (!reply) try { reply = await askAI("You are the Modo bot, a friendly sales coach for a US call-center agent. Answer briefly and practically: scripts, objections, product facts, American English phrases. Follow the call guide: honest, no pressure, never claim to be the customer's provider, never ask for passwords, PINs, one-time codes, card numbers or SSNs. If the agent asks for their campaign speech or to practise, use the campaign speeches from the admin.", text, { maxTokens: 600, campaignId: (await db.user.findUnique({ where: { id: s.uid }, select: { campaignId: true } }).catch(() => null))?.campaignId || "" }); }
+    if (!reply) try { reply = await askAI("You are the Modo bot, a friendly sales coach for a US sales agent. Answer briefly and practically: scripts, objections, product facts, American English phrases. Follow the call guide: honest, no pressure, never claim to be the customer's provider, never ask for passwords, PINs, one-time codes, card numbers or SSNs. If the agent asks for their campaign speech or to practise, use the campaign speeches from the admin.", text, { maxTokens: 600, campaignId: (await db.user.findUnique({ where: { id: s.uid }, select: { campaignId: true } }).catch(() => null))?.campaignId || "" }); }
     catch (e) { reply = "I couldn't answer right now: " + (e.message || "AI error"); }
     const bot = await db.message.create({ data: { conversationId: c, userId: "modo-bot", kind: "TEXT", text: String(reply).slice(0, 3900) } });
     await db.convMember.update({ where: { conversationId_userId: { conversationId: c, userId: s.uid } }, data: { lastReadAt: bot.createdAt } });

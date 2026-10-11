@@ -9,7 +9,7 @@ export async function POST(req) {
   const { text } = await req.json().catch(() => ({}));
   if (!String(text || "").trim()) return NextResponse.json({ error: "Write or record something first." }, { status: 400 });
   try {
-    const out = await askAI("You rewrite a call-center agent's rough notes about a customer complaint into a clear, factual summary for the manager. Plain English, 2–6 short sentences: what happened, what the customer is unhappy about, and what they want. Keep every fact, name, number and date exactly; add nothing that isn't in the notes. Return only the summary.", String(text).slice(0, 6000), { knowledge: false, maxTokens: 600 });
+    const out = await askAI("You rewrite a sales agent's rough notes about a customer complaint into a clear, factual summary for the manager. Plain English, 2–6 short sentences: what happened, what the customer is unhappy about, and what they want. Keep every fact, name, number and date exactly; add nothing that isn't in the notes. Return only the summary.", String(text).slice(0, 6000), { knowledge: false, maxTokens: 600 });
     return NextResponse.json({ text: out });
   } catch (e) { return NextResponse.json({ error: e.message }, { status: 502 }); }
 }

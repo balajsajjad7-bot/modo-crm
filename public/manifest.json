@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Modo",
   "short_name": "Modo",
-  "description": "Call-center CRM: attendance, sales, AI call assist, dialer, chat and order tracking for your team.",
+  "description": "Sales & support CRM: attendance, sales, AI call assist, dialer, chat and order tracking for your team.",
   "start_url": "/login",
   "scope": "/",
   "display": "standalone",

@@ -40,7 +40,7 @@ export async function POST(req) {
   const attempt = String(b.text || "").trim().slice(0, 4000);
   if (attempt.length < 15) return NextResponse.json({ error: "Write (or paste) how you'd say it first." }, { status: 400 });
   try {
-    const out = await askAI(`You are Modo, a friendly sales trainer at a US call center (agents are from Pakistan, speaking to Americans). Compare the agent's attempt with the official speech below.
+    const out = await askAI(`You are Modo, a friendly sales trainer at a US sales team (agents are from Pakistan, speaking to Americans). Compare the agent's attempt with the official speech below.
 Reply with JSON only: {"score": 0-100, "good": ["…"], "fix": ["what's missing or wrong, short"], "say": "the 2–4 best lines to say next time, in natural American English"}.
 The agent may practise only one part (opening, discovery, pitch, one objection, recap or close) — judge it against the matching part of the speech, not the whole call. Be encouraging and specific. Penalise anything the speech says never to say, invented prices or promises, and an introduction that doesn't match the speech's opening.
 

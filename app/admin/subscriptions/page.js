@@ -168,7 +168,7 @@ export default function Subscriptions() {
               );
             })}
           </div>
-          <p className="muted small" style={{ margin: 0 }}>Recommended prices sit just under comparable tools in 2026: HubSpot Sales Starter ≈ $20/user, Pipedrive $14–$99, Aircall $30–$50, call-center suites (Five9, Talkdesk) $100+/user.</p>
+          <p className="muted small" style={{ margin: 0 }}>Recommended prices sit just under comparable tools in 2026: HubSpot Sales Starter ≈ $20/user, Pipedrive $14–$99, Aircall $30–$50, contact-center suites (Five9, Talkdesk) $100+/user.</p>
         </section>
       )}
 
@@ -218,7 +218,7 @@ function SubForm({ form, setForm, plans, onSave }) {
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   return (
     <div className="sb-form">
-      <label>Company<input value={form.company} onChange={set("company")} placeholder="Acme Call Center" /></label>
+      <label>Company<input value={form.company} onChange={set("company")} placeholder="Acme Sales" /></label>
       <label>Contact name<input value={form.contact} onChange={set("contact")} /></label>
       <label>Email<input type="email" value={form.email} onChange={set("email")} /></label>
       <label>Phone<input value={form.phone} onChange={set("phone")} /></label>

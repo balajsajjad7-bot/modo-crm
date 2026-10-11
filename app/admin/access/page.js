@@ -1,3 +1,4 @@
 "use client";
 import Access from "@/components/admin/Access";
-export default function Page() { return <Access />; }
+import SaleControls from "@/components/admin/SaleControls";
+export default function Page() { return <div className="stack"><SaleControls /><Access /></div>; }

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { checkSaleSubmit } from "@/lib/saleLock";
+import { redact } from "@/lib/redact";
 import { feed, tag, money as usd } from "@/lib/salesFeed";
 import { sendPush } from "@/lib/push";
 import crypto from "crypto";
@@ -35,12 +37,14 @@ export async function POST(req) {
   const { session, error } = await requireRole("AGENT");
   if (error) return error;
   const b = await req.json();
+  const lock = await checkSaleSubmit(session, b.salePassword); // sale password / submit switched off for this agent
+  if (lock) return NextResponse.json(lock, { status: lock.status });
   const f = {
     customer: str(b.customer, 120), phone: str(b.phone, 40), email: str(b.email, 120), address: str(b.address, 240), zip: str(b.zip, 20),
     orderNumber: str(b.orderNumber, 60), discountPct: num(b.discountPct), billBefore: num(b.billBefore), billAfter: num(b.billAfter),
     nextBillDate: b.nextBillDate ? new Date(b.nextBillDate) : null, lines: b.lines === "" || b.lines == null ? null : parseInt(b.lines) || null,
     overcharged: num(b.overcharged), device: str(b.device, 120), deviceColor: str(b.deviceColor, 60), storage: str(b.storage, 40),
-    specs: str(b.specs, 400), gift: str(b.gift, 200), office: str(b.office, 40), locationCode: str(b.locationCode, 40), notes: str(b.notes, 2000),
+    specs: redact(str(b.specs, 400)), gift: redact(str(b.gift, 200)), office: str(b.office, 40), locationCode: str(b.locationCode, 40), notes: redact(str(b.notes, 2000)),
     saleType: b.saleType === "addon" ? "addon" : "new", campaignId: str(b.campaignId, 60),
     trackingNo: str(b.trackingNo, 60), carrier: str(b.carrier, 20),
   };

@@ -58,6 +58,8 @@ function ringOnce() {
 }
 
 export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out", userMenu = [], userSub, status, children, header, navAction }) {
+  // Customer details used to be kept in the browser's permanent storage; they now live only in the open tab.
+  useEffect(() => { try { ["modo-sale-draft", "modo-sale-prefill", "modo-lookups", "modo-notes-local"].forEach((k) => localStorage.removeItem(k)); } catch {} }, []);
   const router = useRouter(); const path = usePathname();
   const [me, setMe] = useState(null);
   const [chat, setChat] = useState({ conversations: [] });

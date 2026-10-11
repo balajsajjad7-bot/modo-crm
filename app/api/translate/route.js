@@ -12,7 +12,7 @@ export async function POST(req) {
   const list = Array.isArray(texts) ? texts.slice(0, 60).map((t) => String(t || "")) : [];
   if (!lang || lang === "en" || !list.length) return NextResponse.json({ t: [] });
   const langName = NAMES[lang] || lang;
-  const sys = `You translate short UI labels for a call-center web app into ${langName}.
+  const sys = `You translate short UI labels for a sales team web app into ${langName}.
 Return ONLY JSON: {"t":[...]} with EXACTLY ${list.length} strings, in the same order as given.
 Rules: translate naturally and concisely (these are buttons, menu items, headings).
 Keep unchanged: numbers, prices, dates, times, phone numbers, ZIP codes, email addresses, URLs, IDs/codes, and brand or product names (Verizon, AT&T, UPS, Budget Ease, VICIdial, Modo, etc.).
