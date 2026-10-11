@@ -4,7 +4,6 @@ export async function POST() {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(COOKIE, "", { path: "/", maxAge: 0 });
   res.cookies.set(WA_COOKIE, "", { path: "/", maxAge: 0 }); // signing out also locks WhatsApp
-  res.headers.set("Clear-Site-Data", '"cache"'); // the browser drops every cached Modo page / answer
   res.headers.set("Cache-Control", "no-store");
   return res;
 }

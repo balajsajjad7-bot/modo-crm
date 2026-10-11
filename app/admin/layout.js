@@ -1,4 +1,5 @@
 "use client";
+import { signOutNow } from "@/lib/signOut";
 import Shell from "@/components/Shell";
 import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic, Bot, CreditCard, MessageSquareWarning, UserPlus } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
@@ -95,7 +96,7 @@ export default function AdminLayout({ children }) {
     const ok = (href) => { if (!href || href === "/admin") return true; const k = sectionForPath(href); return !k || allowed.includes(k); };
     shownNav = shownNav.map((it) => it.children ? (() => { const kids = it.children.filter((c) => ok(c.href)); return kids.length ? { ...it, children: kids } : null; })() : (ok(it.href) ? it : null)).filter(Boolean);
   }
-  const signOut = async (leaveCall) => { await leaveCall(); await fetch("/api/auth/logout", { method: "POST" }); try { sessionStorage.clear(); } catch {} location.href = "/login"; };
+  const signOut = async (leaveCall) => { await signOutNow(leaveCall); };
   return <Shell nav={shownNav} home="/admin" onSignOut={signOut}>
     {me?.role === "SUPERVISOR" && <div className="viewonly-banner"><ShieldCheck size={14} /> View-only supervisor — you can monitor everything you're given access to, but changes are turned off.</div>}
     {children}
