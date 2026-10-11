@@ -17,7 +17,7 @@ export default function Apply() {
   const pickCv = (file) => { setErr(""); if (!file) return; if (file.size > 6 * 1024 * 1024) return setErr("Your resume is over 6 MB. Please upload a smaller file."); if (!/\.(pdf|docx|txt|jpe?g|png)$/i.test(file.name)) return setErr("Please upload a PDF, Word (.docx), text file or a photo of your resume."); setCv(file); };
   useEffect(() => {
     const h = document.documentElement; h.setAttribute("data-appearance", "dark"); h.setAttribute("data-theme", "dark");
-    fetch("/api/apply").then((r) => r.json()).then(setInfo).catch(() => setInfo({ open: true, company: "Modo" }));
+    fetch("/api/apply").then((r) => r.json()).then(setInfo).catch(() => setInfo({ open: true, company: "" }));
   }, []);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const send = async (e) => {
@@ -28,7 +28,7 @@ export default function Apply() {
     const d = await r?.json().catch(() => ({}));
     if (r?.ok && d.token) location.href = "/test/" + d.token; else { setBusy(false); setErr(d?.error || "Couldn't send. Check your connection and try again."); }
   };
-  const company = info?.company || "Modo";
+  const company = info?.company || "";
   return (
     <div className="et cr">
       <div className="et-glow" aria-hidden="true" />

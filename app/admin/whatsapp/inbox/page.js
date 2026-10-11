@@ -170,7 +170,7 @@ function Rules({ d, onSaved }) {
       <section className="panel stack">
         <b className="row" style={{ gap: 6 }}><Check size={15} style={{ color: "var(--green)" }} /> Modo may say</b>
         <p className="muted small" style={{ margin: 0 }}>Facts and phrases you approve: hours, what happens next, how long shipping takes, how you sign off. One per line.</p>
-        <textarea value={r.say} onChange={(e) => setR({ ...r, say: e.target.value })} style={{ minHeight: 120 }} placeholder={"- Our team is available 9am–9pm Eastern, Monday to Saturday.\n- Your order is being processed; we'll message you with the tracking number.\n- Sign off with: — Team Modo"} />
+        <textarea value={r.say} onChange={(e) => setR({ ...r, say: e.target.value })} style={{ minHeight: 120 }} placeholder={"- Our team is available 9am–9pm Eastern, Monday to Saturday.\n- Your order is being processed; we'll message you with the tracking number.\n- Sign off with: — Team Voice Verve"} />
       </section>
       <section className="panel stack">
         <b className="row" style={{ gap: 6 }}><Ban size={15} style={{ color: "var(--red, #ff6b6b)" }} /> Modo must never say</b>

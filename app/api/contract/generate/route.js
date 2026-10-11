@@ -3,12 +3,13 @@ import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { buildContract } from "@/lib/contract";
+import { companyName } from "@/lib/company";
 
 async function opts(departmentId, campaignId) {
   const st = await getSettings();
   const dep = departmentId ? await db.department.findUnique({ where: { id: departmentId }, select: { name: true } }).catch(() => null) : null;
   const camp = campaignId ? await db.campaign.findUnique({ where: { id: campaignId }, select: { name: true } }).catch(() => null) : null;
-  return { companyName: st.companyName, currency: st.currency, bonusPerSale: st.bonusPerSale, dailyTarget: st.dailyTarget, departmentName: dep?.name, campaignName: camp?.name };
+  return { companyName: await companyName(), currency: st.currency, bonusPerSale: st.bonusPerSale, dailyTarget: st.dailyTarget, departmentName: dep?.name, campaignName: camp?.name };
 }
 
 export async function POST(req) {

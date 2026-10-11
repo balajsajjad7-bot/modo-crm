@@ -9,7 +9,7 @@ export const maxDuration = 60;
 // Public "Apply" page → a new candidate with their own English-test link.
 export async function GET() {
   const v = await loadHiring();
-  return NextResponse.json({ open: v.settings.applyOpen !== false, company: v.settings.company || "Modo" });
+  return NextResponse.json({ open: v.settings.applyOpen !== false, company: v.settings.company });
 }
 export async function POST(req) {
   const key = "apply:" + (clientIp() || "?");

@@ -14,7 +14,7 @@ async function state(c, v, t) {
   const iv = (c.interviews || []).filter((x) => x.status === "scheduled" && new Date(x.at) > Date.now() - 3600000).sort((a, b) => new Date(a.at) - new Date(b.at))[0];
   const passed = !!c.result?.pass;
   return {
-    hasCv: !!c.cv, name: c.name.split(" ")[0], company: v.settings.company || "Modo", track: TRACKS[c.track], status: c.status,
+    hasCv: !!c.cv, name: c.name.split(" ")[0], company: v.settings.company, track: TRACKS[c.track], status: c.status,
     expired: expired(c, t), started: !!t.startedAt, finished: done, startedAt: t.startedAt, limitMin: LIMIT_MIN,
     sections: SECTIONS, items: done ? [] : t.items.map(publicItem), answered: Object.keys(t.answers),
     interview: iv ? { at: iv.at, mins: iv.mins, joinUrl: iv.zoom?.joinUrl || v.settings.zoomLink || "", passcode: iv.zoom?.passcode || "", interviewer: iv.interviewer || "" } : null,

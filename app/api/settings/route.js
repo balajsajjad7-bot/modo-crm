@@ -21,7 +21,8 @@ export async function GET() {
     return NextResponse.json({ currency: st.currency, discountRates: st.discountRates, creatorName: st.creatorName, switchOn: !!st.switchHash, quickLinks: st.quickLinksOn === false ? "[]" : ql, quickLinksOn: st.quickLinksOn !== false });
   }
   const { switchHash, ...safe } = st; // never send the passphrase hash to the browser
-  return NextResponse.json({ ...safe, switchSet: !!switchHash, yourIp: clientIp() });
+  const { companyName } = await import("@/lib/company");
+  return NextResponse.json({ ...safe, companyName: await companyName(), switchSet: !!switchHash, yourIp: clientIp() });
 }
 
 // Partial update: only the fields sent are changed

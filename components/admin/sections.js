@@ -7,7 +7,7 @@ import CallTest from "./CallTest";
 export { api, usePoll };
 import Link from "next/link";
 import { useShell } from "@/components/Shell";
-import { Phone, MessageSquare, UserRound, X, AlertTriangle, Activity, Coffee, Hand, KeyRound, PhoneCall, Radio, Shield, Trophy } from "lucide-react";
+import { Phone, MessageSquare, UserRound, X, AlertTriangle, Activity, Coffee, Hand, KeyRound, PhoneCall, Radio, Shield, Trophy, Building2 } from "lucide-react";
 import FoldHead from "@/components/FoldHead";
 
 export function Floor() {
@@ -305,6 +305,14 @@ export function Settings() {
     <div className="stack"><SystemCheck /><CallTest /><Broadcast /><Security />
     <form className="stack" onSubmit={save}>
       <section className="panel stack">
+        <h2><Building2 size={17} /> Your company</h2>
+        <p className="muted small" style={{ margin: 0 }}>Modo is the CRM; this is your company's name. It's used on contracts, welcome letters, the hiring page, interview invites, WhatsApp replies and agent welcomes.</p>
+        <div className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <label style={{ flex: "1 1 220px" }}>Company name<input value={f.companyName || ""} onChange={set("companyName")} placeholder="Voice Verve" maxLength={120} /></label>
+          <button type="submit">Save</button>
+        </div>
+      </section>
+      <section className="panel stack">
         <h2><Shield size={17} /> Office IP lock</h2>
         <p className="muted small" style={{ margin: 0 }}>When on, agents can only sign in from the IPs below. Admin sign-in is never blocked. Your current IP is <b>{f.yourIp || "unknown"}</b>.</p>
         <label className="row" style={{ color: "var(--ink)" }}><input type="checkbox" style={{ width: "auto" }} checked={f.ipLock} onChange={set("ipLock")} /> Only allow sign-in from office IPs</label>
@@ -324,7 +332,6 @@ export function Settings() {
       <section className="panel stack">
         <h2><Hand size={17} /> New-agent welcome message</h2>
         <p className="muted small" style={{ margin: 0 }}>Shown to every agent the first time they sign in, greeting them by name, alongside their confidential contract. Edit each agent's contract on their profile (Team → Agents).</p>
-        <label>Company name (used on generated contracts)<input value={f.companyName || ""} onChange={set("companyName")} placeholder="e.g. VoiceVerve Pvt Ltd" /></label>
         <label>Team onboarding message<textarea style={{ minHeight: 90 }} value={f.onboardMsg || ""} onChange={set("onboardMsg")} placeholder="Welcome to the team! Here's how we work, your shift, and who to ask for help…" /></label>
       </section>
       {me?.ceo && (

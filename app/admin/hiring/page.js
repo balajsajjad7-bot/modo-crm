@@ -104,7 +104,7 @@ function AddForm({ tracks, onAdd }) {
 function Cand({ c, d, open, toggle, link, act, say }) {
   const r = c.result; const [s, col] = ST[c.status] || [c.status, "#64748b"];
   const next = (c.interviews || []).filter((iv) => iv.status === "scheduled").sort((a, b) => new Date(a.at) - new Date(b.at))[0];
-  const testMsg = `Hi ${c.name.split(" ")[0]}, thanks for applying to ${d.settings.company || "Modo"}! Please take your Modo English Assessment (about 30 minutes) here:\n${link}\n\nOpen the link in Google Chrome (not inside WhatsApp), use a headset and a quiet place. You can also send us your resume from that page. The link works for ${d.settings.linkDays || 7} days.`;
+  const testMsg = `Hi ${c.name.split(" ")[0]}, thanks for applying to ${d.settings.company}! Please take your Modo English Assessment (about 30 minutes) here:\n${link}\n\nOpen the link in Google Chrome (not inside WhatsApp), use a headset and a quiet place. You can also send us your resume from that page. The link works for ${d.settings.linkDays || 7} days.`;
   return (
     <div className={"hr-cand" + (open ? " open" : "")}>
       <button type="button" data-plain className="hr-head" onClick={toggle}>
@@ -129,7 +129,7 @@ function Cand({ c, d, open, toggle, link, act, say }) {
             <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
               <button className="ghost sm" onClick={() => copy(link, say)}><Copy size={13} /> Copy link</button>
               {c.phone && <WaButton phone={c.phone} name={c.name} text={testMsg} label="Send on WhatsApp" />}
-              {c.email && <a className="btn-link ghost sm" href={`mailto:${c.email}?subject=${encodeURIComponent((d.settings.company || "Modo") + " English test")}&body=${encodeURIComponent(testMsg)}`}><Mail size={13} /> Email</a>}
+              {c.email && <a className="btn-link ghost sm" href={`mailto:${c.email}?subject=${encodeURIComponent((d.settings.company) + " English test")}&body=${encodeURIComponent(testMsg)}`}><Mail size={13} /> Email</a>}
               <button className="ghost sm" onClick={() => act({ action: "update", id: c.id, patch: { newLink: true } }, "✓ New link made — the old one stops working")}><RefreshCw size={13} /> New link</button>
               {r && <button className="ghost sm" onClick={() => confirm("Delete their answers and let them take the test again?") && act({ action: "update", id: c.id, patch: { resetTest: true } }, "✓ Test reset")}><RefreshCw size={13} /> Retake</button>}
             </div>
@@ -329,7 +329,7 @@ function Interviews({ c, d, act, say }) {
               <a className="btn-link sm" href={iv.zoom?.startUrl || iv.zoom?.joinUrl} target="_blank" rel="noreferrer"><Video size={13} /> Start Zoom</a>
               <button className="ghost sm" onClick={() => copy(iv.invite, say)}><Copy size={13} /> Copy invite</button>
               {c.phone && <WaButton phone={c.phone} name={c.name} text={iv.invite} label="Send invite" />}
-              {c.email && <a className="btn-link ghost sm" href={`mailto:${c.email}?subject=${encodeURIComponent("Your interview with " + (s.company || "Modo"))}&body=${encodeURIComponent(iv.invite)}`}><Mail size={13} /> Email</a>}
+              {c.email && <a className="btn-link ghost sm" href={`mailto:${c.email}?subject=${encodeURIComponent("Your interview with " + (s.company))}&body=${encodeURIComponent(iv.invite)}`}><Mail size={13} /> Email</a>}
               <a className="btn-link ghost sm" href={iv.cal} target="_blank" rel="noreferrer"><CalendarPlus size={13} /> Calendar</a>
             </span>}
           </div>
@@ -401,7 +401,7 @@ function SettingsBox({ d, act, say, origin }) {
     <section className="panel stack">
       <h2><Settings2 size={17} /> Settings & Zoom</h2>
       <div className="sb-form">
-        <label>Company name (shown to candidates)<input value={f.company} onChange={set("company")} /></label>
+        <label>Company name (the same name everywhere in Modo — also in Settings)<input value={f.company} onChange={set("company")} placeholder="Voice Verve" /></label>
         <label>Default interviewer<input value={f.interviewer} onChange={set("interviewer")} /></label>
         <label>Interview length (minutes)<input type="number" value={f.mins} onChange={set("mins")} /></label>
         <label>Pass mark — customer service (20–80)<input type="number" min="20" max="80" value={f.passMark.support} onChange={(e) => setF({ ...f, passMark: { ...f.passMark, support: e.target.value } })} /></label>
