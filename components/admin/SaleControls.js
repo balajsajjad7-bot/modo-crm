@@ -25,7 +25,7 @@ export default function SaleControls({ startOpen = false }) {
       {open && <>
         <div className="sc-box">
           <b><KeyRound size={14} /> Sale password</b>
-          <p className="muted small" style={{ margin: 0 }}>When it's on, agents must type this password every time they submit a sale. 5 wrong tries lock them out for 15 minutes and you get an alert.</p>
+          <p className="muted small" style={{ margin: 0 }}>When it's on, everyone (agents and you) must type this password every time a sale is submitted. 5 wrong tries lock them out for 15 minutes and you get an alert.</p>
           <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
             <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder={d.hasPassword ? "New sale password" : "Set a sale password"} autoComplete="new-password" style={{ maxWidth: 260 }} />
             <button disabled={pw.length < 4 || busy === "pw"} onClick={async () => { setBusy("pw"); const r = await api("/api/sales/lock", "POST", { action: "password", password: pw }); setBusy(""); if (r.ok) { setPw(""); say("✓ Sale password is on"); load(); } else say(r.data.error); }}>{busy === "pw" ? <Loader2 size={14} className="spin" /> : <KeyRound size={14} />} {d.hasPassword ? "Change" : "Turn on"}</button>

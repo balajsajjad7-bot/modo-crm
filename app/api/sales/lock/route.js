@@ -10,7 +10,7 @@ export async function GET() {
   if (session.role === "AGENT") return NextResponse.json({ needPassword: !!v.pw, off: v.blocked.includes(session.uid) });
   const { db } = await import("@/lib/db");
   const agents = await db.user.findMany({ where: { role: "AGENT", active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, agentId: true } });
-  return NextResponse.json({ hasPassword: !!v.pw, setAt: v.pw?.setAt || null, blocked: v.blocked, agents });
+  return NextResponse.json({ needPassword: !!v.pw, off: false, hasPassword: !!v.pw, setAt: v.pw?.setAt || null, blocked: v.blocked, agents });
 }
 // Admin: { action: "password", password } | { action: "clearPassword" } | { action: "agent", uid, off }
 export async function POST(req) {

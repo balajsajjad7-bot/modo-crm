@@ -1,7 +1,7 @@
 "use client";
 // Budget Ease agents: submit a utility-bill discount signup. Separate from telecom sales.
 import { useEffect, useState } from "react";
-import { useSaleGate, SalePassword, SalesOff } from "@/components/agent/SaleGate";
+import { useSaleGate, SalePassword, SalesOff, gateFromError } from "@/components/agent/SaleGate";
 import BeCard, { money } from "./BeCard";
 import BrandLogo from "@/components/BrandLogo";
 import { Sparkles, Send, Eye, EyeOff, Lock, CheckCircle2, Upload, ClipboardCheck, PiggyBank } from "lucide-react";
@@ -51,7 +51,8 @@ export default function BeForm() {
   }
   async function submit(e) {
     e.preventDefault(); setErr(""); setBusy(true);
-    const r = await post("/api/budgetease", { ...f, ...(gate.needPassword ? { salePassword: salePw } : {}) }); const d = await r.json().catch(() => ({})); setBusy(false);
+    const r = await post("/api/budgetease", { ...f, salePassword: salePw }); const d = await r.json().catch(() => ({})); setBusy(false);
+    if (!r.ok) gateFromError(gate, r.status, d);
     if (!r.ok) return setErr(d.error || "Couldn't submit.");
     setDone(d); setF(EMPTY); setSalePw(""); setNotes(""); setAi(""); loadMine(); window.scrollTo({ top: 0, behavior: "smooth" });
   }

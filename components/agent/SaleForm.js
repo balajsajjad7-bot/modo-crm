@@ -1,7 +1,7 @@
 "use client";
 // Structured sale form. Sent straight to admin, then cleared. A live preview shows exactly how admin will see it.
 import { useEffect, useState } from "react";
-import { useSaleGate, SalePassword, SalesOff } from "./SaleGate";
+import { useSaleGate, SalePassword, SalesOff, gateFromError } from "./SaleGate";
 import SaleCard from "@/components/SaleCard";
 import { useShell } from "@/components/Shell";
 import { Send, Wand2, Eraser } from "lucide-react";
@@ -51,9 +51,9 @@ export default function SaleForm({ onDone }) {
   }
   async function submit(e) {
     e.preventDefault(); setErr(""); setReceipt(""); setBusy(true);
-    const r = await fetch("/api/sales", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...f, ...(gate.needPassword ? { salePassword: salePw } : {}) }) });
-    const d = await r.json(); setBusy(false);
-    if (!r.ok) return setErr(d.error);
+    const r = await fetch("/api/sales", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...f, salePassword: salePw }) });
+    const d = await r.json().catch(() => ({})); setBusy(false);
+    if (!r.ok) { gateFromError(gate, r.status, d); return setErr(d.error || "Couldn't send the sale."); }
     setReceipt(d.receipt); setF({ ...EMPTY, office: f.office, locationCode: f.locationCode }); setAuto(true); setSalePw("");
     try { sessionStorage.removeItem("modo-sale-draft"); } catch {}
     onDone?.();
