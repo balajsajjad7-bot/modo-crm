@@ -140,13 +140,75 @@ function Cand({ c, d, open, toggle, link, act, say }) {
 
           <Interviews c={c} d={d} act={act} say={say} />
 
+          <HireBox c={c} act={act} say={say} />
+
           <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
-            <button className="sm" onClick={() => act({ action: "update", id: c.id, patch: { status: "hired" } }, `✓ ${c.name} marked hired — add them in Team → Agents`)}><CheckCircle2 size={13} /> Hire</button>
             <button className="ghost sm" onClick={() => act({ action: "update", id: c.id, patch: { status: "on hold" } })}><PauseCircle size={13} /> On hold</button>
             <button className="ghost sm danger" onClick={() => act({ action: "update", id: c.id, patch: { status: "rejected" } })}><XCircle size={13} /> Reject</button>
             <button className="ghost sm icon-btn" title="Delete candidate" onClick={() => confirm(`Delete ${c.name} and their test?`) && act({ action: "delete", id: c.id })}><Trash2 size={13} /></button>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// Hire → Modo creates the agent's login and a PDF welcome letter (congratulations, login, first day, test results).
+function HireBox({ c, act, say }) {
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const [open, setOpen] = useState(false); const [f, setF] = useState({ startDate: tomorrow, shiftStart: "19:00" });
+  const [busy, setBusy] = useState(""); const [made, setMade] = useState(null);
+  const origin = typeof location !== "undefined" ? location.origin : "";
+  const pdf = async (letter, password) => { const { downloadWelcomeLetter } = await import("@/components/hiring/welcomeLetter"); await downloadWelcomeLetter({ letter, password, origin }); };
+  const hire = async () => {
+    setBusy("hire"); const r = await act({ action: "hire", id: c.id, hire: f }); setBusy("");
+    if (r.ok) { setMade(r.data); setOpen(false); await pdf(r.data.letter, r.data.password); say(`🎉 ${c.name} hired — login ${r.data.agentId} created, welcome letter downloaded`); }
+  };
+  const newPw = async () => {
+    if (!confirm(`Make a new password for ${c.name} (${c.agentId})? Their current password stops working.`)) return;
+    setBusy("pw"); const r = await act({ action: "newPassword", id: c.id }); setBusy("");
+    if (r.ok) { setMade(r.data); await pdf(r.data.letter, r.data.password); say("✓ New password made — welcome letter downloaded"); }
+  };
+  const letterOnly = async () => { setBusy("pdf"); const r = await api("/api/hiring", "POST", { action: "letter", id: c.id }); setBusy(""); if (r.ok) await pdf(r.data.letter, null); else say(r.data.error); };
+  const msg = made ? `Congratulations ${c.name.split(" ")[0]}! 🎉 Welcome to the team.\n\nYour Modo login:\nSign in: ${origin}/login\nAgent ID: ${made.agentId}\nPassword: ${made.password}\n\nKeep it private. Your welcome letter with your first-day details is attached separately.` : "";
+  if (c.agentId) return (
+    <div className="hr-box hr-hired">
+      <div className="row" style={{ justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+        <b><CheckCircle2 size={14} /> Hired · Modo login <code>{c.agentId}</code>{c.hire?.startDate ? ` · starts ${new Date(c.hire.startDate).toDateString()}` : ""}</b>
+        <span className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+          <button className="ghost sm" disabled={!!busy} onClick={letterOnly}>{busy === "pdf" ? <Loader2 size={13} className="spin" /> : <FileText size={13} />} Welcome letter (PDF)</button>
+          <button className="ghost sm" disabled={!!busy} onClick={newPw}>{busy === "pw" ? <Loader2 size={13} className="spin" /> : <RefreshCw size={13} />} New password + letter</button>
+        </span>
+      </div>
+      {made && (
+        <div className="hr-login">
+          <span>Agent ID <code>{made.agentId}</code></span><span>Password <code>{made.password}</code></span>
+          <button className="ghost sm" onClick={() => pdf(made.letter, made.password)}><FileText size={13} /> Download letter again</button>
+          {c.phone && <WaButton phone={c.phone} name={c.name} text={msg} label="Send login" />}
+          <small className="muted">Shown only now — the password isn't stored. Send the PDF or the login to {c.name.split(" ")[0]}.</small>
+        </div>
+      )}
+    </div>
+  );
+  return (
+    <div className="hr-box hr-hire">
+      {!open ? (
+        <div className="row" style={{ justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+          <b><CheckCircle2 size={14} /> Ready to hire {c.name.split(" ")[0]}?</b>
+          <button className="sm" onClick={() => setOpen(true)}><CheckCircle2 size={13} /> Hire</button>
+        </div>
+      ) : (
+        <>
+          <b><CheckCircle2 size={14} /> Hire {c.name} — Modo makes their login and a welcome letter (PDF) with their test results</b>
+          <div className="sb-form">
+            <label>Start date<input type="date" value={f.startDate} onChange={(e) => setF({ ...f, startDate: e.target.value })} /></label>
+            <label>Shift starts (PKT)<input type="time" value={f.shiftStart} onChange={(e) => setF({ ...f, shiftStart: e.target.value })} /></label>
+            <div className="sb-wide row" style={{ gap: 6 }}>
+              <button disabled={busy === "hire"} onClick={hire}>{busy === "hire" ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />} Hire & create login</button>
+              <button className="ghost" onClick={() => setOpen(false)}>Cancel</button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

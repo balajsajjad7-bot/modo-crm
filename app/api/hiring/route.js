@@ -21,6 +21,9 @@ export async function POST(req) {
       case "add": return NextResponse.json({ ok: true, candidate: await addCandidate(b.candidate || {}) });
       case "update": return NextResponse.json({ ok: true, candidate: await updateCandidate(String(b.id), b.patch || {}) });
       case "delete": await deleteCandidate(String(b.id)); return NextResponse.json({ ok: true });
+      case "hire": { const { hireCandidate } = await import("@/lib/hiring"); const { session } = await requireAdminOnly(); return NextResponse.json({ ok: true, ...(await hireCandidate(String(b.id), b.hire || {}, session?.name || "Admin")) }); }
+      case "newPassword": { const { rehirePassword } = await import("@/lib/hiring"); return NextResponse.json({ ok: true, ...(await rehirePassword(String(b.id))) }); }
+      case "letter": { const { loadHiring: lh, letterData } = await import("@/lib/hiring"); const v = await lh(); const c = v.candidates.find((x) => x.id === String(b.id)); if (!c) throw new Error("Candidate not found."); return NextResponse.json({ ok: true, letter: letterData(c, v.settings) }); }
       case "schedule": { const r = await scheduleInterview(String(b.id), b.interview || {}); return NextResponse.json({ ok: true, warn: r.warn }); }
       case "interview": await updateInterview(String(b.id), String(b.ivId), b.patch || {}); return NextResponse.json({ ok: true });
       case "slots": return NextResponse.json({ ok: true, slots: await addSlots(b.slots) });
