@@ -214,7 +214,7 @@ async function handle(req, res, raw) {
 function start() {
   if (!MODO || !KEY) return log("WhatsApp off: set MODO_URL and RELAY_KEY.");
   connect();
-  setInterval(() => { if (state === "open") flushOutbox(); }, 5 * 60000); // catch anything Modo queued while we were away
+  setInterval(() => { if (state === "open") flushOutbox(); }, 60 * 60000); // safety net: Modo sends straight to the relay; this catches anything queued while we were away
 }
 
 module.exports = { info, start, handle };

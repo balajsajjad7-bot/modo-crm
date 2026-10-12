@@ -68,6 +68,8 @@ async function register() {
   } catch (e) { reg = { ok: false, at: new Date().toISOString(), error: "Couldn't reach Modo: " + e.message }; log("Couldn't reach Modo:", e.message); }
 }
 http.createServer(forward).listen(PORT, () => { log("Modo Cloud Relay on port", PORT, SELF); register(); if (wa) wa.start(); });
-setInterval(register, 4 * 60 * 1000);
+// The cloud relay's address never changes, so check in rarely: every call wakes Modo's database, and a database
+// that never sleeps uses up the free Neon plan. (An office PC relay gets a new address each start, so it checks in often.)
+setInterval(register, (/onrender\.com/i.test(SELF || "") ? 6 * 60 : 4) * 60 * 1000);
 // Free hosts sleep after ~15 minutes without visitors: visit ourselves so the relay stays awake.
 if (SELF) setInterval(() => fetch(SELF + "/ping").catch(() => {}), 10 * 60 * 1000);

@@ -11,6 +11,8 @@ import TopBar from "./TopBar";
 import { useHuddle } from "./useHuddle";
 import { LogOut, Phone, PhoneOff, Mic, MicOff, X, Users, AlarmClock, MapPin, Power, Clock, Search, CornerDownLeft, GraduationCap, MessageSquare, Plus, PhoneCall, Receipt, SearchCheck, Timer, Coffee, Settings as SettingsIcon, LayoutDashboard, KeyRound, Headphones, Smartphone, Bot } from "lucide-react";
 import { guideForRole } from "@/lib/guide";
+import { installQuietFetch, isActive } from "@/lib/quietFetch";
+if (typeof window !== "undefined") installQuietFetch(); // let the database sleep when nobody is using Modo
 import { startChunkSend } from "@/components/chunklisten";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Translator from "@/components/Translator";
@@ -73,6 +75,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   const isDesktop = typeof window !== "undefined" && !!window.modo?.isDesktop;
   const [locked, setLocked] = useState(null); const [myStatus, setMyStatus] = useState("available");
   useEffect(() => { if (me?.status) setMyStatus(me.status); }, [me]);
+  const meRef = useRef(null); useEffect(() => { meRef.current = me; }, [me]);
   useEffect(() => { if (!locked) return; const t = setInterval(async () => { const st = await fetch("/api/status").then((x) => x.json()).catch(() => ({})); if (!st.lockdown) location.reload(); }, 15000); return () => clearInterval(t); }, [locked]);
   const setStatus = async (st) => { setMyStatus(st); await fetch("/api/me/status", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: st }) }); };
   const [pwOpen, setPwOpen] = useState(false);
@@ -103,6 +106,7 @@ export default function Shell({ nav, home, onSignOut, signOutLabel = "Sign out",
   useEffect(() => {
     let stop = false;
     const beat = async () => {
+      if (meRef.current && meRef.current.role !== "AGENT" && !isActive()) return; // admins: no heartbeat from an unused screen (agents keep theirs for attendance)
       const body = { idle: !!window.__modoIdle };
       if (geo.current.v) Object.assign(body, geo.current.v);
       const r = await fetch("/api/heartbeat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
