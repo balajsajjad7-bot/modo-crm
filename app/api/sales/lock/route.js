@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireRole, requireAdminOnly } from "@/lib/auth";
-import { saleLock, setSalePassword, setSaleBlocked } from "@/lib/saleLock";
+import { saleLock, setSalePassword, setSaleBlocked, unlockSale } from "@/lib/saleLock";
+import { currentUser } from "@/lib/auth";
 
 // Agent: does submitting need the sale password / is it off for me?  Admin: the whole picture.
 export async function GET() {
@@ -14,9 +15,15 @@ export async function GET() {
 }
 // Admin: { action: "password", password } | { action: "clearPassword" } | { action: "agent", uid, off }
 export async function POST(req) {
+  const b = await req.json().catch(() => ({}));
+  // Anyone signed in: unlock the Sale section with the sale password.
+  if (b.action === "unlock") {
+    const s = await currentUser(); if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+    const r = await unlockSale(s, b.password);
+    return NextResponse.json(r, { status: r.status || 200 });
+  }
   const { error } = await requireAdminOnly();
   if (error) return error;
-  const b = await req.json().catch(() => ({}));
   if (b.action === "password") {
     const pw = String(b.password || "");
     if (pw.length < 4 || pw.length > 100) return NextResponse.json({ error: "Use 4 to 100 characters." }, { status: 400 });

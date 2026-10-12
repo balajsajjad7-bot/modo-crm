@@ -53,8 +53,10 @@ export function WaComposer({ phone, name, text, onClose }) {
     </div>, document.body);
 }
 
-export default function WaButton({ phone, text, label = "WhatsApp", iconOnly, title, name }) {
-  const [ready, setReady] = useState(false); const [open, setOpen] = useState(false);
+// direct: one click sends the text straight away from Modo's WhatsApp (no composer). Without a linked WhatsApp it
+// opens your own WhatsApp with the text filled in, so it's still one tap.
+export default function WaButton({ phone, text, label = "WhatsApp", iconOnly, title, name, direct, onSent }) {
+  const [ready, setReady] = useState(false); const [open, setOpen] = useState(false); const [st, setSt] = useState(""); const [err, setErr] = useState("");
   useEffect(() => { if (phone) isReady().then(setReady); }, [phone]);
   const href = phone ? waLink(phone, text) : `https://wa.me/?text=${encodeURIComponent(text || "")}`;
   if (phone && waNumber(phone).length < 8) return null;
@@ -62,9 +64,19 @@ export default function WaButton({ phone, text, label = "WhatsApp", iconOnly, ti
   return (
     <>
       <a className={"wa-btn" + (iconOnly ? " icon" : "")} href={href} target="_blank" rel="noreferrer" title={tip} aria-label={tip}
-        onClick={(e) => { e.stopPropagation(); if (phone && ready) { e.preventDefault(); setOpen(true); } }}>
-        <Icon />{!iconOnly && <span>{label}</span>}
+        onClick={async (e) => {
+          e.stopPropagation();
+          if (!(phone && ready)) { if (direct) onSent?.("opened"); return; }
+          e.preventDefault();
+          if (!direct) return setOpen(true);
+          if (st === "busy") return;
+          setSt("busy"); setErr("");
+          const r = await fetch("/api/wa-send", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ to: phone, text, name }) }).then(async (x) => ({ ok: x.ok, d: await x.json().catch(() => ({})) })).catch(() => ({ ok: false, d: { error: "No connection." } }));
+          if (r.ok) { setSt(r.d.queued ? "queued" : "sent"); onSent?.(r.d.queued ? "queued" : "sent"); } else { setSt(""); setErr(r.d.error || "Didn't send."); }
+        }}>
+        {st === "busy" ? <Loader2 size={13} className="spin" /> : st ? <CheckCircle2 size={13} /> : <Icon />}{!iconOnly && <span>{st === "busy" ? "Sending…" : st === "sent" ? "Sent on WhatsApp" : st === "queued" ? "Queued — sends shortly" : label}</span>}
       </a>
+      {err && <small className="err small" style={{ display: "block", marginTop: 4 }}>{err} <a href={waLink(phone, text)} target="_blank" rel="noreferrer">Open in my WhatsApp</a></small>}
       {open && <WaComposer phone={phone} name={name} text={text} onClose={() => setOpen(false)} />}
     </>
   );

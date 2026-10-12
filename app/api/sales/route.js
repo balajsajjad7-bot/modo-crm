@@ -37,7 +37,7 @@ export async function POST(req) {
   const { session, error } = await requireRole("AGENT");
   if (error) return error;
   const b = await req.json();
-  const lock = await checkSaleSubmit(session, b.salePassword); // sale password / submit switched off for this agent
+  const lock = await checkSaleSubmit(session, b.salePassword, b.saleToken); // sale password / submit switched off for this agent
   if (lock) return NextResponse.json(lock, { status: lock.status });
   const f = {
     customer: str(b.customer, 120), phone: str(b.phone, 40), email: str(b.email, 120), address: str(b.address, 240), zip: str(b.zip, 20),

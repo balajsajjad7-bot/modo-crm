@@ -33,7 +33,7 @@ export async function POST(req) {
   const s = await currentUser();
   if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   const b = await req.json();
-  const lock = await checkSaleSubmit(s, b.salePassword);
+  const lock = await checkSaleSubmit(s, b.salePassword, b.saleToken);
   if (lock) return NextResponse.json(lock, { status: lock.status });
   const f = {
     customer: String(b.customer || "").trim().slice(0, 100), phone: digits(b.phone).slice(-10), email: String(b.email || "").trim().slice(0, 120) || null,

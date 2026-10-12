@@ -1,7 +1,7 @@
 "use client";
 // Structured sale form. Sent straight to admin, then cleared. A live preview shows exactly how admin will see it.
 import { useEffect, useState } from "react";
-import { useSaleGate, SalePassword, SalesOff, gateFromError } from "./SaleGate";
+import { useSaleGate, SaleUnlock, SalesOff, gateFromError } from "./SaleGate";
 import SaleCard from "@/components/SaleCard";
 import { useShell } from "@/components/Shell";
 import { Send, Wand2, Eraser } from "lucide-react";
@@ -28,7 +28,7 @@ export default function SaleForm({ onDone }) {
   const [f, setF] = useState(EMPTY); const [people, setPeople] = useState([]); const [auto, setAuto] = useState(true); const [camps, setCamps] = useState([]);
   useEffect(() => { fetch("/api/org").then((r) => r.json()).then((d) => setCamps((d.campaigns || []).filter((c) => c.active))).catch(() => {}); }, []);
   useEffect(() => { if (me?.campaignId) setF((o) => (o.campaignId ? o : { ...o, campaignId: me.campaignId })); }, [me]);
-  const gate = useSaleGate(); const [salePw, setSalePw] = useState("");
+  const gate = useSaleGate();
   const [paste, setPaste] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState(""); const [receipt, setReceipt] = useState("");
   useEffect(() => {
     fetch("/api/chat/people").then((r) => r.json()).then((p) => setPeople(Array.isArray(p) ? p : []));
@@ -51,10 +51,10 @@ export default function SaleForm({ onDone }) {
   }
   async function submit(e) {
     e.preventDefault(); setErr(""); setReceipt(""); setBusy(true);
-    const r = await fetch("/api/sales", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...f, salePassword: salePw }) });
+    const r = await fetch("/api/sales", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...f, saleToken: gate.token }) });
     const d = await r.json().catch(() => ({})); setBusy(false);
     if (!r.ok) { gateFromError(gate, r.status, d); return setErr(d.error || "Couldn't send the sale."); }
-    setReceipt(d.receipt); setF({ ...EMPTY, office: f.office, locationCode: f.locationCode }); setAuto(true); setSalePw("");
+    setReceipt(d.receipt); setF({ ...EMPTY, office: f.office, locationCode: f.locationCode }); setAuto(true);
     try { sessionStorage.removeItem("modo-sale-draft"); } catch {}
     onDone?.();
   }
@@ -66,6 +66,7 @@ export default function SaleForm({ onDone }) {
   const chips = (k, opts, multi) => <div className="chip-pick" role="group">{opts.map((o) => <button key={o} type="button" className={"chip-btn" + ((multi ? inList(k, o) : f[k] === o) ? " on" : "")} onClick={() => (multi ? toggleWord(k, o) : setF({ ...f, [k]: f[k] === o ? "" : o }))}>{o}</button>)}</div>;
 
   if (gate.off) return <SalesOff />;
+  if (gate.locked) return <SaleUnlock gate={gate} />;
   return (
     <div className="sale-form-wrap sales-page">
       <form className="panel stack sale-form" onSubmit={submit}>
@@ -125,7 +126,6 @@ export default function SaleForm({ onDone }) {
         </fieldset>
         {err && <div className="err">{err}</div>}
         {receipt && <div className="receipt">Sale sent to admin. Receipt {receipt}. The form has been cleared.</div>}
-        {gate.needPassword && <SalePassword value={salePw} onChange={setSalePw} />}
         <div className="row">
           <button disabled={busy}><Send size={15} /> {busy ? "Sending…" : "Send sale to admin"}</button>
           <button type="button" className="ghost" onClick={() => { if (confirm("Clear the form?")) { setF({ ...EMPTY, office: f.office }); setAuto(true); } }}><Eraser size={15} /> Clear</button>

@@ -3216,6 +3216,8 @@ html .lp .wl-hero h1 em{background:linear-gradient(90deg,#c4b5fd,#93c5fd 60%,#67
 .hr-score.pass{background:#10b98122;color:#10b981}.hr-score.fail{background:#ef444422;color:#ef4444}.hr-score.none{opacity:.6}
 .hr-st{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);white-space:nowrap}
 .hr-box{display:grid;gap:8px;padding:12px;border:1px solid var(--border);border-radius:14px}
+.hr-next{border-color:color-mix(in srgb,#22c55e 45%,var(--border));background:color-mix(in srgb,#22c55e 6%,transparent)}
+.hr-next-msg{margin:0;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--border);white-space:pre-wrap;font-size:13px;line-height:1.5}
 .hr-box>b{display:flex;gap:6px;align-items:center}
 .hr-res{display:flex;gap:14px;align-items:center}
 .hr-big{display:grid;place-items:center;width:74px;height:74px;border-radius:20px;color:#fff;flex-shrink:0}.hr-big b{font-size:28px;line-height:1}.hr-big small{font-size:11px;opacity:.85}
@@ -3624,6 +3626,9 @@ html[data-look="minimal"] .lp *{transition:none}
 .hr-login{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px;border-radius:12px;border:1px dashed #10b98188}
 .hr-login small{flex-basis:100%}
 .sale-pw{display:grid;gap:6px;max-width:320px}.sale-pw>span{display:inline-flex;gap:6px;align-items:center;font-weight:600}
+.sale-lock{display:grid;justify-items:center;text-align:center;gap:8px;max-width:420px;margin:24px auto;padding:28px 22px}.sale-lock>b{font-size:18px}.sale-lock p{margin:0}
+.sale-lock-ic{display:grid;place-items:center;width:58px;height:58px;border-radius:18px;color:#fff;background:linear-gradient(135deg,#fda4af,#e11d48);box-shadow:0 10px 30px -10px #e11d48}
+.sale-lock-form{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;justify-content:center;width:100%}.sale-lock-form .sale-pw{flex:1 1 200px;text-align:left}
 .sales-off{display:grid!important;grid-template-columns:auto 1fr;gap:12px;align-items:center}
 :root .sc-head{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;width:100%;color:inherit!important;background:transparent!important;box-shadow:none!important}
 .sc-head>span:nth-child(2){display:grid}.sc-head small{color:var(--muted-foreground,#888);font-size:12px}

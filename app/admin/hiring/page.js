@@ -3,7 +3,7 @@
 // answer review with recordings, interview slots and Zoom interviews.
 import { useEffect, useRef, useState } from "react";
 import WaButton from "@/components/WaButton";
-import { UserPlus, Link2, Copy, Mail, Video, CalendarPlus, CalendarClock, Settings2, Users, GraduationCap, CheckCircle2, XCircle, PauseCircle, Trash2, RefreshCw, ChevronDown, Star, Headphones, AlertTriangle, ExternalLink, Clock3, Briefcase, Plus, FileText, Sparkles, UploadCloud, Loader2 } from "lucide-react";
+import { UserPlus, Link2, Copy, Mail, Video, CalendarPlus, CalendarClock, Settings2, Users, GraduationCap, CheckCircle2, XCircle, PauseCircle, Trash2, RefreshCw, ChevronDown, Star, Headphones, AlertTriangle, ExternalLink, Clock3, Briefcase, Plus, FileText, Sparkles, UploadCloud, Loader2, Send } from "lucide-react";
 
 const api = (url, method = "GET", body) => fetch(url, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const when = (t) => new Date(t).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -136,6 +136,8 @@ function Cand({ c, d, open, toggle, link, act, say }) {
             {!r && <small className="muted">Link valid until {when(c.expiresAt)}.</small>}
           </div>
 
+          {r && !["hired", "rejected"].includes(c.status) && !next && <NextStep c={c} r={r} d={d} link={link} act={act} />}
+
           {r && <Result c={c} r={r} />}
 
           <Interviews c={c} d={d} act={act} say={say} />
@@ -149,6 +151,34 @@ function Cand({ c, d, open, toggle, link, act, say }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// After the test: the next step of hiring as one WhatsApp message, sent in one click.
+const SKILL_TIP = { speaking: "speaking clearly and confidently", listening: "listening to native US speakers", reading: "reading out loud", writing: "writing short professional emails", fluency: "speaking smoothly without long pauses", pronunciation: "pronunciation" };
+function NextStep({ c, r, d, link, act }) {
+  const first = c.name.split(" ")[0]; const co = d.settings.company;
+  const open = (d.slots || []).some((s) => !s.bookedBy && new Date(s.at) > Date.now() + 30 * 60000);
+  const weakest = Object.entries(r.skills || {}).sort((a, b) => a[1] - b[1])[0]?.[0];
+  const kind = r.pass ? (open ? "book" : "wait") : "regret";
+  const msg = {
+    book: `Congratulations ${first}! 🎉 You passed the ${co} English Assessment with ${r.score}/80 (CEFR ${r.cefr}).\n\nNext step: a short Zoom interview (about ${d.settings.mins || 30} minutes). Pick a time that suits you here:\n${link}\n\nJoin from a quiet place with a headset and your camera on. See you soon!`,
+    wait: `Congratulations ${first}! 🎉 You passed the ${co} English Assessment with ${r.score}/80 (CEFR ${r.cefr}).\n\nNext step: a short Zoom interview (about ${d.settings.mins || 30} minutes). Please reply with the days and times you're free this week and we'll send you the Zoom link.`,
+    regret: `Hi ${first}, thank you for taking the ${co} English Assessment. You scored ${r.score}/80 (CEFR ${r.cefr}), which is a little below what this role needs right now.\n\nKeep practising${weakest && SKILL_TIP[weakest] ? `, especially ${SKILL_TIP[weakest]}` : ""}, and you're welcome to apply again in 30 days. We wish you all the best!`,
+  }[kind];
+  const title = { book: "Passed → invite them to book a Zoom interview", wait: "Passed → ask for their free times (no open interview times — add some in Interview times)", regret: "Below the pass mark → kind thank-you message" }[kind];
+  return (
+    <div className="hr-box hr-next">
+      <b><Send size={14} /> Next step</b>
+      <small className="muted">{title}</small>
+      <p className="hr-next-msg">{msg}</p>
+      <div className="row" style={{ gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+        {c.phone ? <WaButton direct phone={c.phone} name={c.name} text={msg} label={r.pass ? "Send next step on WhatsApp" : "Send message on WhatsApp"} onSent={() => act({ action: "update", id: c.id, patch: { nextStepSent: kind } })} />
+          : <small className="hr-warn"><AlertTriangle size={13} /> No phone number — add one to send on WhatsApp.</small>}
+        <button className="ghost sm" onClick={() => copy(msg, () => {})}><Copy size={13} /> Copy</button>
+        {c.nextStepAt && <small className="muted"><CheckCircle2 size={12} /> Sent {when(c.nextStepAt)}</small>}
+      </div>
     </div>
   );
 }
