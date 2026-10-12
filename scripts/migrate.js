@@ -267,20 +267,20 @@ const CORE = [
   await pool.query(
     `INSERT INTO "User" ("id","agentId","passwordHash","role","name","active","shiftStart","shiftHours","workDays","graceMinutes","baseSalary")
      VALUES ($1,'DEMO',$2,'AGENT','Demo Agent',true,'00:00',24,'0,1,2,3,4,5,6',60,50000)
-     ON CONFLICT ("agentId") DO UPDATE SET "passwordHash"=EXCLUDED."passwordHash", "role"='AGENT', "active"=true, "shiftStart"='00:00', "shiftHours"=24, "workDays"='0,1,2,3,4,5,6', "graceMinutes"=60`,
+     ON CONFLICT ("agentId") DO NOTHING`,
     [require("crypto").randomUUID(), demoHash]
   );
-  console.log("Demo agent ready: DEMO / demo1234");
+  console.log("Demo agent: created once if missing (never reset).");
   // A ready supervisor login with the recommended access preset. Login: SUP1 / budgetease123.
   const supHash = await bcrypt.hash("budgetease123", 10);
   const supAccess = JSON.stringify(["sales", "quality", "recordings", "attendance", "whereabouts", "breaks", "chat", "reports", "agents"]);
   await pool.query(
     `INSERT INTO "User" ("id","agentId","passwordHash","role","name","active","supAccess")
      VALUES ($1,'SUP1',$2,'SUPERVISOR','Supervisor',true,$3)
-     ON CONFLICT ("agentId") DO UPDATE SET "passwordHash"=EXCLUDED."passwordHash", "role"='SUPERVISOR', "active"=true, "supAccess"=EXCLUDED."supAccess"`,
+     ON CONFLICT ("agentId") DO NOTHING`,
     [require("crypto").randomUUID(), supHash, supAccess]
   );
-  console.log("Supervisor ready: SUP1 / budgetease123");
+  console.log("Supervisor SUP1: created once if missing (never reset).");
   // Merge the built-in quick-link pack (carriers, bill pay, order & shipment tracking) into whatever's there,
   // de-duping by URL so admin's own links and edits are kept.
   try {
@@ -294,4 +294,9 @@ const CORE = [
     if (added) { await pool.query(`UPDATE "Setting" SET "quickLinks"=$1 WHERE "id"='global'`, [JSON.stringify(cur)]); console.log(`Quick links: added ${added} built-in links.`); }
   } catch (e) { console.log("Quick-link merge skipped:", e.message); }
   await pool.end();
-})().catch((e) => { console.error(e.message); process.exit(1); });
+})().catch((e) => {
+  // Database out of quota / asleep / unreachable: don't block the deploy — the tables already exist; it runs again next deploy.
+  const soft = e?.code === "53000" || /quota|ECONNREFUSED|ENOTFOUND|timeout|terminat|Connection/i.test(e?.message || "");
+  console.error((soft ? "⚠️ Database setup skipped (database not reachable): " : "") + e.message);
+  process.exit(soft ? 0 : 1);
+});
