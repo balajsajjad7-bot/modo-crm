@@ -10,6 +10,7 @@ export async function GET() {
   } catch (e) {
     const m = String(e?.message || "");
     const why = /53000|exceeded the quota/i.test(m) ? "quota" : /connect|timeout|ECONN|terminat/i.test(m) ? "unreachable" : "error";
-    return NextResponse.json({ db: why, code: e?.code || (m.match(/\b(5\d{4}|[0-9A-Z]{5})\b/)?.[1]) || "" }, { headers: { "cache-control": "no-store" } });
+    const pg = (m.match(/message: "([^"]{0,300})/) || [])[1] || m.slice(-300).replace(/postgres(ql)?:\/\/\S+/gi, "[url]");
+    return NextResponse.json({ db: why, detail: pg, code: e?.code || (m.match(/\b(5\d{4}|[0-9A-Z]{5})\b/)?.[1]) || "" }, { headers: { "cache-control": "no-store" } });
   }
 }
