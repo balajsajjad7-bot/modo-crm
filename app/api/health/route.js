@@ -10,6 +10,6 @@ export async function GET() {
   } catch (e) {
     const m = String(e?.message || "");
     const why = /53000|exceeded the quota/i.test(m) ? "quota" : /connect|timeout|ECONN|terminat/i.test(m) ? "unreachable" : "error";
-    return NextResponse.json({ db: why }, { status: 503, headers: { "cache-control": "no-store" } });
+    return NextResponse.json({ db: why, code: e?.code || (m.match(/\b(5\d{4}|[0-9A-Z]{5})\b/)?.[1]) || "" }, { headers: { "cache-control": "no-store" } });
   }
 }
