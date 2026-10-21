@@ -1,0 +1,12 @@
+name: Modo daily jobs (free replacement for host cron)
+on:
+  schedule: [{ cron: "0 21 * * *" }, { cron: "0 14 * * *" }]
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          URL="${{ vars.MODO_URL || 'https://modo-crm1.vercel.app' }}"
+          if [ "${{ github.event.schedule }}" = "0 14 * * *" ]; then P=/api/sales/ups-bot; else P=/api/drive/backup; fi
+          curl -s -m 60 "$URL$P" -o /dev/null -w "$P → %{http_code}\n" || true

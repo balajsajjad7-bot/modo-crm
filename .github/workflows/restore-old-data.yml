@@ -1,0 +1,14 @@
+name: Restore old Modo data
+on: workflow_dispatch
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-save @neondatabase/serverless ws
+      - run: node scripts/copy-db.js
+        env:
+          OLD_DATABASE_URL: ${{ secrets.OLD_DATABASE_URL }}
+          NEW_DATABASE_URL: ${{ secrets.NEW_DATABASE_URL }}
