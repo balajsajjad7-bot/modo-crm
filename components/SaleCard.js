@@ -12,7 +12,8 @@ import UpsTrack from "@/components/UpsTrack";
 import BrandLogo from "@/components/BrandLogo";
 import { brandDomain } from "@/lib/brands";
 import WaButton from "./WaButton";
-import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard, Maximize2, Minimize2, X, Store } from "lucide-react";
+const CustomerIntel = dynamic(() => import("@/components/intel/CustomerIntel"), { ssr: false });
+import { User, Phone, Mail, MapPin, Receipt, Smartphone, Gift, Building2, Clock, Copy, AlertTriangle, StickyNote, Trash2, ChevronDown, Layers, PackagePlus, Send, Tag, RefreshCw, Pencil, Package, ExternalLink, Printer, CreditCard, Maximize2, Minimize2, X, Store , Radar } from "lucide-react";
 
 export const pkTime = (d) => d ? new Date(d).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + " PKT" : "—";
 const $ = (n) => (n == null || n === "" || isNaN(Number(n)) ? "—" : "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -151,7 +152,7 @@ function ReturnLabel({ s, labels, onPatch }) {
 
 export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview, labels, defaultOpen = false, wide = false }) {
   const [open, setOpen] = useState(defaultOpen);
-  const [max, setMax] = useState(false); const [more, setMore] = useState(false);
+  const [max, setMax] = useState(false); const [more, setMore] = useState(false); const [intel, setIntel] = useState(false);
   useEffect(() => {
     if (!max) return;
     const esc = (e) => e.key === "Escape" && setMax(false);
@@ -249,6 +250,8 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
               {s.address && <button className="ghost sm" onClick={() => navigator.clipboard?.writeText([s.customer, s.address, s.zip].filter(Boolean).join("\n"))}><Copy size={13} /> Copy address</button>}
               {onStatus && s.id && s.orderNumber && <OrderCheck s={s} onSaved={(d) => d && setLive(d)} />}
               {onStatus && s.id && <AiButton task="check_sale" payload={{ id: s.id }} label="AI check" />}
+              {onStatus && s.id && (s.phone || s.address || s.email || s.device) && <button className="ghost sm" onClick={() => setIntel(true)}><Radar size={13} /> Customer 360</button>}
+              {intel && typeof document !== "undefined" && createPortal(<div className="ci-modal" onClick={(e) => e.target === e.currentTarget && setIntel(false)}><CustomerIntel saleId={s.id} auto isAdmin onClose={() => setIntel(false)} /></div>, document.body)}
             </div>
           )}
           {s.notes ? <section className="sale-sec sale-notes"><h4><StickyNote size={13} /> Notes</h4><div className="sf-v" style={{ fontWeight: 600, whiteSpace: "pre-wrap" }}>{s.notes}</div></section> : null}

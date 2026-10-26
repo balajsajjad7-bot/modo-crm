@@ -4,7 +4,7 @@ import Shell from "@/components/Shell";
 import { AgentProvider, useAgent } from "@/components/agent/AgentContext";
 import Onboarding from "@/components/agent/Onboarding";
 import GeoReporter from "@/components/agent/GeoReporter";
-import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText, GraduationCap, Wand2, Phone, MessageSquareWarning } from "lucide-react";
+import { Timer, Coffee, Trophy, ClipboardPaste, Mic, MessageSquare, Sparkles, Calculator, Kanban, Contact, ListChecks, BarChart3, Briefcase, NotebookPen, SearchCheck, BadgeCheck, PiggyBank, PhoneCall, Lock, FileText, GraduationCap, Wand2, Phone, MessageSquareWarning, Radar } from "lucide-react";
 
 function BreakButton({ onBreak, since, onClick }) {
   const [now, setNow] = useState(Date.now());
@@ -36,6 +36,7 @@ function Frame({ children }) {
     { href: "/agent/target", label: "Target & leaderboard", hint: "Today's target and ranking", icon: i(Trophy) },
     { href: "/agent/quality", label: "My call quality", hint: "AI coaching on every call", icon: i(BadgeCheck) },
     { href: "/agent/reports", label: "My stats", hint: "Your sales and attendance trends", icon: i(BarChart3) },
+    ...(P.customerIntel !== false ? [{ href: "/agent/intel", label: "Customer 360", hint: "Carrier, safe call hours, address, utility, internet and email checks in one scan", icon: i(Radar) }] : []),
     ...(P.lookups !== false ? [{ href: "/agent/lookups", label: "Lookups", hint: "USA phone, ZIP, address and email checks", icon: i(SearchCheck) }] : []),
     ...(P.calculator !== false ? [{ href: "/agent/calculator", label: "Calculator", hint: "Quote a customer's discount", icon: i(Calculator) }] : []),
     { href: "/agent/contract", label: "My contract", hint: "Your welcome and confidential contract", icon: i(FileText) },

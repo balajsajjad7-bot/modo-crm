@@ -1,7 +1,7 @@
 "use client";
 import { signOutNow } from "@/lib/signOut";
 import Shell from "@/components/Shell";
-import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic, Bot, CreditCard, MessageSquareWarning, UserPlus } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Wallet, Settings, MessageSquare, Sparkles, Calculator, Plug, Kanban, Contact, ListChecks, BarChart3, Fingerprint, MonitorSmartphone, Briefcase, Wrench, UsersRound, NotebookPen, Mail, ShieldCheck, UserCog, Building2, Coffee, SearchCheck, BadgeCheck, CalendarClock, PiggyBank, PhoneCall, Brain, Download, MonitorDown, Disc3, Lock, MapPin, GraduationCap, BookOpen, PackageSearch, Wand2, Phone, HardDrive, Blocks, CheckCircle2, MessageCircle, Mic, Bot, CreditCard, MessageSquareWarning, UserPlus, Radar } from "lucide-react";
 import { usePoll } from "@/components/admin/api";
 import { useEffect, useState } from "react";
 import { sectionForPath } from "@/lib/supaccess";
@@ -28,6 +28,7 @@ export default function AdminLayout({ children }) {
     { label: "CRM", icon: i(Briefcase), children: [
       { href: "/admin/pipeline", label: "Pipeline", hint: "Deals by stage, drag to move", icon: i(Kanban) },
       { href: "/admin/contacts", label: "Customers", hint: "Everyone you've talked to", icon: i(Contact) },
+      { href: "/admin/intel", label: "Customer 360", hint: "One scan: carrier, safe call hours, verified address, neighbourhood, utility, internet, email, IMEI, Modo history", icon: i(Radar) },
       { href: "/admin/notepad", label: "Notepad", hint: "Last notes and callbacks for every customer", icon: i(NotebookPen) },
       { href: "/admin/email", label: "Email", hint: "Email customers and see what was sent", icon: i(Mail) },
       { href: "/admin/tasks", label: "Tasks & callbacks", hint: "Who needs to call whom, when", icon: i(ListChecks) },

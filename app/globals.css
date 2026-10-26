@@ -3639,3 +3639,72 @@ html[data-look="minimal"] .lp *{transition:none}
 .sc-row.off{border-color:#ef444455;background:#ef44440d}.sc-state{font-size:12px;font-weight:700;color:#10b981}.sc-row.off .sc-state{color:#ef4444}
 :root .sc-sw{all:unset;cursor:pointer;width:40px;height:22px;border-radius:999px;background:#ef444466;position:relative;transition:background .2s}
 :root .sc-sw.on{background:#10b981}.sc-sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}.sc-sw.on i{transform:translateX(18px)}
+
+/* ── Customer 360 (components/intel) ─────────────────────────────────────────────────────── */
+.ci{display:grid;gap:14px}
+.ci-scan{display:grid;gap:14px}
+.ci-scan-head{display:flex;gap:12px;align-items:flex-start}
+.ci-orb{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:14px;color:#fff;background:var(--grad);box-shadow:0 8px 24px rgba(var(--p),.4);flex-shrink:0}
+.ci-paste{display:flex;gap:10px;align-items:flex-start;border:1px dashed rgba(var(--p),.45);border-radius:14px;padding:8px 12px;background:rgba(var(--p),.06)}
+.ci-paste svg{margin-top:9px;flex-shrink:0}
+.ci-paste textarea{min-height:44px;border:none;background:transparent;padding:6px 0;resize:vertical}
+.ci-paste textarea:focus-visible{outline:none}
+.ci-fields{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.ci-fields .span2{grid-column:span 2}
+@media (max-width:520px){.ci-fields{grid-template-columns:1fr 1fr}.ci-fields .span2{grid-column:1/-1}}
+.ci-actions{gap:8px}
+.ci-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;color:var(--foreground);border:1px solid var(--border);border-radius:999px;padding:6px 12px;background:var(--card)}
+.ci-toggle input{width:auto;margin:0;accent-color:rgb(var(--p))}
+.ci-toggle span{display:inline-flex;align-items:center;gap:5px;font-size:13px}
+.ci-toggle:has(input:checked){border-color:rgb(var(--p));background:rgba(var(--p),.14)}
+.ci-recent{display:flex;gap:6px;flex-wrap:wrap}
+.ci-recent button{max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.ci-hero{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.ci-hero-mid{flex:1;min-width:220px;display:grid;gap:6px}
+.ci-hero-meta{display:flex;gap:12px;flex-wrap:wrap}
+.ci-hero-meta span{display:inline-flex;gap:4px;align-items:center}
+.ci-ring{position:relative;width:72px;height:72px;flex-shrink:0}
+.ci-ring>div{position:absolute;inset:0;display:grid;place-content:center;text-align:center;line-height:1}
+.ci-ring b{font-size:22px;font-variant-numeric:tabular-nums}
+.ci-ring span{font-size:10px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.ci-call{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:16px;border:1px solid var(--border);background:var(--card)}
+.ci-call div{display:grid;line-height:1.25}.ci-call span{font-size:12px;color:var(--muted-fg)}
+.ci-light{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.ci-call.go .ci-light{background:var(--green);box-shadow:0 0 0 4px var(--green-soft),0 0 14px var(--green)}
+.ci-call.stop .ci-light{background:var(--red);box-shadow:0 0 0 4px var(--red-soft),0 0 14px var(--red)}
+.ci-call.go b{color:var(--green)}.ci-call.stop b{color:var(--red)}
+.ci-badges{display:flex;gap:6px;flex-wrap:wrap}
+.chip.muted{background:rgba(var(--mut),.14);color:var(--muted-fg)}
+.ci-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ci-tabs::-webkit-scrollbar{display:none}
+.ci-tabs button{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;background:var(--card);color:var(--foreground);border:1px solid var(--border);box-shadow:none;padding:7px 14px;font-size:13px;position:relative}
+.ci-tabs button.on{background:var(--grad);color:#fff;border-color:transparent}
+.ci-dot{width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block}
+.ci-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.ci-card{background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:16px;display:grid;gap:10px;align-content:start;min-width:0;box-shadow:var(--shadow)}
+.ci-card.wide{grid-column:1/-1}
+.ci-card>header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ci-card h3{display:inline-flex;gap:7px;align-items:center}
+.ci-card h3 svg{color:rgb(var(--p))}
+.ci-facts{margin:0;display:grid;gap:0}
+.ci-fact{display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:10px;padding:7px 0;border-top:1px solid var(--border)}
+.ci-fact:first-child{border-top:none}
+.ci-fact dt{color:var(--muted-fg);font-size:13px}
+.ci-fact dd{margin:0;font-size:14px;font-weight:550;overflow-wrap:anywhere}
+.ci-fact.t-ok dd{color:var(--green)}.ci-fact.t-bad dd{color:var(--red)}.ci-fact.t-warn dd{color:var(--amber)}.ci-fact.t-muted dd{color:var(--muted-fg);font-weight:450}
+@media (max-width:420px){.ci-fact{grid-template-columns:1fr;gap:2px}}
+.ci-links{display:flex;gap:6px;flex-wrap:wrap}
+.ci-map{height:300px;border-radius:16px;overflow:hidden;border:1px solid var(--border)}
+.ci-pin{width:14px;height:14px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer}
+.ci-pin.big{width:22px;height:22px;box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 30%,transparent),0 2px 10px rgba(0,0,0,.4)}
+.ci-stores{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.ci-store{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--foreground);text-decoration:none}
+.ci-store .chip{justify-self:start;margin-top:4px}
+a.ci-store:hover{border-color:var(--accent)}
+.ci-skel{min-height:140px;background:linear-gradient(90deg,var(--card) 0%,rgba(var(--p),.10) 50%,var(--card) 100%);background-size:200% 100%;animation:ci-sh 1.3s linear infinite}
+@keyframes ci-sh{to{background-position:-200% 0}}
+.ci.compact .ci-grid{grid-template-columns:1fr}
+html[data-appearance="light"] .ci-card{background:#fff}
+html[data-appearance="light"] .ci-tabs button:not(.on),html[data-appearance="light"] .ci-toggle,html[data-appearance="light"] .ci-call,html[data-appearance="light"] .ci-store{background:#fff;color:#141414}
+.ci-modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.55);display:grid;place-items:start center;overflow-y:auto;padding:24px 12px 120px}
+.ci-modal>.ci{width:min(1100px,100%)}

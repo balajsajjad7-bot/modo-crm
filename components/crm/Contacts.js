@@ -9,7 +9,8 @@ import { useShell } from "@/components/Shell";
 import { api, money, when, Modal, usePeople, OwnerFilter, base, toLocalInput } from "./shared";
 import { DealEditor } from "./Pipeline";
 import EmailComposer from "@/components/EmailComposer";
-import { Plus, Upload, Phone, Mail, MapPin, Building2, Tag, ArrowLeft, Copy, PhoneCall, StickyNote, AlarmClock, Trash2, Calculator, Check, Handshake, History, ListChecks } from "lucide-react";
+import CustomerIntel from "@/components/intel/CustomerIntel";
+import { Plus, Upload, Phone, Mail, MapPin, Building2, Tag, ArrowLeft, Copy, PhoneCall, StickyNote, AlarmClock, Trash2, Calculator, Check, Handshake, History, ListChecks, Radar } from "lucide-react";
 
 const OUTCOMES = ["Reached", "No answer", "Voicemail", "Call back later", "Not interested", "Wrong number"];
 
@@ -89,7 +90,7 @@ export function ContactDetail({ id }) {
   const people = usePeople(isAdmin);
   const [d, setD] = useState(null); const [err, setErr] = useState(""); const [editing, setEditing] = useState(false);
   const [deal, setDeal] = useState(null); const [task, setTask] = useState(null);
-  const [note, setNote] = useState(""); const [outcome, setOutcome] = useState(""); const [stages, setStages] = useState([]); const [mail, setMail] = useState(false);
+  const [note, setNote] = useState(""); const [outcome, setOutcome] = useState(""); const [stages, setStages] = useState([]); const [mail, setMail] = useState(false); const [intel, setIntel] = useState(false);
   const P = me?.perms || {};
   const load = useCallback(() => api(`/api/crm/contacts/${id}`).then((r) => r.ok ? setD(r.data) : setErr(r.data.error)), [id]);
   useEffect(() => { load(); api("/api/crm/deals?contact=" + id).then((r) => r.ok && setStages(r.data.stages)); }, [load, id]);
@@ -118,6 +119,7 @@ export function ContactDetail({ id }) {
         <div className="row" style={{ marginLeft: "auto" }}>
           {P.scheduleCallbacks && <button onClick={() => setTask({ type: "callback", title: `Call back ${c.name}`, dueAt: toLocalInput(new Date(Date.now() + 3600000)) })}><AlarmClock size={15} /> Schedule callback</button>}
           {P.emailCustomers && c.email && <button className="ghost" onClick={() => setMail(true)}><Mail size={15} /> Email</button>}
+          {P.customerIntel !== false && (isAdmin || P.seeContactInfo) && (c.phone || c.email || c.address || c.city) && <button className={intel ? "" : "ghost"} onClick={() => setIntel(!intel)}><Radar size={15} /> Customer 360</button>}
           <AiButton task="brief_customer" payload={{ contactId: c.id }} label="AI brief" />
           <Link href={B + "/calculator"} className="btn-link"><Calculator size={14} /> Quote</Link>
           {P.editCustomers && <button className="ghost" onClick={() => setEditing(true)}>Edit</button>}
@@ -125,6 +127,7 @@ export function ContactDetail({ id }) {
         </div>
       </section>
 
+      {intel && <CustomerIntel contactId={c.id} auto isAdmin={isAdmin} onClose={() => setIntel(false)} />}
       <div className="two-col">
         <div className="stack">
           {P.addNotes && <section className="panel stack">
