@@ -1,12 +1,13 @@
 "use client";
-// Appearance: Day · Auto · Night, a colour palette (Aurora, Ember, Ocean, Emerald) and a look: Vivid (glass + glow) or Minimal (flat).
+// Appearance: Day · Auto · Night, a colour palette (Aurora, Ember, Ocean, Emerald) and a look: Glass (default: frosted, calm, minimal),
+// Vivid (plasma + glow) or Minimal (flat).
 // Auto = night mode from 7 PM to 7 AM (your computer's clock), day mode otherwise.
 //
 // One shared store for the whole page. Every toggle (desktop bar, phone menu, login, kiosk) reads and
 // writes the same state, so two toggles can never fight each other (that fight used to flip the page
 // back and forth and freeze it when you picked Night).
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Sun, Moon, SunMoon, Sparkles, Square } from "lucide-react";
+import { Sun, Moon, SunMoon, Sparkles, Square, Droplets } from "lucide-react";
 
 export const KEY = "modo-appearance";
 export const STYLE_KEY = "modo-style";
@@ -20,19 +21,19 @@ export const PALETTES = [
 export const NIGHT_FROM = 19, NIGHT_TO = 7;
 const isNight = (d = new Date()) => d.getHours() >= NIGHT_FROM || d.getHours() < NIGHT_TO;
 export const effective = (mode) => (mode === "light" ? "light" : mode === "dark" ? "dark" : isNight() ? "dark" : "light");
-const MODES = ["light", "auto", "dark"], STYLES = ["royal", "minimal"], PAL = PALETTES.map((p) => p.id);
+const MODES = ["light", "auto", "dark"], STYLES = ["glass", "royal", "minimal"], PAL = PALETTES.map((p) => p.id);
 
 // Runs before the page paints (in <head>) so there is no white/black flash.
-export const bootScript = `(function(){var d=document.documentElement;try{var m=localStorage.getItem("${KEY}")||"auto";var s=localStorage.getItem("${STYLE_KEY}")||"royal";var p=localStorage.getItem("${PALETTE_KEY}")||"aurora";d.dataset.palette=p;var h=new Date().getHours();var e=m==="light"?"light":m==="dark"?"dark":(h>=${NIGHT_FROM}||h<${NIGHT_TO})?"dark":"light";d.dataset.appearance=e;d.dataset.appearanceMode=m;d.dataset.look=s;}catch(e){d.dataset.appearance="dark";d.dataset.look="royal";d.dataset.palette="aurora";}})();`;
+export const bootScript = `(function(){var d=document.documentElement;try{if(!localStorage.getItem("modo-look-v4")){localStorage.setItem("${STYLE_KEY}","glass");localStorage.setItem("modo-look-v4","1");}var m=localStorage.getItem("${KEY}")||"auto";var s=localStorage.getItem("${STYLE_KEY}")||"glass";var p=localStorage.getItem("${PALETTE_KEY}")||"aurora";d.dataset.palette=p;var h=new Date().getHours();var e=m==="light"?"light":m==="dark"?"dark":(h>=${NIGHT_FROM}||h<${NIGHT_TO})?"dark":"light";d.dataset.appearance=e;d.dataset.appearanceMode=m;d.dataset.look=s;}catch(e){d.dataset.appearance="dark";d.dataset.look="glass";d.dataset.palette="aurora";}})();`;
 
 // ---- shared store ----
 const read = (k, ok, def) => { try { const v = localStorage.getItem(k); return ok.includes(v) ? v : def; } catch { return def; } };
 let state = null;
 const subs = new Set();
-const SERVER = { mode: "auto", style: "royal", palette: "aurora", eff: "dark" };
+const SERVER = { mode: "auto", style: "glass", palette: "aurora", eff: "dark" };
 function init() {
   if (state || typeof window === "undefined") return;
-  const mode = read(KEY, MODES, "auto"), style = read(STYLE_KEY, STYLES, "royal"), palette = read(PALETTE_KEY, PAL, "aurora");
+  const mode = read(KEY, MODES, "auto"), style = read(STYLE_KEY, STYLES, "glass"), palette = read(PALETTE_KEY, PAL, "aurora");
   state = { mode, style, palette, eff: effective(mode) };
   // Keep in sync with other tabs, and flip by itself at 7 PM / 7 AM while on Auto.
   window.addEventListener("storage", (e) => { if ([KEY, STYLE_KEY, PALETTE_KEY].includes(e.key)) set({ mode: read(KEY, MODES, state.mode), style: read(STYLE_KEY, STYLES, state.style), palette: read(PALETTE_KEY, PAL, state.palette) }, false); });
@@ -104,9 +105,11 @@ export default function AppearanceToggle({ compact, showStyle = true }) {
                 </button>
               ))}
               <hr />
-              <button type="button" role="menuitemcheckbox" aria-checked={style === "minimal"} className={style === "minimal" ? "on" : ""} onClick={() => setStyle(style === "minimal" ? "royal" : "minimal")}>
-                {style === "minimal" ? <Square size={14} /> : <Sparkles size={14} />}{style === "minimal" ? "Minimal look (on)" : "Minimal look"}
-              </button>
+              {[["glass", "Glass", Droplets], ["royal", "Vivid", Sparkles], ["minimal", "Flat", Square]].map(([k, l, I]) => (
+                <button key={k} type="button" role="menuitemradio" aria-checked={style === k} className={style === k ? "on" : ""} onClick={() => { setStyle(k); setPickOpen(false); }}>
+                  <I size={14} />{l} look
+                </button>
+              ))}
             </span>
           )}
         </span>

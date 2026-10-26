@@ -3708,3 +3708,78 @@ html[data-appearance="light"] .ci-card{background:#fff}
 html[data-appearance="light"] .ci-tabs button:not(.on),html[data-appearance="light"] .ci-toggle,html[data-appearance="light"] .ci-call,html[data-appearance="light"] .ci-store{background:#fff;color:#141414}
 .ci-modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.55);display:grid;place-items:start center;overflow-y:auto;padding:24px 12px 120px}
 .ci-modal>.ci{width:min(1100px,100%)}
+
+/* ══════════ GLASS LOOK (default) ═════════════════════════════════════════════════════════
+   Minimal and modern: frosted panels over a calm colour field, one solid accent, no glows,
+   no gradient text. Works in Day and Night and with every palette. Vivid and Flat stay as options. */
+html[data-look="glass"]{
+  --glass:rgba(255,255,255,.055); --card:rgba(255,255,255,.05); --card-solid:rgb(var(--bg2));
+  --border:rgba(255,255,255,.10); --hair:rgba(255,255,255,.07); --hi:rgba(255,255,255,.09);
+  --shadow:0 1px 0 var(--hi) inset,0 10px 34px rgba(0,0,0,.28);
+  --grad:linear-gradient(rgb(var(--p)),rgb(var(--p))); --grad-ember:var(--grad);
+  --blur:blur(26px) saturate(170%); --r:18px; --field:rgba(255,255,255,.045);
+}
+html[data-look="glass"][data-appearance="light"]{
+  --background:rgb(var(--lbg)); --glass:rgba(255,255,255,.58); --card:rgba(255,255,255,.55); --card-solid:#fff;
+  --border:rgba(255,255,255,.75); --hair:rgba(20,24,48,.07); --hi:rgba(255,255,255,.9);
+  --shadow:0 1px 0 var(--hi) inset,0 0 0 1px rgba(20,24,48,.05),0 10px 30px rgba(30,36,80,.08); --field:rgba(255,255,255,.72);
+}
+/* background: three soft colour pools from the palette, drifting very slowly */
+.glass-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:rgb(var(--bg))}
+[data-appearance="light"] .glass-bg{background:rgb(var(--lbg))}
+.glass-bg i{position:absolute;width:70vmax;height:70vmax;border-radius:50%;opacity:.55;animation:glass-drift 60s ease-in-out infinite alternate}
+.glass-bg i:nth-child(1){left:-22vmax;top:-26vmax;background:radial-gradient(circle,rgba(var(--p),.55),rgba(var(--p),0) 62%)}
+.glass-bg i:nth-child(2){right:-26vmax;top:8vmax;background:radial-gradient(circle,rgba(var(--s),.38),rgba(var(--s),0) 62%);animation-duration:75s;animation-direction:alternate-reverse}
+.glass-bg i:nth-child(3){left:12vmax;bottom:-40vmax;background:radial-gradient(circle,rgba(var(--p-lo),.6),rgba(var(--p-lo),0) 62%);animation-duration:90s}
+[data-appearance="light"] .glass-bg i{opacity:.32}
+@keyframes glass-drift{to{transform:translate3d(6vmax,4vmax,0) scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.glass-bg i{animation:none}}
+
+/* surfaces */
+html[data-look="glass"] :is(.panel,.ci-card,.sale-card,.be-card,.conn-tile,.kpi,.kcol,.lk-tool,.sales-kpis>div,.floor-kpis>div,.slack,.ai,.sale-form,.search-box,.ai-modal,.sl-modal,.call-banner,.call-panel){
+  background:var(--glass)!important;border:1px solid var(--border)!important;box-shadow:var(--shadow)!important;border-radius:var(--r);
+  -webkit-backdrop-filter:var(--blur)!important;backdrop-filter:var(--blur)!important}
+html[data-look="glass"] :is(.tb,.pn-sheet,.tb-menu,.pal-menu,.dock,.pillnav,.toast){
+  background:color-mix(in srgb,rgb(var(--bg2)) 62%,transparent)!important;border-color:var(--hair)!important;box-shadow:0 8px 30px rgba(0,0,0,.18)!important;
+  -webkit-backdrop-filter:var(--blur)!important;backdrop-filter:var(--blur)!important}
+html[data-look="glass"][data-appearance="light"] :is(.tb,.pn-sheet,.tb-menu,.pal-menu,.dock,.pillnav,.toast){background:rgba(255,255,255,.66)!important;box-shadow:0 8px 30px rgba(30,36,80,.07)!important}
+html[data-look="glass"] .tb{border-width:0 0 1px!important}
+
+/* type: clean, no gradient text */
+html[data-look="glass"] :is(h1,.bar h1,.brand b,.calc-big,.kiosk .clock){background:none!important;-webkit-text-fill-color:currentColor!important;color:var(--foreground)!important}
+html[data-look="glass"] h1{font-weight:620;letter-spacing:-.025em}
+html[data-look="glass"] h2{font-weight:600;letter-spacing:-.01em}
+
+/* controls */
+html[data-look="glass"] button{background:rgb(var(--p));color:#fff;border:1px solid transparent;box-shadow:0 1px 2px rgba(0,0,0,.18);filter:none}
+html[data-look="glass"] button:hover{filter:brightness(1.08)}
+html[data-look="glass"] button:active{transform:translateY(.5px)}
+html[data-look="glass"][data-appearance="light"] button{background:rgb(var(--p-ink))}
+html[data-look="glass"] :is(button.ghost,.btn-link,.ci-toggle,.ci-tabs button:not(.on),.seg,.appear2 button,.tb-icon){background:var(--field)!important;color:var(--foreground)!important;border:1px solid var(--border)!important;box-shadow:none!important}
+html[data-look="glass"] :is(button.ghost,.btn-link):hover{background:color-mix(in srgb,rgb(var(--p)) 10%,var(--field))!important}
+html[data-look="glass"] button.danger{background:var(--red)!important}
+html[data-look="glass"] :is(.seg button[aria-selected="true"],.ci-tabs button.on,.appear2 button.on,.toggle.on){background:rgb(var(--p))!important;color:#fff!important;box-shadow:none!important}
+html[data-look="glass"] :is(input,select,textarea){background:var(--field);border:1px solid var(--border);border-radius:12px;box-shadow:none}
+html[data-look="glass"] :is(input,select,textarea):focus-visible{outline:none;border-color:rgb(var(--p));box-shadow:0 0 0 3px rgba(var(--p),.22)}
+html[data-look="glass"] input::placeholder,html[data-look="glass"] textarea::placeholder{color:var(--muted-fg);opacity:.7}
+html[data-look="glass"] .chip{background:rgba(var(--p),.13);color:var(--accent)}
+html[data-look="glass"] :is(.ai-orb,.ci-orb,.sl-avatar){box-shadow:none}
+html[data-look="glass"] :is(.timeline .dot,.bars .bar-fill){box-shadow:none}
+html[data-look="glass"] .receipt{background:var(--green-soft);border:1px solid rgba(74,222,128,.18)}
+html[data-look="glass"] th{font-weight:600;letter-spacing:.02em;text-transform:uppercase;font-size:11px}
+html[data-look="glass"] :is(td,th){border-color:var(--hair)}
+
+/* phones: keep the frost, with a lighter blur so scrolling stays smooth */
+@media (hover: none), (pointer: coarse), (update: slow){
+  html[data-look="glass"]{--blur:blur(16px) saturate(160%)}
+  html[data-look="glass"] :is(.panel,.ci-card,.sale-card,.be-card,.conn-tile,.kpi,.kcol,.lk-tool,.sales-kpis>div,.floor-kpis>div,.slack,.ai,.sale-form,.search-box,.ai-modal,.sl-modal,.call-banner,.call-panel,.tb,.pn-sheet,.tb-menu,.pal-menu,.dock,.pillnav,.toast){
+    -webkit-backdrop-filter:var(--blur)!important;backdrop-filter:var(--blur)!important}
+  html[data-look="glass"] .glass-bg i{animation:none}
+}
+/* unselected options in tab bars / segmented switches stay quiet; only the chosen one is filled */
+html[data-look="glass"] :is(button[aria-selected="false"],button[aria-checked="false"],.seg button:not([aria-selected="true"]):not(.on),.tabs button:not(.on):not([aria-selected="true"])){
+  background:transparent!important;color:var(--foreground)!important;border-color:transparent!important;box-shadow:none!important}
+html[data-look="glass"] :is(button[aria-selected="false"],button[aria-checked="false"]):hover{background:var(--field)!important}
+html[data-look="glass"] :is(button[aria-selected="true"],button[aria-checked="true"]){background:rgb(var(--p))!important;color:#fff!important;border-color:transparent!important}
+html[data-look="glass"][data-appearance="light"] :is(button[aria-selected="true"],button[aria-checked="true"]){background:rgb(var(--p-ink))!important}
+html[data-look="glass"] .ci-paste textarea{background:transparent!important;border:none!important;box-shadow:none!important}

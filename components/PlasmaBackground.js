@@ -15,6 +15,7 @@ export default function PlasmaBackground() {
   const [color, setColor] = useState("#8b5cf6");
   // The plasma takes the current palette's colour (CSS --plasma), so it always matches the rest of Modo.
   useEffect(() => { const v = getComputedStyle(document.documentElement).getPropertyValue("--plasma").trim(); if (v) setColor(v); }, [palette]);
+  if (look === "glass") return <div className="plasma-bg glass-bg" aria-hidden="true"><i /><i /><i /></div>;
   if (look === "minimal") return <div className="plasma-bg minimal-bg" aria-hidden="true" />;
   const kiosk = path.startsWith("/kiosk");
   if (failed) return <Aurora />;
