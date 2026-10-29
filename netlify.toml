@@ -1,0 +1,13 @@
+# Netlify build config — free hosting for Modo (Next.js 14 + Prisma/Neon).
+# Mirrors the Vercel build: runs the SQL migration + tenant schema, then builds.
+[build]
+  command = "npm run vercel-build"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Prisma can't fetch its checksum behind some build networks; harmless to ignore.
+  PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING = "1"
+
+# Runs Next.js (App Router, API routes, SSR) on Netlify's Node functions.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
