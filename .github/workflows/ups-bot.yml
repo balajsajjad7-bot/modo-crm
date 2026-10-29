@@ -1,4 +1,5 @@
 # Modo bot heartbeat: asks Modo to check UPS packages every 30 minutes, even when nobody has Modo open.
+# Host-independent: set repo Variable MODO_URL to your live site (Netlify, Vercel, anything). Falls back if unset.
 name: Modo UPS bot
 on:
   schedule:
@@ -8,9 +9,11 @@ jobs:
   tick:
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    env:
+      URL: ${{ vars.MODO_URL || 'https://modo-crm1.vercel.app' }}
     steps:
-      - run: curl -fsS --max-time 60 "https://modo-crm1.vercel.app/api/sales/ups-bot" || true
+      - run: curl -fsS --max-time 60 "$URL/api/sales/ups-bot" || true
       # Modo bots: briefings, callbacks, sale checks, attendance alerts
-      - run: curl -fsS --max-time 60 "https://modo-crm1.vercel.app/api/bots/tick" || true
+      - run: curl -fsS --max-time 60 "$URL/api/bots/tick" || true
       # Notepad coach: posts coaching to #notepad-coach when an agent's notepad changed, even if no one has Modo open
-      - run: curl -fsS --max-time 60 "https://modo-crm1.vercel.app/api/chat/notepad-coach" || true
+      - run: curl -fsS --max-time 60 "$URL/api/chat/notepad-coach" || true
