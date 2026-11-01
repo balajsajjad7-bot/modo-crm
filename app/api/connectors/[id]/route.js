@@ -34,7 +34,7 @@ export async function POST(req, { params }) {
   clearHold();
   const c = await db.connector.findUnique({ where: { id: params.id } });
   if (!c) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  const status = await test(c);
+  const status = await test(c, { origin: new URL(req.url).origin });
   await db.connector.update({ where: { id: c.id }, data: { lastStatus: "test: " + status, lastAt: new Date() } });
   return NextResponse.json({ status });
 }
