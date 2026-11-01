@@ -9,7 +9,7 @@ export async function GET() {
   const { error } = await requireRole("ADMIN");
   if (error) return error;
   await autoCloseStale().catch(() => {});
-  const agents = await db.user.findMany({ where: { role: "AGENT", active: true }, orderBy: { name: "asc" } });
+  const agents = await db.user.findMany({ where: { role: { in: ["AGENT", "AI"] }, active: true }, orderBy: { name: "asc" } });
   const ids = agents.map((a) => a.id);
   const since = new Date(Date.now() - 24 * 3600000);
   const [att, breaks] = await Promise.all([

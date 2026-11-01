@@ -26,7 +26,8 @@ const ICON = { lookup: "🔎", smtp: "✉️", slack: "💬", discord: "🎮", t
 const TYPE_FIELD = { signalwire: {
   space: "SignalWire space (e.g. modo-crm.signalwire.com)", projectId: "Project ID", apiToken: "API token (swapi_…)",
   routes: "Routes — Department = number or SIP, separated by ; (leave empty until you have a transfer number)",
-  number: "Your SignalWire number (e.g. +17752386195)", company: "Company name the receptionist says (optional)",
+  number: "Your SignalWire number (e.g. +17752386195)",
+  aiCalls: "AI crew phone calls — type on to let AI crew call back customers on callback tasks assigned to them (they say they're AI, only within legal calling hours)", company: "Company name the receptionist says (optional)",
   greeting: "Greeting (optional, {company} = your name)", voice: "Voice (optional, e.g. elevenlabs.rachel)",
   notes: "Notes the receptionist should know (optional)", baseUrl: "Modo's web address (optional — found automatically)",
   secret: "Call key (optional — made for you if empty)",

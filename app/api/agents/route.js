@@ -16,8 +16,10 @@ const pick = (b) => ({
 export async function GET(req) {
   const { error } = await requireRole("ADMIN");
   if (error) return error;
-  const month = new URL(req.url).searchParams.get("month") || new Date().toISOString().slice(0, 7);
-  const users = await db.user.findMany({ where: { role: "AGENT" }, orderBy: { agentId: "asc" } });
+  const q = new URL(req.url).searchParams;
+  const month = q.get("month") || new Date().toISOString().slice(0, 7);
+  // ?ai=1 (task pickers) also lists the AI crew, so tasks can be assigned to them; payroll pages leave it off.
+  const users = await db.user.findMany({ where: { role: q.get("ai") === "1" ? { in: ["AGENT", "AI"] } : "AGENT" }, orderBy: { agentId: "asc" } });
   const slips = await slipsFor(users, month);
   return NextResponse.json(slips.map(({ user: { passwordHash, totpSecret, ...u }, attendance, slip }) => ({ ...u, attendance, slip })));
 }

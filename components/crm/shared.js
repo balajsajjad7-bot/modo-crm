@@ -23,7 +23,7 @@ export function Modal({ title, onClose, children, wide }) {
 // Agents list for admin filters and assignment
 export function usePeople(enabled) {
   const [people, setPeople] = useState([]);
-  useEffect(() => { if (enabled) api("/api/agents").then((r) => r.ok && setPeople(r.data.filter((a) => a.active).map((a) => ({ id: a.id, name: a.name })))); }, [enabled]);
+  useEffect(() => { if (enabled) api("/api/agents?ai=1").then((r) => r.ok && setPeople(r.data.filter((a) => a.active).map((a) => ({ id: a.id, name: a.role === "AI" ? "🤖 " + a.name : a.name })))); }, [enabled]);
   return people;
 }
 export function OwnerFilter({ people, value, onChange, label = "All agents" }) {

@@ -89,6 +89,45 @@ async function handle(req) {
     return json({ response: "ok" });
   }
 
+  // ── AI crew outbound callbacks ──
+  if (op === "out" || op === "outfn" || op === "outsum") {
+    const taskId = u.searchParams.get("task") || "", aiId = u.searchParams.get("ai") || "";
+    const [task, me] = await Promise.all([db.task.findUnique({ where: { id: taskId } }), db.user.findUnique({ where: { id: aiId }, select: { id: true, name: true, role: true } })]);
+    if (!task || me?.role !== "AI") return json({ error: "Unknown call." }, 404);
+    const stamp = () => new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    const addNote = (line) => db.task.update({ where: { id: task.id }, data: { notes: ((task.notes ? task.notes + "\n" : "") + line).slice(-4000) } });
+
+    if (op === "out") {
+      const s = await getSettings().catch(() => ({}));
+      const contact = task.contactId ? await db.contact.findUnique({ where: { id: task.contactId }, select: { name: true } }).catch(() => null) : null;
+      const { outboundSwml } = await import("@/lib/aiCalls");
+      return json(outboundSwml({ base: baseUrl(req, cfg), key: cfg.secret, company: cfg.company || s.companyName || "Voice Verve", me, task, contactName: contact?.name || "", taskId: task.id, aiId: me.id }));
+    }
+    if (op === "outfn") {
+      const a = argsOf(body);
+      const outcome = String(a.outcome || "reached");
+      const { whenFrom } = await import("@/lib/aiCalls");
+      const data = {};
+      if (outcome === "callback_later") data.dueAt = whenFrom(a.callback_time);
+      else if (outcome !== "voicemail") { data.done = true; data.doneAt = new Date(); }
+      const line = `🤖 ${stamp()} PKT · ${me.name} called: ${outcome.replace(/_/g, " ")}${a.note ? " — " + String(a.note).slice(0, 300) : ""}${a.callback_time ? " (call back: " + String(a.callback_time).slice(0, 60) + ")" : ""}`;
+      await db.task.update({ where: { id: task.id }, data: { ...data, notes: ((task.notes ? task.notes + "\n" : "") + line).slice(-4000) } });
+      await db.callLog.updateMany({ where: { userId: me.id, leadId: task.id, endedAt: null }, data: { result: outcome.replace(/_/g, " "), resultCode: outcome, endedAt: new Date() } }).catch(() => {});
+      if (outcome === "do_not_call" && task.contactId) {
+        const c = await db.contact.findUnique({ where: { id: task.contactId }, select: { tags: true } }).catch(() => null);
+        if (c && !/\bdnc\b/i.test(c.tags)) await db.contact.update({ where: { id: task.contactId }, data: { tags: (c.tags ? c.tags + "," : "") + "dnc" } }).catch(() => {});
+      }
+      return json({ response: "Saved. Now wrap up politely and end the call." });
+    }
+    // outsum
+    const sum = String(body.post_prompt_data?.raw || body.post_prompt_data?.substituted || "").trim();
+    if (sum) {
+      await addNote(`🤖 Call summary: ${sum.slice(0, 600)}`);
+      await alert(`crew-call-${task.id}-${String(body.call_id || Date.now()).slice(0, 40)}`, `📞 ${me.name} called back for "${task.title}":\n${sum.slice(0, 800)}`, { push: false, wa: false }).catch(() => {});
+    }
+    return json({ response: "ok" });
+  }
+
   return json({ error: "Unknown op." }, 400);
 }
 

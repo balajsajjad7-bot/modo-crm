@@ -52,11 +52,38 @@ Help with call scripts, objection handling, polite wording, summarising notes, a
 Be honest: no misleading claims or pressure tactics; always include required disclosures (price, terms, that the call may be recorded).
 You only know this agent's own data; never discuss other agents' pay. Keep answers short and practical.`;
 
+const TEXTY = /^(text\/|application\/(json|csv|xml|javascript))/;
+async function readAttachment({ name = "file", mime = "", data }) {
+  const buf = Buffer.from(String(data), "base64");
+  if (buf.length > 3 * 1024 * 1024) throw new Error("it's over 3 MB.");
+  const m = String(mime).toLowerCase();
+  if (TEXTY.test(m) || /\.(txt|csv|md|json|log|tsv)$/i.test(name)) return buf.toString("utf8");
+  if (m.includes("wordprocessingml") || /\.docx$/i.test(name)) { const mammoth = (await import("mammoth")).default || (await import("mammoth")); return String((await mammoth.extractRawText({ buffer: buf })).value || ""); }
+  if (m.startsWith("image/") || m === "application/pdf") {
+    const { askFile } = await import("@/lib/ai");
+    return await askFile({ mime: m, dataB64: buf.toString("base64"), json: false, maxTokens: 2500,
+      system: "You read files for a CRM assistant. Return everything useful in the file as plain text: all readable text, numbers, names, dates and tables (one row per line). Describe photos briefly. Never invent anything.",
+      prompt: "Extract the contents of this file." });
+  }
+  throw new Error("that file type isn't supported — use a photo, PDF, Word, or text/CSV file.");
+}
+
+export const maxDuration = 60;
+
 export async function POST(req) {
   const s = await currentUser();
   if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
-  const { messages = [] } = await req.json();
-  const turns = messages.filter((m) => m && m.content && ["user", "assistant"].includes(m.role)).slice(-16).map((m) => ({ role: m.role, content: String(m.content).slice(0, 4000) }));
+  const { messages = [], file = null } = await req.json();
+  // An attached file is read once into text (photo/PDF by the AI's vision, Word/text directly) and sent back,
+  // so the page keeps it with that message and follow-up questions still see it.
+  let fileText = "";
+  if (file?.data) {
+    try { fileText = await readAttachment(file); }
+    catch (e) { return NextResponse.json({ error: "Couldn't read that file: " + e.message }, { status: 400 }); }
+  }
+  const withFiles = messages.map((m, i) => (i === messages.length - 1 && fileText ? { ...m, fileText, fileName: file.name } : m));
+  const turns = withFiles.filter((m) => m && (m.content || m.fileText) && ["user", "assistant"].includes(m.role)).slice(-16)
+    .map((m) => ({ role: m.role, content: (String(m.content || "").slice(0, 4000) + (m.fileText ? `\n\n[Attached file: ${String(m.fileName || "file").slice(0, 80)}]\n${String(m.fileText).slice(0, 12000)}` : "")).trim() }));
   if (!turns.length || turns[turns.length - 1].role !== "user") return NextResponse.json({ error: "Ask something first." }, { status: 400 });
   try {
     const ctx = s.role === "ADMIN" ? await adminContext() : await agentContext(s.uid);
@@ -65,7 +92,7 @@ export async function POST(req) {
     const system = (s.role === "ADMIN" ? ADMIN_SYS : AGENT_SYS) + CREATOR + "\n\n" + SKILLS + appMap(s.role) + "\n\nDATA SNAPSHOT (JSON):\n" + JSON.stringify(ctx);
     const camp = s?.uid ? (await db.user.findUnique({ where: { id: s.uid }, select: { campaignId: true } }).catch(() => null))?.campaignId || "" : "";
     const reply = await askAI(system, turns, { maxTokens: 1500, campaignId: camp });
-    return NextResponse.json({ reply });
+    return NextResponse.json({ reply, ...(fileText ? { fileText } : {}) });
   } catch (e) {
     return NextResponse.json({ error: /AI key|AI request/.test(e.message) ? e.message : friendlyError(e) }, { status: 500 });
   }
