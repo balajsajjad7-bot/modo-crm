@@ -22,6 +22,15 @@ const LOOKUP_PRESETS = [
   { name: "Weather at a place", url: "https://api.openweathermap.org/data/2.5/weather?q={q}&appid={key}&units=imperial", hint: "city name", get: "Free key: openweathermap.org/api" },
 ];
 const ICON = { lookup: "🔎", smtp: "✉️", slack: "💬", discord: "🎮", teams: "🟣", googlechat: "💠", mattermost: "🟦", rocketchat: "🚀", telegram: "✈️", ntfy: "🔔", pushover: "📲", twilio: "📱", whatsapp: "🟢", sms: "📨", sheets: "📊", webhook: "🔗", ai: "✨", vicidial: "☎️", turn: "🎧", tracking: "📦" };
+// Labels for one connector type, where the shared label above would be wrong.
+const TYPE_FIELD = { signalwire: {
+  space: "SignalWire space (e.g. modo-crm.signalwire.com)", projectId: "Project ID", apiToken: "API token (swapi_…)",
+  routes: "Routes — Department = number or SIP, separated by ; (leave empty until you have a transfer number)",
+  number: "Your SignalWire number (e.g. +17752386195)", company: "Company name the receptionist says (optional)",
+  greeting: "Greeting (optional, {company} = your name)", voice: "Voice (optional, e.g. elevenlabs.rachel)",
+  notes: "Notes the receptionist should know (optional)", baseUrl: "Modo's web address (optional — found automatically)",
+  secret: "Call key (optional — made for you if empty)",
+} };
 const FIELD = { trackToken: "Live token for tracking (shippo_live_…) — used only to read UPS scans", campaigns: "Your campaign(s) — only these agents show (comma-separated, e.g. BUDGET,VERIZON)", userGroups: "Or your user group(s) (comma-separated) — leave blank to use campaigns", agentUrl: "Agent screen URL (optional, default …/agc/vicidial.php)", dispositions: "Dispositions for the Modo dialer, e.g. SALE:Sale, NI:Not interested, CALLBK:Callback, NA:No answer, DNC:Do not call", pauseCodes: "Pause codes, e.g. BREAK:Break, LUNCH:Lunch, TRAIN:Training", monitorPhone: "Your phone login for listening (e.g. 350a)", serverIp: "Dialer server IP (only if listening says it needs it)", proxy: "Proxy for the dialer (optional) — if your host firewalls Modo, put a fixed-IP proxy here (http://user:pass@host:port) and whitelist that IP with your dialer host", header: "Key header name (optional, e.g. x-api-key)", hint: "What to type (shown to agents)", host: "SMTP host", port: "Port (465 or 587)", fromName: "From name", fromEmail: "From email", url: "URL", secret: "Secret (optional, sent as x-modo-secret header)", apiKey: "API key", provider: "Provider", model: "Model (optional)", baseUrl: "Base URL (only for Ollama / custom / OpenAI-compatible — leave blank for the rest)", user: "Username", pass: "Password", token: "Token", chatId: "Chat ID", userKey: "User key (u…)", projectId: "Project ID (only if your Neon project is in an organization)", email: "Or: your Pushover email (…@pomail.net)", sid: "Account SID", from: "From number (e.g. +1…)", to: "To number (e.g. +1…)", phoneId: "Phone-number ID", template: "Template name (optional, default hello_world)", admins: "Admin WhatsApp numbers that can command the Modo bot (comma-separated, with country code; blank = the To number)", appSecret: "App secret (Meta app → Settings → Basic) — strongly recommended: only real WhatsApp messages are accepted", aiReply: "Modo AI auto-replies to customers (on / off — customer chats always land in Modo Chat)", verifyToken: "Webhook verify token (make one up; paste the same in Meta)", portal: "Firewall page (optional, e.g. https://your-dialer:446/login.php — automatic for dialerlab)", clientId: "App key / client ID", clientSecret: "App secret / client secret", toName: "Return to: name", toCompany: "Return to: company (optional)", toStreet: "Return to: street", toStreet2: "Return to: apt / suite (optional)", toCity: "Return to: city", toState: "Return to: state (2 letters, e.g. TX)", toZip: "Return to: ZIP", toPhone: "Return to: phone", toEmail: "Return to: email (optional)", carrierPref: "Carrier", weightLb: "Package weight in lb (default 1)", boxSize: "Box size in inches L x W x H (default 10x7x4)", maxPrice: "Max price per label in $ (default 25)", auto: "Make a label automatically when a sale is marked Active", emailCustomer: "Email the label to the customer" };
 
 export default function Connectors() {
@@ -88,6 +97,7 @@ export default function Connectors() {
 function Editor({ title, value, types, events, onClose, onSave }) {
   const [v, setV] = useState(value); const [err, setErr] = useState("");
   const t = types[v.type];
+  const lab = (f) => TYPE_FIELD[v.type]?.[f] || FIELD[f] || f;
   const setCfg = (k, x) => setV({ ...v, config: { ...v.config, [k]: x } });
   const toggleEv = (e) => setV({ ...v, events: v.events.includes(e) ? v.events.filter((x) => x !== e) : [...v.events, e] });
   // Opens as a card on top of the page (no scrolling down to find the form). Esc or tapping outside closes it.
@@ -106,11 +116,11 @@ function Editor({ title, value, types, events, onClose, onSave }) {
         {t.fields.map((f) => f === "secure"
           ? <label key={f}>Security<select value={v.config.secure ?? "true"} onChange={(e) => setCfg("secure", e.target.value)}><option value="true">SSL/TLS (port 465)</option><option value="false">STARTTLS (port 587)</option></select></label>
           : f === "auto" || f === "emailCustomer"
-          ? <label key={f}>{FIELD[f]}<select value={v.config[f] ?? (f === "auto" ? "no" : "yes")} onChange={(e) => setCfg(f, e.target.value)}><option value="yes">Yes</option><option value="no">No</option></select></label>
+          ? <label key={f}>{lab(f)}<select value={v.config[f] ?? (f === "auto" ? "no" : "yes")} onChange={(e) => setCfg(f, e.target.value)}><option value="yes">Yes</option><option value="no">No</option></select></label>
           : f === "carrierPref"
-          ? <label key={f}>{FIELD[f]}<select value={v.config[f] || "UPS"} onChange={(e) => setCfg(f, e.target.value)}><option value="UPS">UPS (cheapest UPS rate)</option><option value="USPS">USPS (cheapest USPS rate)</option><option value="cheapest">Cheapest of any carrier</option></select></label>
+          ? <label key={f}>{lab(f)}<select value={v.config[f] || "UPS"} onChange={(e) => setCfg(f, e.target.value)}><option value="UPS">UPS (cheapest UPS rate)</option><option value="USPS">USPS (cheapest USPS rate)</option><option value="cheapest">Cheapest of any carrier</option></select></label>
           : f === "provider"
-          ? <label key={f}>{FIELD[f]}<select value={v.config.provider || "groq"} onChange={(e) => setCfg("provider", e.target.value)}>
+          ? <label key={f}>{lab(f)}<select value={v.config.provider || "groq"} onChange={(e) => setCfg("provider", e.target.value)}>
               <option value="groq">Groq (free tier, fastest)</option>
               <option value="gemini">Google Gemini (free tier)</option>
               <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
@@ -123,7 +133,7 @@ function Editor({ title, value, types, events, onClose, onSave }) {
               <option value="ollama">Ollama (runs on your PC, no key)</option>
               <option value="custom">Custom (any OpenAI-compatible URL)</option>
             </select></label>
-          : <label key={f}>{FIELD[f]}<input type={["pass", "apiKey", "secret", "trackToken", "clientSecret"].includes(f) ? "password" : "text"} value={v.config[f] || ""} placeholder={String(v.config[f] || "").startsWith("••••") ? "Leave as is to keep" : ""} onChange={(e) => setCfg(f, e.target.value)} autoComplete="off" /></label>)}
+          : <label key={f}>{lab(f)}{(() => { const pw = ["pass", "apiKey", "apiToken", "secret", "trackToken", "clientSecret"].includes(f); return <input name={`cx-${v.type}-${f}`} type={pw ? "password" : "text"} value={v.config[f] || ""} placeholder={String(v.config[f] || "").startsWith("••••") ? "Leave as is to keep" : ""} onChange={(e) => setCfg(f, e.target.value)} autoComplete={pw ? "new-password" : "off"} data-lpignore="true" data-1p-ignore="true" />; })()}</label>)}
       </div>
       {v.type === "ai" && (
         <p className="muted small" style={{ margin: 0 }}>{(() => { const p = v.config.provider || "groq"; return (
