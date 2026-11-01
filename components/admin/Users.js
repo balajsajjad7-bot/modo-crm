@@ -8,7 +8,7 @@ import { UserPlus, ShieldCheck, KeyRound, Ban, RotateCcw, SlidersHorizontal, X }
 import { SECTIONS } from "@/lib/supaccess";
 
 const EMPTY = { name: "", loginId: "", password: "", email: "", departmentId: "", role: "ADMIN", supAccess: [] };
-const roleLabel = (r) => (r === "ADMIN" ? "Admin" : r === "SUPERVISOR" ? "Supervisor" : "Agent");
+const roleLabel = (r) => (r === "ADMIN" ? "Admin" : r === "SUPERVISOR" ? "Supervisor" : r === "AI" ? "AI crew" : "Agent");
 // Recommended floor-supervisor access: watch the team & calls, not the money/settings.
 const PRESET = ["sales", "quality", "recordings", "attendance", "whereabouts", "breaks", "chat", "reports", "agents"];
 

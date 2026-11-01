@@ -12,6 +12,7 @@ enum Role {
   ADMIN
   AGENT
   SUPERVISOR
+  AI // AI crew teammates: shown in Chat, never sign in, not counted in attendance/payroll/leaderboards
 }
 
 model User {

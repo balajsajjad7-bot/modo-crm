@@ -44,7 +44,7 @@ async function login(body, ws) {
   const user = id ? await db.user.findUnique({ where: { agentId: id } }) : null;
   // Always run bcrypt (even for an unknown ID) so the response time doesn't reveal which IDs exist.
   const ok = await bcrypt.compare(pw, user?.passwordHash || "$2a$10$CwTycUXWue0Thq9StjUM0uJ8DmRKWwVSOBtYOGqeHRIRwnD0eC0Ku");
-  if (!user || !user.active || !ok) {
+  if (!user || !user.active || !ok || user.role === "AI") { // AI crew accounts never sign in
     await failed("login-id:" + id, { max: 6 }); await failed("login-ip:" + ip, { max: 80, baseLockMs: 10 * 60000 }); // the whole office shares one address: only a real guessing attack trips this
     return NextResponse.json(BAD, { status: 401 });
   }
