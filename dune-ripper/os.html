@@ -1,0 +1,259 @@
+<title>Dune Ripper OS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Six+Caps&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a hunting-ground desktop. Hard-edged windows float over the creature, with a taskbar along the bottom and the eye as the start button. */
+:root{
+  color-scheme:dark;
+  --night:#04090b; --panel:#0a1215; --raise:#121d21; --line:#23373b; --bone:#e6eeec; --dust:#8fa5a3; --teal:#5fe8e6; --ember:#e8682a;
+  --display:"Six Caps","Haettenschweiler","Arial Narrow",Impact,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;overflow:hidden;margin:0}
+body{background:var(--night);color:var(--bone);font:13px/1.5 var(--mono);user-select:none}
+button,input,textarea{font:inherit;color:inherit}
+button{background:var(--raise);border:1px solid var(--line);padding:8px 12px;cursor:pointer}
+button:hover{border-color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+input,textarea{background:var(--night);border:1px solid var(--line);padding:9px 10px;width:100%;user-select:text}
+#wall{position:fixed;inset:0;background:var(--night) url(ripper.jpg) 60% 50%/cover no-repeat}
+#wall.plain{background-image:none}
+#desk{position:fixed;inset:0 0 calc(50px + env(safe-area-inset-bottom,0px));overflow:hidden}
+.icons{position:absolute;top:12px;left:max(12px,env(safe-area-inset-left,0px));display:grid;gap:4px;grid-auto-flow:column;grid-template-rows:repeat(5,auto);justify-content:start}
+.icon{width:86px;padding:10px 4px;background:rgba(4,9,11,.45);border:1px solid transparent;text-align:center;font-size:11px;display:grid;gap:6px;justify-items:center}
+.icon svg{width:26px;height:26px;stroke:var(--teal);fill:none;stroke-width:1.6}
+.win{position:absolute;min-width:280px;min-height:200px;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.6)}
+.win.top{border-color:var(--teal)}
+.bar{display:flex;align-items:center;gap:6px;padding:5px 6px 5px 12px;background:var(--raise);cursor:move;touch-action:none;font-size:12px;font-weight:600;letter-spacing:.05em}
+.bar span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar button{width:30px;height:26px;padding:0;background:none;border-color:transparent}
+.bar button:hover{border-color:var(--teal)}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.grip{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 50%,var(--line) 50%)}
+.log{flex:1;min-height:0;overflow:auto;padding:12px;display:grid;gap:8px;align-content:start;user-select:text;overflow-wrap:anywhere}
+.msg{white-space:pre-wrap;max-width:92%;padding:8px 11px;background:var(--raise);justify-self:start}
+.msg.me{justify-self:end;background:#10353a}
+.msg.err{color:var(--ember)}
+.row{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line);flex-wrap:wrap}
+.row input{flex:1;min-width:0;width:auto}
+.quick{display:flex;gap:6px;flex-wrap:wrap;padding:10px 10px 0}
+.term{flex:1;min-height:0;overflow:auto;padding:10px 12px;background:#02060a;color:#a8f5ee;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text}
+.prompt{display:flex;gap:8px;padding:6px 12px 10px;background:#02060a;color:var(--teal)}
+.prompt input{border:0;padding:0;background:none;color:#a8f5ee;outline:none}
+textarea.pad{flex:1;min-height:0;border:0;resize:none;padding:12px;background:var(--panel)}
+.foot{padding:7px 12px;font-size:11px;color:var(--dust);border-top:1px solid var(--line)}
+dl{margin:0;padding:14px;display:grid;grid-template-columns:auto 1fr;gap:6px 18px;overflow:auto}
+dt{color:var(--dust)} dd{margin:0;font-variant-numeric:tabular-nums}
+#task{position:fixed;left:0;right:0;bottom:0;height:calc(50px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:6px;background:rgba(5,11,13,.95);border-top:1px solid var(--line);
+  padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+#eye{width:40px;height:40px;padding:0;border-radius:50%;border:2px solid #7d8a90;background:radial-gradient(circle at 35% 30%,#fff,#9fb1b8 22%,#1f2c31 62%,#0a1013);position:relative;flex:none}
+#iris{position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px;border-radius:50%;background:radial-gradient(circle,#b9fbff 0,#35c9f5 55%,#063548 100%);box-shadow:0 0 12px #35c9f5}
+#iris::after{content:"";position:absolute;left:50%;top:2px;bottom:2px;width:3px;margin-left:-1.5px;border-radius:2px;background:#01090c}
+#tabs{flex:1;min-width:0;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+#tabs button{white-space:nowrap;font-size:12px;padding:8px 10px}
+#tabs button.on{border-color:var(--teal)}
+#clock{font-variant-numeric:tabular-nums;font-size:12px;color:var(--dust);flex:none}
+#menu{position:fixed;left:max(8px,env(safe-area-inset-left,0px));bottom:calc(58px + env(safe-area-inset-bottom,0px));width:240px;max-width:calc(100vw - 16px);background:var(--panel);border:1px solid var(--line);display:grid;padding:6px;gap:3px;z-index:9000}
+#menu h2{margin:2px 6px 6px;font:400 34px/1 var(--display);letter-spacing:.04em}
+#menu button{text-align:left;background:none;border-color:transparent}
+#menu button:hover{border-color:var(--teal)}
+#toast{position:fixed;right:max(12px,env(safe-area-inset-right,0px));top:12px;max-width:min(320px,calc(100vw - 24px));padding:10px 14px;background:var(--panel);border:1px solid var(--ember);z-index:9500}
+#gate{position:fixed;inset:0;z-index:9900;display:grid;place-items:center;background:rgba(2,5,7,.84);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+.card{width:min(420px,100%);display:grid;gap:12px}
+.card h1{margin:0;font:400 clamp(72px,18vw,120px)/.9 var(--display);letter-spacing:.03em}
+.card p{margin:0;color:var(--dust)}
+#boot{white-space:pre-wrap;min-height:6.5em;color:#a8f5ee;font-size:12px}
+.wake{background:var(--ember);border-color:var(--ember);color:#140702;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:13px}
+.small{font-size:11px;color:var(--dust)}
+@media (max-width:700px){
+  .win{left:0!important;top:0!important;width:100%!important;height:100%!important;min-width:0}
+  .grip{display:none}
+  #clock{display:none}
+}
+@media (prefers-reduced-motion:no-preference){.win{animation:in .14s ease-out}@keyframes in{from{transform:scale(.97);opacity:.4}}}
+</style>
+
+<div id="wall"></div>
+<main id="desk"><nav class="icons" id="icons" aria-label="Apps"></nav></main>
+<nav id="menu" hidden aria-label="Start menu"></nav>
+<footer id="task">
+  <button id="eye" type="button" aria-label="Open the start menu"><i id="iris"></i></button>
+  <div id="tabs"></div>
+  <time id="clock"></time>
+</footer>
+<div id="toast" role="status" hidden></div>
+
+<section id="gate">
+  <form class="card" id="gateForm">
+    <h1>Dune Ripper</h1>
+    <p id="gateLine">It's asleep. Wake it.</p>
+    <div id="boot" hidden></div>
+    <input id="pass" type="password" autocomplete="current-password" aria-label="Password" placeholder="Master password" hidden>
+    <button class="wake" id="wake" type="submit">Wake it</button>
+    <p class="small" id="gateNote"></p>
+  </form>
+</section>
+
+<script>
+(function(){
+const $=(id)=>document.getElementById(id);
+const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;};
+const store={get(k,d){try{const v=localStorage.getItem('ripper.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem('ripper.'+k,JSON.stringify(v));}catch(e){}}};
+const state={live:false,modo:false,ai:false,started:Date.now(),sound:store.get('sound',true),plain:store.get('plain',false)};
+const LINES={open:['Dragging that out for you.','Fetched. Grrr.','Here. Don’t make me wait.'],close:['Bitten off. Gone.','Dead. Next.'],lock:['Guarding. Nobody gets past me.']};
+const pick=(a)=>a[Math.floor(Math.random()*a.length)];
+let toastT;function toast(t){const b=$('toast');b.textContent=t;b.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{b.hidden=true;},2600);}
+
+let ctx;function growl(len){
+  if(!state.sound)return;
+  try{
+    ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();ctx.resume();
+    const d=len||1.2,t=ctx.currentTime,o=ctx.createOscillator(),l=ctx.createOscillator(),lg=ctx.createGain(),f=ctx.createBiquadFilter(),g=ctx.createGain();
+    o.type='sawtooth';o.frequency.setValueAtTime(62,t);o.frequency.linearRampToValueAtTime(90,t+d*.25);o.frequency.linearRampToValueAtTime(48,t+d);
+    l.frequency.value=27;lg.gain.value=.5;f.type='lowpass';f.frequency.value=480;f.Q.value=6;
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.07);g.gain.setValueAtTime(.22,t+d*.6);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    l.connect(lg);lg.connect(g.gain);o.connect(f);f.connect(g);g.connect(ctx.destination);[o,l].forEach(n=>{n.start(t);n.stop(t+d+.05);});
+  }catch(e){}
+}
+
+// Talking to the server. Preview pages have no server, so these answers say so plainly.
+async function ask(text,route){
+  if(!state.live)return{reply:'I can’t reach my brain or Modo from this preview. On your live server, this goes through.',off:true};
+  try{
+    const r=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json','x-ripper':'1'},body:JSON.stringify({text,route})});
+    if(r.status===401){lock();return{reply:'Session ended. Sign in again.',off:true};}
+    const d=await r.json().catch(()=>({}));
+    return r.ok?{reply:d.reply||'Done.'}:{reply:d.error||'The server returned an error.',off:true};
+  }catch(e){return{reply:'I can’t reach the server. Check your internet and try again.',off:true};}
+}
+const needsYes=(t)=>/Reply YES/i.test(t);
+
+function chat(body,o){
+  const log=el('div','log'),quick=el('div','quick'),row=el('form','row'),input=el('input');
+  input.placeholder=o.hint;input.setAttribute('aria-label',o.hint);input.autocomplete='off';const go=el('button',null,'Send');go.type='submit';row.append(input,go);
+  const add=(t,c)=>{const m=el('div','msg '+(c||''),t);log.append(m);log.scrollTop=log.scrollHeight;return m;};
+  async function send(text,route){
+    add(text,'me');const wait=add('…');const r=await ask(text,route);wait.remove();add(r.reply,r.off?'err':'');
+    if(!r.off&&needsYes(r.reply)){
+      const y=el('div','row');const yes=el('button',null,'YES'),no=el('button',null,'NO');
+      const answer=(w)=>()=>{y.remove();send(w,'modo');};yes.onclick=answer('YES');no.onclick=answer('NO');y.append(yes,no);log.append(y);log.scrollTop=log.scrollHeight;
+    }
+  }
+  (o.quick||[]).forEach(q=>{const b=el('button',null,q);b.type='button';b.onclick=()=>send(q,o.route);quick.append(b);});
+  row.onsubmit=(e)=>{e.preventDefault();const t=input.value.trim();if(!t)return;input.value='';send(t,o.route);};
+  if(o.quick)body.append(quick);body.append(log,row);add(o.hello);
+  return{input};
+}
+
+const APPS={
+  ripper:{title:'Ripper',w:420,h:480,svg:'<path d="M4 9l3-5 3 4h4l3-4 3 5v5l-4 6H8l-4-6z"/><circle cx="12" cy="12" r="2.4"/>',
+    open(b){return chat(b,{hello:'Grrr. Master. What needs ripping?',hint:'Talk to Ripper',route:'auto'});}},
+  modo:{title:'Modo',w:520,h:520,svg:'<path d="M4 20V5h16v15z"/><path d="M8 16v-5M12 16V8M16 16v-3"/>',
+    open(b){return chat(b,{hello:'Modo is on the leash. Pick a report or give an order. Anything that reaches a customer or changes a sale waits for your YES.',hint:'Give Modo an order',route:'modo',quick:['brief','sales','online','late','callbacks']});}},
+  term:{title:'Terminal',w:560,h:380,svg:'<path d="M3 5h18v14H3z"/><path d="M7 9l3 3-3 3M13 15h4"/>',open:terminal},
+  notes:{title:'Notes',w:400,h:400,svg:'<path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+    open(b){const t=el('textarea','pad');t.setAttribute('aria-label','Notes');t.value=store.get('notes','');t.placeholder='Write something. Ripper guards it.';t.oninput=()=>store.set('notes',t.value);b.append(t,el('div','foot','Saved in this browser only.'));return{input:t};}},
+  sys:{title:'System',w:380,h:400,svg:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/>',
+    open(b){
+      const dl=el('dl');const row=el('div','row');
+      const tick=()=>{dl.replaceChildren();[['System','Dune Ripper OS 0.1'],['Master','Balaj'],['Mode',state.live?'Live':'Preview'],['Modo',state.modo?'Connected':'Not connected'],['AI',state.ai?'Connected':'Not connected'],['Windows',String(wins.size)],['Awake',Math.floor((Date.now()-state.started)/60000)+' min']].forEach(([k,v])=>dl.append(el('dt',null,k),el('dd',null,v)));};
+      const s=el('button',null,'');const w=el('button',null,'Change wallpaper');const l=el('button',null,'Lock');
+      const lab=()=>{s.textContent=state.sound?'Sound on':'Sound off';};lab();
+      s.onclick=()=>{state.sound=!state.sound;store.set('sound',state.sound);lab();};
+      w.onclick=()=>{state.plain=!state.plain;store.set('plain',state.plain);$('wall').classList.toggle('plain',state.plain);};
+      l.onclick=lock;row.append(s,w,l);tick();const t=setInterval(tick,5000);b.append(dl,row);return{stop(){clearInterval(t);}};
+    }},
+};
+
+function terminal(b){
+  const out=el('div','term'),p=el('form','prompt'),input=el('input');input.setAttribute('aria-label','Terminal command');input.autocomplete='off';input.spellcheck=false;p.append(el('span',null,'ripper>'),input);b.append(out,p);
+  const say=(t)=>{out.append(t+'\n');out.scrollTop=out.scrollHeight;};
+  say('Dune Ripper OS 0.1. Type help.\n');
+  const cmds={
+    help:()=>say('apps            list apps\nopen <app>      open an app\nask <text>      talk to Ripper\nmodo <text>     order Modo\nnote <text>     add to Notes\ngrowl           make it growl\ndate, whoami, uname, clear, lock'),
+    apps:()=>say(Object.keys(APPS).join('  ')),
+    open:(a)=>{APPS[a]?launch(a):say('No such app. Type apps.');},
+    note:(a)=>{if(!a)return say('note what?');store.set('notes',(store.get('notes','')+'\n'+a).trim());say('Saved. I bite anyone who touches it.');},
+    date:()=>say(new Date().toString()),whoami:()=>say('balaj, master of this beast'),uname:()=>say('DuneRipperOS 0.1 browser'),
+    growl:()=>{growl();say('GRRRRRRR');},clear:()=>out.replaceChildren(),lock,
+    ask:async(a)=>{if(!a)return say('ask what?');say((await ask(a,'auto')).reply);},modo:async(a)=>{if(!a)return say('modo what?');say((await ask(a,'modo')).reply);},
+  };
+  p.onsubmit=(e)=>{e.preventDefault();const t=input.value.trim();input.value='';if(!t)return;say('ripper> '+t);const i=t.indexOf(' '),c=(i<0?t:t.slice(0,i)).toLowerCase(),a=i<0?'':t.slice(i+1).trim();
+    if(Object.prototype.hasOwnProperty.call(cmds,c))cmds[c](a);else say(c+': never heard of it. Type help.');};
+  return{input};
+}
+
+// Window manager.
+const wins=new Map();let z=10,cascade=0;
+function focus(id){const w=wins.get(id);if(!w)return;wins.forEach(x=>x.el.classList.remove('top'));w.el.hidden=false;w.el.style.zIndex=++z;w.el.classList.add('top');drawTabs();(w.api&&w.api.input)&&w.api.input.focus({preventScroll:true});}
+function close(id){const w=wins.get(id);if(!w)return;w.api&&w.api.stop&&w.api.stop();w.el.remove();wins.delete(id);drawTabs();toast(pick(LINES.close));}
+function launch(id){
+  $('menu').hidden=true;if(wins.has(id))return focus(id);
+  const a=APPS[id],D=$('desk'),win=el('section','win'),bar=el('header','bar'),body=el('div','body'),grip=el('div','grip');
+  win.setAttribute('aria-label',a.title);
+  const name=el('span',null,a.title),min=el('button',null,'_'),max=el('button',null,'▢'),x=el('button',null,'✕');
+  min.setAttribute('aria-label','Minimize '+a.title);max.setAttribute('aria-label','Maximize '+a.title);x.setAttribute('aria-label','Close '+a.title);
+  bar.append(name,min,max,x);win.append(bar,body,grip);
+  const W=Math.min(a.w,D.clientWidth-16),H=Math.min(a.h,D.clientHeight-16);cascade=(cascade+1)%6;
+  win.style.cssText=`left:${Math.max(8,Math.min(130+cascade*30,D.clientWidth-W-8))}px;top:${Math.max(8,Math.min(24+cascade*26,D.clientHeight-H-8))}px;width:${W}px;height:${H}px`;
+  D.append(win);const entry={el:win,title:a.title};wins.set(id,entry);entry.api=a.open(body);
+  win.addEventListener('pointerdown',()=>focus(id));
+  min.onclick=(e)=>{e.stopPropagation();win.hidden=true;win.classList.remove('top');drawTabs();};
+  x.onclick=(e)=>{e.stopPropagation();close(id);};
+  let saved;max.onclick=()=>{if(saved){win.style.cssText=saved;saved=null;}else{saved=win.style.cssText;win.style.cssText=`left:0;top:0;width:100%;height:100%;z-index:${++z}`;}};
+  const dragWith=(handle,move)=>handle.addEventListener('pointerdown',(e)=>{
+    if(e.target.tagName==='BUTTON'||innerWidth<=700)return;handle.setPointerCapture(e.pointerId);
+    const s={x:e.clientX,y:e.clientY,l:win.offsetLeft,t:win.offsetTop,w:win.offsetWidth,h:win.offsetHeight};
+    const mv=(ev)=>move(ev.clientX-s.x,ev.clientY-s.y,s);
+    const up=()=>{handle.removeEventListener('pointermove',mv);handle.removeEventListener('pointerup',up);handle.removeEventListener('pointercancel',up);};
+    handle.addEventListener('pointermove',mv);handle.addEventListener('pointerup',up);handle.addEventListener('pointercancel',up);
+  });
+  dragWith(bar,(dx,dy,s)=>{win.style.left=Math.max(40-s.w,Math.min(D.clientWidth-40,s.l+dx))+'px';win.style.top=Math.max(0,Math.min(D.clientHeight-30,s.t+dy))+'px';});
+  dragWith(grip,(dx,dy,s)=>{win.style.width=Math.max(280,s.w+dx)+'px';win.style.height=Math.max(200,s.h+dy)+'px';});
+  focus(id);toast(pick(LINES.open));
+}
+function drawTabs(){const t=$('tabs');t.replaceChildren();wins.forEach((w,id)=>{const b=el('button',w.el.classList.contains('top')?'on':'',w.title);b.onclick=()=>focus(id);t.append(b);});}
+
+const iconWrap=$('icons'),menu=$('menu');menu.append(el('h2',null,'Dune Ripper'));
+Object.entries(APPS).forEach(([id,a])=>{
+  const i=el('button','icon');i.type='button';i.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+a.svg+'</svg>';i.append(el('span',null,a.title));i.onclick=()=>launch(id);iconWrap.append(i);
+  const m=el('button',null,a.title);m.onclick=()=>launch(id);menu.append(m);
+});
+const lockB=el('button',null,'Lock');lockB.onclick=()=>lock();menu.append(lockB);
+$('eye').onclick=()=>{growl(.5);menu.hidden=!menu.hidden;};
+$('desk').addEventListener('pointerdown',()=>{menu.hidden=true;});
+addEventListener('pointermove',(e)=>{const r=$('eye').getBoundingClientRect(),dx=e.clientX-r.left-20,dy=e.clientY-r.top-20,l=Math.hypot(dx,dy)||1,k=Math.min(8,l/30);$('iris').style.transform=`translate(${dx/l*k}px,${dy/l*k}px)`;});
+const tickClock=()=>{$('clock').textContent=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});};tickClock();setInterval(tickClock,20000);
+$('wall').classList.toggle('plain',state.plain);
+
+// The gate: a password on the live server, a plain wake button in preview.
+function lock(){
+  menu.hidden=true;[...wins.keys()].forEach(id=>{const w=wins.get(id);w.api&&w.api.stop&&w.api.stop();w.el.remove();wins.delete(id);});drawTabs();
+  if(state.live)fetch('/api/logout',{method:'POST',headers:{'x-ripper':'1'}}).catch(()=>{});
+  $('gate').hidden=false;$('boot').hidden=true;$('wake').disabled=false;$('gateLine').textContent=LINES.lock[0];$('pass').value='';$('pass').hidden=!state.live;
+}
+async function boot(){
+  const b=$('boot');b.hidden=false;b.textContent='';$('pass').hidden=true;$('wake').disabled=true;growl(1.5);
+  const lines=['Hull heat ......... ok','Spine blades ...... out','Chrome eye ........ open',state.modo?'Modo leash ........ locked':'Modo leash ........ not connected','Master found. Grrr.'];
+  const fast=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  for(const l of lines){b.textContent+=l+'\n';await new Promise(r=>setTimeout(r,fast?0:230));}
+  $('gate').hidden=true;
+  if(!wins.size&&innerWidth>700)launch('ripper');
+}
+$('gateForm').addEventListener('submit',async(e)=>{
+  e.preventDefault();$('gateNote').textContent='';
+  if(!state.live)return boot();
+  const r=await fetch('/api/login',{method:'POST',headers:{'content-type':'application/json','x-ripper':'1'},body:JSON.stringify({password:$('pass').value})}).catch(()=>null);
+  if(!r||!r.ok){$('gateNote').textContent=r&&r.status===429?'Too many tries. Wait five minutes.':r&&r.status===503?'No password is set on the server yet.':'Wrong password. It’s showing teeth.';return;}
+  const d=await r.json();state.modo=d.modo;state.ai=d.ai;boot();
+});
+(async()=>{
+  let me=null;try{const r=await fetch('/api/me',{headers:{'x-ripper':'1'}});if(r.ok)me=await r.json();}catch(e){}
+  if(me&&me.ripper){state.live=true;state.modo=me.modo;state.ai=me.ai;if(me.authed){$('wake').textContent='Wake it';}else{$('pass').hidden=false;$('wake').textContent='Unlock';$('pass').focus();}}
+  else $('gateNote').textContent='Preview: the desktop and apps work, but Ripper’s AI and Modo need the live server.';
+})();
+})();
+</script>

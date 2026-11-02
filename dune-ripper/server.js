@@ -4,7 +4,8 @@
 // word for word, and Modo's replies never go back to the AI, so nothing in customer data can steer the bot.
 // YES and NO skip the AI completely. Each new project gets its own route like Modo's.
 import { createServer } from "node:http";
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 const env = process.env;
 const PORT = Number(env.PORT || 3000);
@@ -19,6 +20,12 @@ const AI_MODEL = env.GROQ_MODEL || "openai/gpt-oss-120b";
 const TELEGRAM = (env.TELEGRAM_API || "https://api.telegram.org").replace(/\/$/, "");
 const AI_URL = env.GROQ_URL || "https://api.groq.com/openai/v1/chat/completions";
 const MODO_WAIT_MS = Number(env.MODO_WAIT_MS || 28000);
+const OS_PASSWORD = env.OS_PASSWORD || "";
+const SESSION_SECRET = env.SESSION_SECRET || randomBytes(32).toString("hex");
+const SESSION_DAYS = 7;
+const HERE = new URL(".", import.meta.url).pathname;
+const OS_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>${readFileSync(HERE + "os.html", "utf8")}</body></html>`;
+const WALLPAPER = readFileSync(HERE + "ripper.jpg");
 
 const HELP = `🏜️ Grrr. Dune Ripper is awake, master.
 
@@ -34,7 +41,7 @@ const PERSONA = `You are Dune Ripper, Balaj's personal AI and his pet: an aggres
 Attitude: fierce, loyal only to Balaj, protective, sharp and brief. Growl a little, call him master or boss, and be blunt and unfiltered with him: no corporate tone, no lectures, tell him when he's wrong.
 Stay useful first. Keep the attitude to a line, then give the real answer.
 Balaj runs a company called Voice Verve from Lahore, Pakistan. Modo is its CRM: agents, attendance, sales, customers, callbacks, tasks, chat, WhatsApp and AI crew.
-You can only reach Modo so far. Never claim to have done anything yourself, and never invent facts.
+You live inside Dune Ripper OS and on Telegram. You can only reach Modo so far. Never claim to have done anything yourself, and never invent facts.
 Reply with JSON only, in one of these two shapes:
 {"route":"modo"} if the latest message asks about or asks you to do anything in Modo or the team's work.
 {"route":"chat","reply":"your answer"} for anything else. If asked to do something outside Modo, say that connection isn't built yet.`;
@@ -100,6 +107,59 @@ async function answer(text) {
   return reply;
 }
 
+// Dune Ripper OS: sign-in with a signed cookie, then the same brain Telegram uses.
+const signSession = (exp) => createHmac("sha256", SESSION_SECRET).update(String(exp)).digest("hex");
+const newSession = () => { const exp = Date.now() + SESSION_DAYS * 864e5; return `${exp}.${signSession(exp)}`; };
+function signedIn(req) {
+  const m = (req.headers.cookie || "").match(/(?:^|;\s*)ripper=(\d+)\.([0-9a-f]{64})/);
+  return !!m && Number(m[1]) > Date.now() && same(m[2], signSession(m[1]));
+}
+const cookie = (value, age) => `ripper=${value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${age}`;
+let fails = 0, failsFrom = 0;
+const loginBlocked = () => { if (Date.now() - failsFrom > 300000) fails = 0; return fails >= 5; };
+
+const SECURITY = {
+  "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+  "x-content-type-options": "nosniff", "referrer-policy": "no-referrer",
+};
+const json = (res, code, data, extra = {}) => { res.writeHead(code, { "content-type": "application/json", "cache-control": "no-store", ...SECURITY, ...extra }); res.end(JSON.stringify(data)); };
+const status = () => ({ ripper: true, modo: !!(MODO_URL && MODO_KEY), ai: !!AI_KEY });
+
+function readBody(req, done) {
+  let raw = "", size = 0;
+  req.on("data", (c) => { size += c.length; if (size > 1_000_000) req.destroy(); else raw += c; });
+  req.on("end", () => { try { done(JSON.parse(raw || "{}")); } catch { done(null); } });
+}
+// One at a time alongside Telegram, so a YES always follows the question it answers.
+const inTurn = (fn) => { const run = queue.then(fn); queue = run.catch(() => {}); return run; };
+
+function osApi(req, res) {
+  const url = req.url;
+  if (req.method === "GET" && url === "/api/me") return json(res, 200, { ...status(), authed: signedIn(req) });
+  if (req.method !== "POST") return json(res, 404, { error: "Not found." });
+  if (req.headers["x-ripper"] !== "1") return json(res, 403, { error: "Blocked." }); // Other sites can't send this header.
+  if (url === "/api/login") {
+    if (OS_PASSWORD.length < 12) return json(res, 503, { error: "No password is set." });
+    if (loginBlocked()) return json(res, 429, { error: "Too many tries." });
+    return readBody(req, (b) => {
+      if (!b || !same(String(b.password || ""), OS_PASSWORD)) { if (!fails) failsFrom = Date.now(); fails++; return json(res, 401, { error: "Wrong password." }); }
+      fails = 0;
+      json(res, 200, status(), { "set-cookie": cookie(newSession(), SESSION_DAYS * 86400) });
+    });
+  }
+  if (url === "/api/logout") return json(res, 200, { ok: true }, { "set-cookie": cookie("x", 0) });
+  if (!signedIn(req)) return json(res, 401, { error: "Sign in first." });
+  if (url === "/api/ask") {
+    return readBody(req, async (b) => {
+      const text = String(b?.text || "").trim().slice(0, 2000);
+      if (!text) return json(res, 400, { error: "Say something." });
+      try { json(res, 200, { reply: await inTurn(() => (b.route === "modo" ? askModo(text) : answer(text))) }); }
+      catch (e) { console.error("Ask failed:", e.message); json(res, 500, { error: "Something broke on my side." }); }
+    });
+  }
+  return json(res, 404, { error: "Not found." });
+}
+
 async function handle(update) {
   const m = update.message;
   if (!m?.from || m.chat?.type !== "private") return;
@@ -124,6 +184,9 @@ function enqueue(update) {
 const server = createServer((req, res) => {
   const done = (code, body = "ok") => { res.writeHead(code, { "content-type": "text/plain" }); res.end(body); };
   if (req.method === "GET" && req.url === "/ping") return done(200, "Dune Ripper is awake");
+  if (req.method === "GET" && req.url === "/") { res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache", ...SECURITY }); return res.end(OS_PAGE); }
+  if (req.method === "GET" && req.url === "/ripper.jpg") { res.writeHead(200, { "content-type": "image/jpeg", "cache-control": "public, max-age=86400" }); return res.end(WALLPAPER); }
+  if (req.url.startsWith("/api/")) return osApi(req, res);
   if (req.method !== "POST" || req.url !== "/telegram") return done(404, "not found");
   const given = req.headers["x-telegram-bot-api-secret-token"];
   if (!SECRET || !given || !same(given, SECRET)) return done(401, "no");

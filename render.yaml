@@ -29,6 +29,10 @@ services:
         generateValue: true
       - key: WEBHOOK_SECRET
         generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: OS_PASSWORD
+        sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: TELEGRAM_OWNER_ID

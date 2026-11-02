@@ -1,6 +1,6 @@
 # Dune Ripper
 
-Balaj's personal assistant on Telegram. Only the owner's Telegram account can use it. Modo is its first connection.
+Balaj's personal assistant. It runs as Dune Ripper OS, a password-protected desktop in the browser, and optionally on Telegram. Modo is its first connection.
 
 ## How it works
 - A free Groq AI decides whether a message is for Modo or a normal chat.
@@ -11,8 +11,10 @@ Balaj's personal assistant on Telegram. Only the owner's Telegram account can us
 ## Settings on Render
 | Name | Value |
 | --- | --- |
-| `TELEGRAM_BOT_TOKEN` | From @BotFather |
-| `TELEGRAM_OWNER_ID` | Your numeric Telegram ID. Leave it blank at first and the bot tells you |
+| `OS_PASSWORD` | Your OS password, 12+ characters |
+| `SESSION_SECRET` | Render makes this |
+| `TELEGRAM_BOT_TOKEN` | Optional. From @BotFather |
+| `TELEGRAM_OWNER_ID` | Optional. Your numeric Telegram ID. Leave it blank at first and the bot tells you |
 | `GROQ_API_KEY` | From console.groq.com/keys |
 | `DUNE_RIPPER_KEY` | Render makes this. Copy the same value to Netlify |
 | `WEBHOOK_SECRET` | Render makes this |

@@ -29,7 +29,7 @@ const fake = createServer(async (req, res) => {
 await new Promise((ok) => fake.listen(0, ok));
 const F = `http://127.0.0.1:${fake.address().port}`;
 const PORT = 4100 + (process.pid % 500);
-const bot = spawn("node", ["server.js"], { cwd: new URL(".", import.meta.url).pathname, stdio: "inherit", env: { PATH: process.env.PATH, PORT, TELEGRAM_BOT_TOKEN: "T", TELEGRAM_OWNER_ID: "7", WEBHOOK_SECRET: "s3cret", TELEGRAM_API: F, MODO_URL: F, DUNE_RIPPER_KEY: "k".repeat(32), GROQ_API_KEY: "g", GROQ_URL: `${F}/ai`, MODO_WAIT_MS: "300" } });
+const bot = spawn("node", ["server.js"], { cwd: new URL(".", import.meta.url).pathname, stdio: "inherit", env: { PATH: process.env.PATH, PORT, TELEGRAM_BOT_TOKEN: "T", TELEGRAM_OWNER_ID: "7", WEBHOOK_SECRET: "s3cret", TELEGRAM_API: F, MODO_URL: F, DUNE_RIPPER_KEY: "k".repeat(32), GROQ_API_KEY: "g", GROQ_URL: `${F}/ai`, MODO_WAIT_MS: "300", OS_PASSWORD: "correct-horse-1", SESSION_SECRET: "x".repeat(32) } });
 const B = `http://127.0.0.1:${PORT}`;
 for (let i = 0; i < 50; i++) { try { await fetch(`${B}/ping`); break; } catch { await new Promise((r) => setTimeout(r, 50)); } }
 
@@ -52,6 +52,20 @@ try {
   await t("bad AI output does nothing in Modo", async () => { const n = modo.length, s = sent.length; aiMode = "garbage"; await say("mark order 6 active"); await settled(s + 1); assert.equal(modo.length, n); });
   await t("a slow Modo is not retried", async () => { const n = modo.length, s = sent.length; modoMode = "slow"; await say("/modo tell all agents hi"); await settled(s + 1); assert.equal(modo.length, n); assert.match(last(), /may or may not/); });
   await t("a rejected key is explained", async () => { const s = sent.length; modoMode = "reject"; await say("/modo sales"); await settled(s + 1); assert.match(last(), /DUNE_RIPPER_KEY/); });
+  const api = (path, body, headers = {}) => fetch(`${B}${path}`, { method: "POST", headers: { "x-ripper": "1", ...headers }, body: JSON.stringify(body) });
+  modoMode = "ok";
+  await t("the OS page and wallpaper load", async () => { const r = await fetch(B + "/"); assert.match(await r.text(), /Dune Ripper OS/); assert.match(r.headers.get("content-security-policy"), /frame-ancestors 'none'/); assert.equal((await fetch(B + "/ripper.jpg")).status, 200); });
+  await t("the OS refuses anyone not signed in", async () => { const n = modo.length; assert.equal((await api("/api/ask", { text: "sales", route: "modo" })).status, 401); assert.equal(modo.length, n); });
+  await t("a forged session is refused", async () => { assert.equal((await api("/api/ask", { text: "sales" }, { cookie: `ripper=${Date.now() + 1e7}.${"a".repeat(64)}` })).status, 401); });
+  await t("other sites are blocked", async () => { assert.equal((await fetch(B + "/api/ask", { method: "POST", body: "{}" })).status, 403); });
+  await t("a wrong password is refused", async () => { assert.equal((await api("/api/login", { password: "nope" })).status, 401); });
+  await t("the OS drives Modo after sign-in", async () => {
+    const r = await api("/api/login", { password: "correct-horse-1" }); assert.equal(r.status, 200);
+    const c = r.headers.get("set-cookie").split(";")[0]; assert.match(r.headers.get("set-cookie"), /HttpOnly; Secure; SameSite=Strict/);
+    const a = await api("/api/ask", { text: "sales", route: "modo" }, { cookie: c }); assert.equal(a.status, 200); assert.equal(modo.at(-1), "sales");
+    assert.match((await a.json()).reply, /modo:sales/);
+  });
+  await t("repeated wrong passwords lock sign-in", async () => { for (let i = 0; i < 5; i++) await api("/api/login", { password: "nope" }); assert.equal((await api("/api/login", { password: "correct-horse-1" })).status, 429); });
   console.log(`\n${passed} tests passed`);
 } finally { bot.kill(); fake.close(); fake.closeAllConnections(); }
 process.exit(0);
