@@ -13,3 +13,25 @@ services:
         value: https://modo-crm1.vercel.app
       - key: RELAY_KEY
         sync: false
+  # Dune Ripper: your personal assistant on Telegram (see dune-ripper/README.md).
+  - type: web
+    name: dune-ripper
+    runtime: node
+    plan: free
+    rootDir: dune-ripper
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /ping
+    envVars:
+      - key: MODO_URL
+        value: https://dapper-custard-f935ba.netlify.app
+      - key: DUNE_RIPPER_KEY
+        generateValue: true
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_OWNER_ID
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
