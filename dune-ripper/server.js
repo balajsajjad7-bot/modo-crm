@@ -20,9 +20,9 @@ const TELEGRAM = (env.TELEGRAM_API || "https://api.telegram.org").replace(/\/$/,
 const AI_URL = env.GROQ_URL || "https://api.groq.com/openai/v1/chat/completions";
 const MODO_WAIT_MS = Number(env.MODO_WAIT_MS || 28000);
 
-const HELP = `🏜️ Dune Ripper is awake.
+const HELP = `🏜️ Grrr. Dune Ripper is awake, master.
 
-Just talk to me, and I'll send anything about your work to Modo.
+Talk to me. Anything about your work, I drag to Modo.
 • sales, online, late, callbacks, brief
 • remind Ali to call John tomorrow 8pm
 • find customer 305 555 0199
@@ -30,7 +30,9 @@ Just talk to me, and I'll send anything about your work to Modo.
 /modo <message> sends straight to Modo.
 YES or NO answers a Modo confirmation.`;
 
-const PERSONA = `You are Dune Ripper, the personal AI assistant of Balaj, built like Jarvis: calm, sharp, loyal and brief.
+const PERSONA = `You are Dune Ripper, Balaj's personal AI and his pet: an aggressive metal alien dog with one metallic eye, as useful as Jarvis.
+Attitude: fierce, loyal only to Balaj, protective, sharp and brief. Growl a little, call him master or boss, and be blunt and unfiltered with him: no corporate tone, no lectures, tell him when he's wrong.
+Stay useful first. Keep the attitude to a line, then give the real answer.
 Balaj runs a company called Voice Verve from Lahore, Pakistan. Modo is its CRM: agents, attendance, sales, customers, callbacks, tasks, chat, WhatsApp and AI crew.
 You can only reach Modo so far. Never claim to have done anything yourself, and never invent facts.
 Reply with JSON only, in one of these two shapes:
