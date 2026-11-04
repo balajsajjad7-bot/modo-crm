@@ -15,9 +15,12 @@ export async function GET(req) {
   const q = new URL(req.url).searchParams;
   const s = await db.sale.findUnique({ where: { id: String(q.get("id") || "") }, select: {
     id: true, address: true, zip: true, geoLat: true, geoLng: true, geoStores: true, geoAt: true,
-    carrierName: true, carrierStores: true, carrierAt: true,
-    product: true, summary: true, device: true, specs: true, notes: true, raw: true, flags: true } });
+    carrierName: true, carrierStores: true, carrierAt: true, campaignId: true,
+    product: true, summary: true, device: true, specs: true, gift: true, office: true, saleType: true, notes: true, raw: true, flags: true } });
   if (!s) return NextResponse.json({ error: "That sale doesn't exist any more." }, { status: 404 });
+  // The carrier a customer is "associated with" in Modo is usually their campaign (Verizon / AT&T / …),
+  // so pull the campaign name in for detection.
+  if (s.campaignId) { try { const c = await db.campaign.findUnique({ where: { id: s.campaignId }, select: { name: true } }); s.campaignName = c?.name || null; } catch {} }
   const refresh = q.get("refresh") === "1";
   const wantCarrier = q.get("carrier") === "1";
   let lat = s.geoLat, lng = s.geoLng, label = null;
