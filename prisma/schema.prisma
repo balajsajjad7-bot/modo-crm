@@ -133,6 +133,9 @@ model Sale {
   geoLng         Float?
   geoStores      String?   // nearest UPS locations (JSON), refreshed monthly
   geoAt          DateTime?
+  carrierName    String?   // the customer's mobile carrier: verizon | att | tmobile | …
+  carrierStores  String?   // nearest stores of that carrier (JSON), refreshed monthly
+  carrierAt      DateTime?
   dropStore      String?   // where the customer dropped the return package (JSON: name, addr, at, how)
   upsStatus      String?   // Modo bot: label | dropped_off | in_transit | out_for_delivery | delivered | exception | returned
   upsStage       String?

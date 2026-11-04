@@ -1,26 +1,53 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireManager } from "@/lib/auth";
-import { geocode, nearestUps } from "@/lib/geo";
+import { geocode, nearestUps, nearestCarrier } from "@/lib/geo";
+import { detectCarrier, carrierInfo } from "@/lib/carriers";
 
 export const maxDuration = 45;
 // ?id=…            → the customer's location (fast; saved on the sale) + any saved UPS list
 // ?id=…&stores=1   → find the nearest UPS locations (slower; saved, refreshed monthly)
+// ?id=…&carrier=1  → find the nearest store for the customer's own carrier (Verizon / AT&T / …)
 // &refresh=1       → look everything up again
 export async function GET(req) {
   const { error } = await requireManager("sales");
   if (error) return error;
   const q = new URL(req.url).searchParams;
-  const s = await db.sale.findUnique({ where: { id: String(q.get("id") || "") }, select: { id: true, address: true, zip: true, geoLat: true, geoLng: true, geoStores: true, geoAt: true } });
+  const s = await db.sale.findUnique({ where: { id: String(q.get("id") || "") }, select: {
+    id: true, address: true, zip: true, geoLat: true, geoLng: true, geoStores: true, geoAt: true,
+    carrierName: true, carrierStores: true, carrierAt: true,
+    product: true, summary: true, device: true, specs: true, notes: true, raw: true, flags: true } });
   if (!s) return NextResponse.json({ error: "That sale doesn't exist any more." }, { status: 404 });
   const refresh = q.get("refresh") === "1";
+  const wantCarrier = q.get("carrier") === "1";
   let lat = s.geoLat, lng = s.geoLng, label = null;
   if (lat == null || refresh) {
     const g = await geocode(s.address, s.zip);
     if (!g) return NextResponse.json({ error: "Couldn't find this address on the map. Check the street, city, state and ZIP on the sale." }, { status: 422 });
     lat = g.lat; lng = g.lng; label = g.label;
-    await db.sale.update({ where: { id: s.id }, data: { geoLat: lat, geoLng: lng, ...(refresh ? { geoStores: null, geoAt: null } : {}) } }).catch(() => {});
+    await db.sale.update({ where: { id: s.id }, data: { geoLat: lat, geoLng: lng, ...(refresh ? { geoStores: null, geoAt: null, carrierStores: null, carrierAt: null } : {}) } }).catch(() => {});
   }
+
+  // Which carrier is the customer on? saved value, else detect from the sale text.
+  const carrierId = (s.carrierName || detectCarrier(s) || "").toLowerCase() || null;
+  const carrier = carrierInfo(carrierId);
+  if (carrierId && carrierId !== s.carrierName) await db.sale.update({ where: { id: s.id }, data: { carrierName: carrierId } }).catch(() => {});
+
+  // Carrier-store mode
+  if (wantCarrier) {
+    if (!carrier) return NextResponse.json({ lat, lng, label, carrier: null, carrierStores: [], carrierNote: "No carrier found on this sale, so there's no store to show." });
+    let cStores = null; try { cStores = s.carrierStores && !refresh ? JSON.parse(s.carrierStores) : null; } catch {}
+    const cStale = !s.carrierAt || Date.now() - new Date(s.carrierAt) > 30 * 864e5 || lat !== s.geoLat;
+    if (cStale || !cStores?.length || refresh) {
+      const found = await nearestCarrier(carrierId, { lat, lng });
+      if (found === null) return NextResponse.json({ lat, lng, label, carrier: { id: carrier.id, label: carrier.label, color: carrier.color, fg: carrier.fg }, carrierStores: cStores || [], carrierError: "The free map search is busy right now. Tap refresh in a minute." });
+      cStores = found;
+      await db.sale.update({ where: { id: s.id }, data: { carrierStores: JSON.stringify(cStores), carrierAt: new Date(), carrierName: carrierId } }).catch(() => {});
+    }
+    return NextResponse.json({ lat, lng, label, carrier: { id: carrier.id, label: carrier.label, color: carrier.color, fg: carrier.fg }, carrierStores: cStores || [] });
+  }
+
+  // UPS mode (default)
   let stores = null; try { stores = s.geoStores && !refresh ? JSON.parse(s.geoStores) : null; } catch {}
   const stale = !s.geoAt || Date.now() - new Date(s.geoAt) > 30 * 864e5 || lat !== s.geoLat;
   if (q.get("stores") === "1" && (stale || !stores?.length || refresh)) {
@@ -29,5 +56,5 @@ export async function GET(req) {
     stores = found;
     await db.sale.update({ where: { id: s.id }, data: { geoStores: JSON.stringify(stores), geoAt: new Date() } }).catch(() => {});
   }
-  return NextResponse.json({ lat, lng, label, stores: stores || [], storesPending: !stores });
+  return NextResponse.json({ lat, lng, label, stores: stores || [], storesPending: !stores, carrier: carrier ? { id: carrier.id, label: carrier.label, color: carrier.color, fg: carrier.fg } : null });
 }

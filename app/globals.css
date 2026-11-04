@@ -3783,3 +3783,46 @@ html[data-look="glass"] :is(button[aria-selected="false"],button[aria-checked="f
 html[data-look="glass"] :is(button[aria-selected="true"],button[aria-checked="true"]){background:rgb(var(--p))!important;color:#fff!important;border-color:transparent!important}
 html[data-look="glass"][data-appearance="light"] :is(button[aria-selected="true"],button[aria-checked="true"]){background:rgb(var(--p-ink))!important}
 html[data-look="glass"] .ci-paste textarea{background:transparent!important;border:none!important;box-shadow:none!important}
+
+/* ── Carrier store card (nearest Verizon / AT&T / … + call-back log) ───────────── */
+.cstore{display:flex;flex-direction:column;gap:12px}
+.cstore-top{display:flex;align-items:center;gap:10px}
+.cstore-badge{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12px;letter-spacing:.02em;padding:5px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;box-shadow:0 2px 10px -4px rgba(0,0,0,.4)}
+.cstore-ttl{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.cstore-ttl b{font-size:14.5px}
+.cstore-top .icon-btn{margin-left:auto}
+.cstore-best{position:relative;display:flex;align-items:center;gap:12px;padding:12px 14px 12px 16px;border-radius:14px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--car) 12%,transparent),transparent 60%),var(--card);
+  border:1px solid var(--border);overflow:hidden}
+.cstore-best::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--car)}
+.cstore-star{color:var(--car);flex:0 0 auto}
+.cstore-best-t{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.cstore-best-t b{font-size:14.5px;letter-spacing:-.01em}
+.cstore-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cstore-body{display:grid;grid-template-columns:1.5fr 1fr;gap:12px}
+@media (max-width:760px){.cstore-body{grid-template-columns:1fr}}
+.cstore-map-wrap{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--border);min-height:240px}
+.cstore-map{position:absolute;inset:0}
+.cstore-overlay{position:absolute;inset:0;display:grid;place-items:center;background:var(--card);text-align:center;padding:16px}
+.cstore-tools{position:absolute;left:10px;bottom:10px;display:flex;gap:6px;z-index:2}
+.cstore-tools .sm{backdrop-filter:blur(8px);background:color-mix(in srgb,var(--card-solid) 80%,transparent)}
+.cstore-side{display:flex;flex-direction:column;gap:8px}
+.cstore-sh{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:650;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.06em}
+.cstore-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 10px;border-radius:11px;border:1px solid var(--border)}
+.cstore-row.best{border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.cstore-rt{min-width:0;display:flex;flex-direction:column}
+.cstore-rt b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cstore-rr{display:flex;flex-direction:column;align-items:flex-end;gap:3px;white-space:nowrap}
+.sm-num,.sm-pin.car{--car:var(--accent)}
+.sm-pin.car{display:grid;place-items:center;width:28px;height:28px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);
+  background:var(--car);color:#fff;font-weight:800;font-size:13px;box-shadow:0 4px 12px -2px rgba(0,0,0,.5);border:2px solid #fff}
+.sm-pin.car span{transform:rotate(-45deg)}
+.sm-pin.car.best{width:34px;height:34px;font-size:15px;box-shadow:0 0 0 4px color-mix(in srgb,var(--car) 30%,transparent),0 6px 16px -2px rgba(0,0,0,.6)}
+/* Call-back log */
+.cstore-notes{display:flex;flex-direction:column;gap:9px;padding-top:4px;border-top:1px dashed var(--border)}
+.cstore-add{display:flex;gap:8px}
+.cstore-add input{flex:1;min-width:0}
+.cstore-log{display:flex;flex-direction:column;gap:7px;max-height:220px;overflow:auto}
+.cstore-logline{display:flex;flex-direction:column;gap:3px;padding:9px 11px;border-radius:10px;background:var(--accent-soft);font-size:13.5px;line-height:1.45}
+.cstore-logline:first-child{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent)}
+.cstore-when{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}

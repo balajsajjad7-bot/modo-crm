@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import OrderCheck, { OrderStatusChip } from "@/components/OrderCheck";
 import dynamic from "next/dynamic";
 const SaleMap = dynamic(() => import("@/components/SaleMap"), { ssr: false, loading: () => <div className="sm-loading muted small">Loading map…</div> });
+const CarrierStoreCard = dynamic(() => import("@/components/CarrierStoreCard"), { ssr: false, loading: () => <div className="sm-loading muted small">Loading carrier store…</div> });
 import { nearestLine, dropLine } from "@/lib/nearest";
 import DeviceArt from "@/components/DeviceArt";
 import UpsTrack from "@/components/UpsTrack";
@@ -278,6 +279,7 @@ export default function SaleCard({ s: base, onStatus, onDelete, onEmail, preview
           </div>
           <div className="sd-b">
           {!preview && s.id && <section className="sale-sec"><h4><MapPin size={13} /> Where the customer is · nearest UPS</h4><SaleMap sale={s} big={max} onDrop={(d) => onPatch({ dropStore: d ? JSON.stringify(d) : null })} /></section>}
+          {!preview && s.id && <section className="sale-sec"><h4><Store size={13} /> Carrier store &amp; call-back log</h4><CarrierStoreCard sale={s} onPatch={onPatch} /></section>}
           {!preview && s.id && <ReturnLabel s={s} labels={labels} onPatch={onPatch} />}
           </div>
         </div>
