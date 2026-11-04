@@ -6,21 +6,28 @@
   :root { color-scheme: dark; }
   html, body { margin: 0; height: 100%; }
   body {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-    background: radial-gradient(120% 120% at 50% 0%, #141926 0%, #0b0d12 60%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    background: radial-gradient(130% 110% at 50% 0%, #1b1f3d 0%, #0b0d1c 60%);
     color: #e9edf6; font-family: "Segoe UI", system-ui, sans-serif; user-select: none; -webkit-app-region: drag;
+    overflow: hidden;
   }
-  .logo { font-size: 34px; font-weight: 800; letter-spacing: 2px;
-    background: linear-gradient(90deg, #6b5cff, #35c3ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .status { font-size: 13px; color: #9aa6bd; min-height: 18px; text-align: center; padding: 0 24px; }
-  .bar { width: 220px; height: 3px; border-radius: 3px; background: #1f2636; overflow: hidden; }
+  .blob { position: fixed; border-radius: 50%; filter: blur(28px); opacity: .5; }
+  .b1 { width: 220px; height: 220px; left: -60px; top: 120px; background: radial-gradient(circle,#6b5cff,transparent 70%); }
+  .b2 { width: 200px; height: 200px; right: -60px; top: -40px; background: radial-gradient(circle,#35c3ff,transparent 70%); }
+  .logo { width: 92px; height: 92px; object-fit: contain; filter: drop-shadow(0 12px 28px rgba(0,0,0,.5)); z-index: 1; }
+  .word { font-size: 30px; font-weight: 800; letter-spacing: 4px; z-index: 1;
+    background: linear-gradient(90deg, #b9adff, #7fe0ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .bar { width: 220px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; z-index: 1; }
   .bar i { display: block; height: 100%; width: 40%; border-radius: 3px;
     background: linear-gradient(90deg, #6b5cff, #35c3ff); animation: slide 1.3s ease-in-out infinite; }
   @keyframes slide { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+  .status { font-size: 12.5px; color: #9aa6bd; min-height: 18px; text-align: center; padding: 0 24px; z-index: 1; }
 </style>
 </head>
 <body>
-  <div class="logo">MODO</div>
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <img class="logo" src="./build/logo.png" alt="Modo" onerror="this.style.display='none'" />
+  <div class="word">MODO</div>
   <div class="bar"><i></i></div>
   <div class="status" id="s">Starting…</div>
   <script>window.setStatus = (t) => { document.getElementById("s").textContent = t; };</script>

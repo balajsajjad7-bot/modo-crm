@@ -30,7 +30,7 @@ export default function DesktopApp() {
             <button role="switch" aria-checked={cfg.kiosk} className={"toggle" + (cfg.kiosk ? " on" : "")} onClick={() => setCfg({ ...cfg, kiosk: !cfg.kiosk })}><span /></button></div>
         </div>
         <label>Admin PIN to exit / unlock (leave blank for none)<input value={cfg.adminExitPin} onChange={(e) => setCfg({ ...cfg, adminExitPin: e.target.value.replace(/\D/g, "").slice(0, 8) })} inputMode="numeric" placeholder="e.g. 4729" /></label>
-        <label>Auto-update server URL (optional)<input value={cfg.updateFeedUrl} onChange={(e) => setCfg({ ...cfg, updateFeedUrl: e.target.value })} placeholder="https://…/updates (leave blank — the app already loads the latest site)" /></label>
+        <div className="action-list"><div><div><b>Automatic updates</b><div className="muted small">Every installed Modo checks for new versions on its own and updates itself (it asks before restarting). When a new version is published, all PCs get it within a few hours or on next launch — nothing to set here.</div></div></div></div>
         <div className="row"><button onClick={download}><Save size={15} /> Download modo.config.json</button>{msg && <span className="small" style={{ color: "var(--green)" }}>{msg}</span>}</div>
       </section>
 

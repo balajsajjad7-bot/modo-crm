@@ -46,6 +46,14 @@ jobs:
           robocopy . desktop\appsrc /E /NFL /NDL /NJH /NJS /XD .git desktop .github /XF "*.log"
           if ($LASTEXITCODE -ge 8) { Write-Error "robocopy failed ($LASTEXITCODE)"; exit 1 } else { exit 0 }
 
+      - name: Set build version
+        shell: bash
+        run: |
+          V="4.4.${{ github.run_number }}"
+          node -e "const f='desktop/package.json';const p=require('./'+f);p.version='$V';require('fs').writeFileSync(f,JSON.stringify(p,null,2)+'\n')"
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          echo "Building Modo $V"
+
       - name: Install Electron build tools
         working-directory: desktop
         run: npm install --no-audit --no-fund
@@ -64,10 +72,14 @@ jobs:
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: desktop-v${{ github.run_number }}
-          name: Modo for Windows (build ${{ github.run_number }})
+          tag_name: v${{ env.VERSION }}
+          name: Modo for Windows ${{ env.VERSION }}
           body: |
             Modo offline desktop app. Download **Modo-Setup.exe** below and run it to install Modo on a Windows PC.
             Default login: **ADMIN / admin** (change it in Modo after first sign-in).
-          files: desktop/dist/Modo-Setup.exe
+
+            Already have Modo installed? It updates itself to this version automatically the next time it's online.
+          files: |
+            desktop/dist/Modo-Setup.exe
+            desktop/dist/latest.yml
           make_latest: true

@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "0.3.3",
-    "@electric-sql/pglite-socket": "0.0.8"
+    "@electric-sql/pglite-socket": "0.0.8",
+    "electron-updater": "6.3.9"
   },
   "devDependencies": {
     "electron": "31.7.6",
@@ -20,7 +21,7 @@
   "build": {
     "appId": "com.modo.desktop",
     "productName": "Modo",
-    "publish": null,
+    "publish": { "provider": "github", "owner": "balajsajjad7-bot", "repo": "modo-crm" },
     "asar": false,
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["main.js", "splash.html", "build/**", "node_modules/**"],
@@ -39,7 +40,11 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Modo",
       "uninstallDisplayName": "Modo",
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "multiLanguageInstaller": true,
+      "displayLanguageSelector": true,
+      "installerLanguages": ["en_US", "es_ES", "fr_FR", "de_DE", "it_IT", "pt_BR", "ru_RU", "ar_SA", "zh_CN", "ja_JP"],
+      "installerSidebar": "build/sidebar.bmp"
     }
   }
 }

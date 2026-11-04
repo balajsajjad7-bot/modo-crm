@@ -166,6 +166,32 @@ function openMainWindow(url, cfg) {
     try { app.setLoginItemSettings({ openAtLogin: true, path: app.getPath("exe") }); } catch {}
   }
   if (kiosk) setupKiosk(cfg);
+  startAutoUpdate();
+}
+
+// ── Update client: when a new Modo version is published, every installed PC picks it up. ──
+// Checks the GitHub release feed on launch and every few hours; downloads in the background;
+// offers a one-click restart to apply. Needs internet, so offline PCs simply skip until online.
+function startAutoUpdate() {
+  if (!isPackaged) return;
+  let autoUpdater;
+  try { ({ autoUpdater } = require("electron-updater")); } catch (e) { log("updater unavailable", e.message); return; }
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on("error", (e) => log("update error", e && e.message));
+  autoUpdater.on("update-available", (i) => log("update available", i && i.version));
+  autoUpdater.on("update-downloaded", async (i) => {
+    log("update downloaded", i && i.version);
+    const r = await dialog.showMessageBox(win || undefined, {
+      type: "info", buttons: ["Restart now", "Later"], defaultId: 0, cancelId: 1,
+      title: "Update ready", message: `Modo ${i && i.version ? i.version : ""} is ready to install.`,
+      detail: "Modo will restart to finish updating. Your data stays on this PC.",
+    });
+    if (r.response === 0) { app._allowQuit = true; setImmediate(() => autoUpdater.quitAndInstall()); }
+  });
+  const check = () => autoUpdater.checkForUpdates().catch((e) => log("update check failed", e && e.message));
+  check();
+  setInterval(check, 4 * 60 * 60 * 1000); // every 4 hours
 }
 
 // Minimal kiosk guard: lock to full screen; leaving needs the admin PIN. Uninstall always frees the PC.
@@ -200,6 +226,9 @@ else {
     });
   });
   app.on("will-quit", () => { globalShortcut.unregisterAll(); });
-  app.on("before-quit", async (e) => { if (!app._shuttingDown) { app._shuttingDown = true; e.preventDefault(); await shutdown(); app.exit(0); } });
+  app.on("before-quit", async (e) => {
+    if (app._allowQuit) { try { if (serverProc) serverProc.kill(); } catch {} return; } // let the updater restart us
+    if (!app._shuttingDown) { app._shuttingDown = true; e.preventDefault(); await shutdown(); app.exit(0); }
+  });
   app.on("window-all-closed", () => { app.quit(); });
 }
