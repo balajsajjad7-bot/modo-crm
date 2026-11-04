@@ -1,0 +1,75 @@
+name: Build Modo Windows app
+
+# Builds the real graphical Windows installer (Modo-Setup.exe) and publishes it as a Release asset.
+# A Windows .exe can only be produced on Windows, so this runs on a Windows runner.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - "scripts/desktop-server.js"
+      - ".github/workflows/desktop.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install app dependencies
+        run: npm install --no-audit --no-fund
+        env:
+          # A valid-looking URL so modules that create a DB client at import don't throw at build time.
+          # Nothing connects during the build.
+          DATABASE_URL: "postgresql://u:p@127.0.0.1:5432/modo"
+
+      - name: Build Modo (Next.js production build)
+        run: npm run build
+        env:
+          DATABASE_URL: "postgresql://u:p@127.0.0.1:5432/modo"
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Stage the app inside the desktop project
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path desktop\appsrc | Out-Null
+          # Copy the whole built project (app, .next, public, node_modules, prisma, lib, scripts, config)
+          # into the Electron project, skipping git and the desktop shell itself.
+          robocopy . desktop\appsrc /E /NFL /NDL /NJH /NJS /XD .git desktop .github /XF "*.log"
+          if ($LASTEXITCODE -ge 8) { Write-Error "robocopy failed ($LASTEXITCODE)"; exit 1 } else { exit 0 }
+
+      - name: Install Electron build tools
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+
+      - name: Build the installer
+        working-directory: desktop
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Modo-Setup
+          path: desktop/dist/Modo-Setup.exe
+          if-no-files-found: error
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-v${{ github.run_number }}
+          name: Modo for Windows (build ${{ github.run_number }})
+          body: |
+            Modo offline desktop app. Download **Modo-Setup.exe** below and run it to install Modo on a Windows PC.
+            Default login: **ADMIN / admin** (change it in Modo after first sign-in).
+          files: desktop/dist/Modo-Setup.exe
+          make_latest: true

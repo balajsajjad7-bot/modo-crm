@@ -13,16 +13,16 @@ export default function DesktopApp() {
     <div className="stack">
       <section className="panel stack">
         <h2><Monitor size={17} /> Modo for Windows</h2>
-        <p className="muted small" style={{ margin: 0 }}>A real Windows app: its own icon and window, no browser bar, starts with the PC, and (optionally) locks the PC to Modo only. Agents install it once and open "Modo" like any program.</p>
-        <div className="row"><a className="btn-link" href="/downloads/Modo-Setup.exe" download><Download size={15} /> Download installer (Modo-Setup.exe)</a>
-          <a className="btn-link" href="https://github.com" target="_blank" rel="noreferrer"><Github size={14} /> How to build it</a></div>
-        <p className="small muted" style={{ margin: 0 }}>Put the built <code>Modo-Setup.exe</code> in your site's <code>public/downloads/</code> folder so this button serves it. Agents run it → Modo appears on their desktop.</p>
+        <p className="muted small" style={{ margin: 0 }}>A real, <b>offline</b> Windows app: its own icon and window, no browser bar, its own built-in database on the PC. Everything — sales, agents, attendance, chat, reports — works with no internet; only AI help and live carrier/shipment lookups reach out when online. Starts with the PC and can lock it to Modo only. First sign-in: <b>ADMIN / admin</b> (change it right after).</p>
+        <div className="row"><a className="btn-link" href="https://github.com/balajsajjad7-bot/modo-crm/releases/latest/download/Modo-Setup.exe"><Download size={15} /> Download installer (Modo-Setup.exe)</a>
+          <a className="btn-link" href="https://github.com/balajsajjad7-bot/modo-crm/actions/workflows/desktop.yml" target="_blank" rel="noreferrer"><Github size={14} /> Build status</a></div>
+        <p className="small muted" style={{ margin: 0 }}>The installer is built automatically on GitHub and always links to the newest version. Agents run it → Modo installs and opens like any program, fully offline.</p>
       </section>
 
       <section className="panel stack">
         <h2><Lock size={17} /> What the app does on each PC</h2>
         <p className="muted small" style={{ margin: 0 }}>These go into <b>modo.config.json</b>. Download it below and drop it on each PC (or push the same values by Group Policy to <code>HKLM\\Software\\Modo</code>).</p>
-        <label>Modo web address the app opens<input value={cfg.url} onChange={(e) => setCfg({ ...cfg, url: e.target.value })} /></label>
+        <label>Online Modo address for sync (optional — leave blank to stay fully offline)<input value={cfg.url} onChange={(e) => setCfg({ ...cfg, url: e.target.value })} placeholder="https://your-modo-site (optional)" /></label>
         <label>Also allow these sites in-app (comma separated) — e.g. your dialer<input value={cfg.allowedHosts} onChange={(e) => setCfg({ ...cfg, allowedHosts: e.target.value })} placeholder="dialer.yourcompany.com" /></label>
         <div className="action-list">
           <div><div><b>Start Modo when the PC turns on</b></div><button role="switch" aria-checked={cfg.startWithWindows} className={"toggle" + (cfg.startWithWindows ? " on" : "")} onClick={() => setCfg({ ...cfg, startWithWindows: !cfg.startWithWindows })}><span /></button></div>

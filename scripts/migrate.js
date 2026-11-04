@@ -4,9 +4,18 @@ const fs = require("fs");
 if (fs.existsSync(".env")) fs.readFileSync(".env", "utf8").split(/\r?\n/).forEach((l) => {
   const m = l.match(/^\s*([A-Z_]+)\s*=\s*"?([^"#]*?)"?\s*(#.*)?$/); if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
 });
-const { Pool, neonConfig } = require("@neondatabase/serverless");
 const { cleanUrl } = require("../lib/neon-url");
-neonConfig.webSocketConstructor = require("ws");
+// Offline desktop uses the bundled local PostgreSQL over plain TCP; the cloud build uses Neon over WebSockets.
+const LOCAL = process.env.MODO_LOCAL_PG === "1";
+let Pool;
+if (LOCAL) {
+  Pool = require("pg").Pool;
+} else {
+  const neon = require("@neondatabase/serverless");
+  neon.neonConfig.webSocketConstructor = require("ws");
+  Pool = neon.Pool;
+}
+const connStr = (url) => (LOCAL ? url : cleanUrl(url));
 
 const fk = (table, name, col, ref) => `DO $$ BEGIN ALTER TABLE "${table}" ADD CONSTRAINT "${name}" FOREIGN KEY ("${col}") REFERENCES "${ref}"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`;
 const SQL = [
@@ -231,7 +240,7 @@ const CORE = [
 
 (async () => {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is missing from .env");
-  const pool = new Pool({ connectionString: cleanUrl(process.env.DATABASE_URL) });
+  const pool = new Pool({ connectionString: connStr(process.env.DATABASE_URL) });
   for (let i = 1; ; i++) {
     try { await pool.query("SELECT 1"); break; }
     catch (e) { if (i >= 5) throw e; console.log(`Database is waking up, retrying (${i}/4)...`); await new Promise((r) => setTimeout(r, 4000)); }

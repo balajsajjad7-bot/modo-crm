@@ -17,7 +17,7 @@ module.exports = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ["ogl"],
-  experimental: { serverComponentsExternalPackages: ["ws", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/client", "nodemailer", "undici", "web-push", "unpdf", "mammoth"], outputFileTracingIncludes: { "/api/subs/public": ["./lib/tenant-schema.sql"], "/api/subs": ["./lib/tenant-schema.sql"] } },
+  experimental: { serverComponentsExternalPackages: ["ws", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/adapter-pg", "pg", "@prisma/client", "nodemailer", "undici", "web-push", "unpdf", "mammoth"], outputFileTracingIncludes: { "/api/subs/public": ["./lib/tenant-schema.sql"], "/api/subs": ["./lib/tenant-schema.sql"] } },
   async headers() {
     // Private pages and every API answer: never kept in the browser's or any proxy's cache, never indexed.
     const priv = [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate, private, max-age=0" }, { key: "Pragma", value: "no-cache" }, { key: "Expires", value: "0" }, { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }];

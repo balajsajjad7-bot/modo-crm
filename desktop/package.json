@@ -1,0 +1,44 @@
+{
+  "name": "modo-desktop",
+  "version": "4.4.0",
+  "description": "Modo — offline Windows desktop app",
+  "author": "Modo",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.3.3",
+    "@electric-sql/pglite-socket": "0.0.8"
+  },
+  "devDependencies": {
+    "electron": "31.7.6",
+    "electron-builder": "24.13.3"
+  },
+  "build": {
+    "appId": "com.modo.desktop",
+    "productName": "Modo",
+    "asar": false,
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "splash.html", "build/**", "node_modules/**"],
+    "extraResources": [{ "from": "appsrc", "to": "appsrc" }],
+    "win": {
+      "target": ["nsis"],
+      "icon": "build/icon.png",
+      "artifactName": "Modo-Setup.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Modo",
+      "uninstallDisplayName": "Modo",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
