@@ -76,7 +76,7 @@ jobs:
           name: Modo for Windows ${{ env.VERSION }}
           body: |
             Modo offline desktop app. Download **Modo-Setup.exe** below and run it to install Modo on a Windows PC.
-            Default login: **ADMIN / admin** (change it in Modo after first sign-in).
+            During setup you choose the password for this PC. No account or sign-up needed.
 
             Already have Modo installed? It updates itself to this version automatically the next time it's online.
           files: |

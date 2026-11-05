@@ -28,7 +28,7 @@
     "extraResources": [{ "from": "appsrc", "to": "appsrc" }],
     "win": {
       "target": ["nsis"],
-      "icon": "build/icon.png",
+      "icon": "build/icon.ico",
       "artifactName": "Modo-Setup.exe"
     },
     "nsis": {
@@ -41,6 +41,7 @@
       "shortcutName": "Modo",
       "uninstallDisplayName": "Modo",
       "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh",
       "multiLanguageInstaller": true,
       "displayLanguageSelector": true,
       "installerLanguages": ["en_US", "es_ES", "fr_FR", "de_DE", "it_IT", "pt_BR", "ru_RU", "ar_SA", "zh_CN", "ja_JP"],

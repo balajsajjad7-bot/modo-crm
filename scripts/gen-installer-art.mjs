@@ -39,7 +39,8 @@ async function shot(page, html, w, h, file) {
   await page.setViewportSize({ width: w, height: h });
   await page.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>${CSS}
     html,body{width:${w}px;height:${h}px}body{display:flex}</style></head><body>${html}</body></html>`, { waitUntil: "networkidle" });
-  await page.screenshot({ path: path.join(OUT, file), clip: { x: 0, y: 0, width: w, height: h } });
+  // omitBackground keeps the logo's surroundings transparent — no white box around the mark.
+  await page.screenshot({ path: path.join(OUT, file), omitBackground: file.startsWith("logo"), clip: { x: 0, y: 0, width: w, height: h } });
   console.log("wrote", file);
 }
 

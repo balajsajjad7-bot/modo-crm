@@ -119,6 +119,11 @@ async function boot() {
   await startLocalPostgres(pgPort);
 
   // AI / live-lookup keys are optional and the ONLY things that use the internet. Pulled from config if present.
+  // Password chosen during install (desktop/build/installer.nsh). Read once, applied, then deleted.
+  const setupPwFile = path.join(USER_DIR, "setup-password.txt");
+  let setupPw = null;
+  try { if (fs.existsSync(setupPwFile)) setupPw = fs.readFileSync(setupPwFile, "utf8").trim() || null; } catch {}
+
   const online = {};
   if (cfg.ai) { if (cfg.ai.provider) online.AI_PROVIDER = cfg.ai.provider; if (cfg.ai.model) online.AI_MODEL = cfg.ai.model; if (cfg.ai.apiKey) online.AI_API_KEY = cfg.ai.apiKey; }
   if (cfg.groqKey) online.GROQ_API_KEY = cfg.groqKey;
@@ -133,7 +138,7 @@ async function boot() {
     PORT: String(appPort),
     HOSTNAME: "127.0.0.1",
     ADMIN_ID: cfg.adminId || "ADMIN",
-    ADMIN_PASSWORD: cfg.adminPassword || "admin",
+    ...(setupPw || cfg.adminPassword ? { ADMIN_PASSWORD: setupPw || cfg.adminPassword } : {}),
     ...online,
   };
 
@@ -142,6 +147,7 @@ async function boot() {
 
   showSplash("Almost there…");
   await runNode("scripts/desktop-server.js", env, { waitFor: "MODO_READY" });
+  if (setupPw) { try { fs.unlinkSync(setupPwFile); } catch {} log("setup password applied"); }
 
   openMainWindow(`http://127.0.0.1:${appPort}`, cfg);
 }

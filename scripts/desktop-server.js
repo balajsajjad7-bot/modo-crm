@@ -18,7 +18,8 @@ async function ensureAdmin() {
     const bcrypt = require("bcryptjs");
     const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
     const agentId = (process.env.ADMIN_ID || "ADMIN").trim().toUpperCase();
-    const pw = (process.env.ADMIN_PASSWORD || "admin").trim();
+    const pw = (process.env.ADMIN_PASSWORD || "").trim();
+    if (!pw) { await pool.end(); return; } // only apply a password the user actually set during install
     const hash = await bcrypt.hash(pw, 10);
     await pool.query(`UPDATE "User" SET "passwordHash"=$1, "role"='ADMIN', "active"=true WHERE "agentId"=$2`, [hash, agentId]);
     await pool.end();

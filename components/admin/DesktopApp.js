@@ -13,7 +13,7 @@ export default function DesktopApp() {
     <div className="stack">
       <section className="panel stack">
         <h2><Monitor size={17} /> Modo for Windows</h2>
-        <p className="muted small" style={{ margin: 0 }}>A real, <b>offline</b> Windows app: its own icon and window, no browser bar, its own built-in database on the PC. Everything — sales, agents, attendance, chat, reports — works with no internet; only AI help and live carrier/shipment lookups reach out when online. Starts with the PC and can lock it to Modo only. First sign-in: <b>ADMIN / admin</b> (change it right after).</p>
+        <p className="muted small" style={{ margin: 0 }}>A real, <b>offline</b> Windows app: its own icon and window, no browser bar, its own built-in database on the PC. Everything — sales, agents, attendance, chat, reports — works with no internet; only AI help and live carrier/shipment lookups reach out when online. Starts with the PC and can lock it to Modo only. During install each PC gets its own sign-in password — no accounts or sign-up needed.</p>
         <div className="row"><a className="btn-link" href="https://github.com/balajsajjad7-bot/modo-crm/releases/latest/download/Modo-Setup.exe"><Download size={15} /> Download installer (Modo-Setup.exe)</a>
           <a className="btn-link" href="https://github.com/balajsajjad7-bot/modo-crm/actions/workflows/desktop.yml" target="_blank" rel="noreferrer"><Github size={14} /> Build status</a></div>
         <p className="small muted" style={{ margin: 0 }}>The installer is built automatically on GitHub and always links to the newest version. Agents run it → Modo installs and opens like any program, fully offline.</p>
