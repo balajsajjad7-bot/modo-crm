@@ -42,6 +42,7 @@
       "uninstallDisplayName": "Modo",
       "deleteAppDataOnUninstall": false,
       "include": "build/installer.nsh",
+      "warningsAsErrors": false,
       "multiLanguageInstaller": true,
       "displayLanguageSelector": true,
       "installerLanguages": ["en_US", "es_ES", "fr_FR", "de_DE", "it_IT", "pt_BR", "ru_RU", "ar_SA", "zh_CN", "ja_JP"],

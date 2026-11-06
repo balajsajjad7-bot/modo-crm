@@ -120,9 +120,12 @@ async function boot() {
 
   // AI / live-lookup keys are optional and the ONLY things that use the internet. Pulled from config if present.
   // Password chosen during install (desktop/build/installer.nsh). Read once, applied, then deleted.
-  const setupPwFile = path.join(USER_DIR, "setup-password.txt");
-  let setupPw = null;
-  try { if (fs.existsSync(setupPwFile)) setupPw = fs.readFileSync(setupPwFile, "utf8").trim() || null; } catch {}
+  // Per-user installs write to %APPDATA%\Modo; an "all users" install writes to C:\ProgramData\Modo.
+  const pwSpots = [path.join(USER_DIR, "setup-password.txt"), "C:\\ProgramData\\Modo\\setup-password.txt"];
+  let setupPw = null, setupPwFile = null;
+  for (const f of pwSpots) {
+    try { if (fs.existsSync(f)) { const v = fs.readFileSync(f, "utf8").trim(); if (v) { setupPw = v; setupPwFile = f; break; } } } catch {}
+  }
 
   const online = {};
   if (cfg.ai) { if (cfg.ai.provider) online.AI_PROVIDER = cfg.ai.provider; if (cfg.ai.model) online.AI_MODEL = cfg.ai.model; if (cfg.ai.apiKey) online.AI_API_KEY = cfg.ai.apiKey; }
